@@ -1,0 +1,55 @@
+name: Backend CI - Java 21
+
+on:
+  push:
+    branches: [ "main", "develop", "feature/**" ]
+    paths:
+      - 'backend/**' # Chỉ chạy khi có thay đổi trong thư mục backend
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./demo # Trỏ vào thư mục backend của bạn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build and Run Tests
+        id: run_tests
+        run: mvn clean test
+
+      # --- PHẦN TỰ ĐỘNG BÁO LỖI SANG JIRA ---
+      - name: Login to Jira
+        if: failure() # Chỉ chạy nếu bước mvn test bị hỏng
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Extract Issue Key
+        if: failure()
+        shell: bash
+        run: |
+          # Tìm mã Task (ví dụ DNCK-30) từ tên nhánh
+          ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
+          echo "JIRA_ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
+
+      - name: Create Bug on Jira
+        if: failure()
+        uses: atlassian/gajira-create@v3
+        with:
+          project: DNCK
+          issuetype: Bug
+          summary: "🚨 [BE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
+          description: "Hệ thống CI/CD phát hiện lỗi logic trong Backend. Vui lòng kiểm tra log GitHub Actions."
+          fields: '{"parent": {"key": "${{ env.JIRA_ISSUE_KEY }}"}}'

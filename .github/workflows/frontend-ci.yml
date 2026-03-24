@@ -1,0 +1,57 @@
+name: Frontend CI - Vite React
+
+on:
+  push:
+    branches: [ "main", "develop", "feature/**" ]
+    paths:
+      - 'frontend/**' # Chỉ chạy khi có thay đổi trong thư mục frontend
+
+jobs:
+  frontend-test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./frontend # Trỏ vào thư mục frontend của bạn
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: './frontend/package-lock.json'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Frontend Tests
+        id: run_fe_tests
+        run: npm test
+
+      # --- PHẦN TỰ ĐỘNG BÁO LỖI SANG JIRA ---
+      - name: Login to Jira
+        if: failure()
+        uses: atlassian/gajira-login@v3
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+
+      - name: Extract Issue Key
+        if: failure()
+        shell: bash
+        run: |
+          ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
+          echo "JIRA_ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
+
+      - name: Create Bug on Jira
+        if: failure()
+        uses: atlassian/gajira-create@v3
+        with:
+          project: DNCK
+          issuetype: Bug
+          summary: "🎨 [FE] Lỗi Giao diện tại nhánh ${{ github.ref_name }}"
+          description: "Phát hiện lỗi khi chạy Test trên Frontend (Vite). Vui lòng kiểm tra màn hình và logic UI."
+          fields: '{"parent": {"key": "${{ env.JIRA_ISSUE_KEY }}"}}'
