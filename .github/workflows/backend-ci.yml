@@ -53,3 +53,14 @@ jobs:
           summary: "🚨 [BE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
           description: "Hệ thống CI/CD phát hiện lỗi logic trong Backend. Vui lòng kiểm tra log GitHub Actions."
           fields: '{"parent": {"key": "${{ env.JIRA_ISSUE_KEY }}"}}'
+      
+      - name: Transition Issue to Done
+        if: success() 
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ env.JIRA_ISSUE_KEY }}
+          transition: "DONE"
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
