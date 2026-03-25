@@ -4,7 +4,9 @@ on:
   push:
     branches: [ "main", "develop", "feature/**" ]
     paths:
-      - 'backend/**' # Chỉ chạy khi có thay đổi trong thư mục backend
+      - 'demo/**' # Chỉ chạy khi có thay đổi trong thư mục backend
+      - '.github/workflows/**'
+  workflow_dispatch:
 
 jobs:
   build-and-test:
@@ -37,7 +39,6 @@ jobs:
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
 
       - name: Extract Issue Key
-        if: failure()
         shell: bash
         run: |
           # Tìm mã Task (ví dụ DNCK-30) từ tên nhánh
