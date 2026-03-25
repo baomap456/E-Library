@@ -40,6 +40,7 @@ jobs:
 
       - name: Extract Issue Key
         shell: bash
+        if: always()
         run: |
           # Tìm mã Task (ví dụ DNCK-30) từ tên nhánh
           ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
@@ -52,9 +53,9 @@ jobs:
           project: DNCK
           issuetype: Bug
           summary: "🚨 [BE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
-          description: "Hệ thống CI/CD phát hiện lỗi logic trong Backend. Vui lòng kiểm tra log GitHub Actions."
-          fields: '{"parent": {"key": "${{ env.JIRA_ISSUE_KEY }}"}}'
-      
+          description: "Hệ thống CI phát hiện lỗi. Liên quan đến Task: ${{ env.JIRA_ISSUE_KEY }}. Vui lòng kiểm tra log GitHub."
+          
+      # --- CHUYỂN TRẠNG THÁI SANG DONE (NẾU SUCCESS) ---
       - name: Transition Issue to Done
         if: success() 
         uses: atlassian/gajira-transition@v3
