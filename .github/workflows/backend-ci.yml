@@ -24,10 +24,15 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
           cache: maven
+      
+      - name: Create mock .env file
+        run: |
+          echo "JWT_SECRET_KEY=DayLaKhoaBaoMatSieuDai12345678901234567890" > .env
+          echo "JWT_EXPIRATION_MS=86400000" >> .env
 
       - name: Build and Run Tests
         id: run_tests
-        run: mvn clean test
+        run: mvn clean test -B -e -DtrimStackTrace=false
 
       # --- PHẦN TỰ ĐỘNG BÁO LỖI SANG JIRA ---
       - name: Login to Jira
@@ -54,6 +59,17 @@ jobs:
           issuetype: Bug
           summary: "🚨 [BE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
           description: "Hệ thống CI phát hiện lỗi. Liên quan đến Task: ${{ env.JIRA_ISSUE_KEY }}. Vui lòng kiểm tra log GitHub."
+
+      - name: Transition Issue Back to To Do
+        if: failure() 
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ env.JIRA_ISSUE_KEY }}
+          transition: "TO DO" # Chữ này phải khớp chính xác với tên cột/trạng thái trong Jira của bạn
+        env:
+          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
+          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
           
       # --- CHUYỂN TRẠNG THÁI SANG DONE (NẾU SUCCESS) ---
       - name: Transition Issue to Done
