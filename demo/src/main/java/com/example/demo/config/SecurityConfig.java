@@ -20,7 +20,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì chúng ta dùng JWT
-            .cors(cors -> cors.configure(null))    // Cấu hình CORS để React gọi API không bị chặn
+            .cors(AbstractHttpConfigurer::disable)    // Cấu hình CORS để React gọi API không bị chặn
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll() // Mở cửa tự do cho Đăng nhập/Đăng ký
                 .requestMatchers("/api/v1/public/**").permitAll() // Các API public (xem danh sách sách)

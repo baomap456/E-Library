@@ -32,7 +32,7 @@ jobs:
 
       - name: Build and Run Tests
         id: run_tests
-        run: mvn clean test -B -e -DtrimStackTrace=false
+        run: mvn clean test -B -e -DtrimStackTrace=false | tee maven-log.txt
 
       - name: Upload Test Reports
         if: always() # Quan trọng: Bắt buộc chạy lấy báo cáo kể cả khi Test báo Đỏ
@@ -41,7 +41,7 @@ jobs:
           name: surefire-test-reports
           path: demo/target/surefire-reports/
           retention-days: 3 # Lưu trên GitHub 3 ngày cho bạn tải về
-      
+
       # --- PHẦN TỰ ĐỘNG BÁO LỖI SANG JIRA ---
       - name: Login to Jira
         if: failure() # Chỉ chạy nếu bước mvn test bị hỏng
@@ -58,6 +58,16 @@ jobs:
           # Tìm mã Task (ví dụ DNCK-30) từ tên nhánh
           ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
           echo "JIRA_ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
+      
+      - name: Extract Error Detail
+        if: failure()
+        shell: bash
+        run: |
+          # Tìm dòng có chữ 'Caused by' trong file log
+          ERROR_MSG=$(grep "Caused by:" maven-log.txt | head -n 1)
+          # Nếu file log không có chữ Caused by, xài câu mặc định
+          if [ -z "$ERROR_MSG" ]; then ERROR_MSG="Không thể trích xuất tự động. Vui lòng xem link đính kèm."; fi
+          echo "JIRA_ERROR_MSG=$ERROR_MSG" >> $GITHUB_ENV   
 
       - name: Create Bug on Jira
         if: failure()
@@ -66,14 +76,21 @@ jobs:
           project: DNCK
           issuetype: Bug
           summary: "🚨 [BE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
-          description: "Hệ thống CI phát hiện lỗi. Liên quan đến Task: ${{ env.JIRA_ISSUE_KEY }}. Vui lòng kiểm tra log GitHub."
+          description: |
+            Hệ thống CI phát hiện lỗi. Liên quan đến Task: ${{ env.JIRA_ISSUE_KEY }}.
+            
+            🔍 **Chi tiết nguyên nhân (Trích xuất):**
+            ${{ env.JIRA_ERROR_MSG }}
+            
+            🔗 **Link xem toàn bộ Log trên GitHub:**
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
       - name: Transition Issue Back to In Progress
         if: failure() 
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ env.JIRA_ISSUE_KEY }}
-          transition: "IN PROGRESS" # Chữ này phải khớp chính xác với tên cột/trạng thái trong Jira của bạn
+          transition: "Test Fail" # Chữ này phải khớp chính xác với tên cột/trạng thái trong Jira của bạn
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
@@ -85,7 +102,7 @@ jobs:
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ env.JIRA_ISSUE_KEY }}
-          transition: "DONE"
+          transition: "Test Success"
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
