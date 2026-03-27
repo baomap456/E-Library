@@ -11,6 +11,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 @Configuration
 @EnableWebSecurity
@@ -20,7 +22,7 @@ public class SecurityConfig {
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì chúng ta dùng JWT
-            .cors(AbstractHttpConfigurer::disable)    // Cấu hình CORS để React gọi API không bị chặn
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))    // Cấu hình CORS để React gọi API không bị chặn
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/v1/auth/**").permitAll() // Mở cửa tự do cho Đăng nhập/Đăng ký
                 .requestMatchers("/api/v1/public/**").permitAll() // Các API public (xem danh sách sách)
@@ -47,4 +49,20 @@ public class SecurityConfig {
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
+
+    @Bean
+    public org.springframework.web.cors.CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        // Cho phép mọi nguồn (hoặc điền cụ thể "http://localhost:5173")
+        configuration.addAllowedOriginPattern("*"); 
+        configuration.addAllowedMethod("*"); // Cho phép GET, POST, PUT, DELETE...
+        configuration.addAllowedHeader("*"); // Cho phép gửi mọi loại Header (kể cả Authorization)
+        configuration.setAllowCredentials(true); 
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
+    }
 }
+
+
