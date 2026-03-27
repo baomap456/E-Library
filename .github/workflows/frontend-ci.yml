@@ -1,50 +1,61 @@
 name: Frontend CI - Vite React
 
+# Kích hoạt khi có code đẩy lên nhánh main hoặc các nhánh tính năng (feature/DNCK-...)
 on:
   push:
-    branches: [ "main", "develop", "feature/**" ]
-    paths:
-      - 'frontend/**' # Chỉ chạy khi có thay đổi trong thư mục frontend
+    branches: [ "main", "feature/*", "DNCK-*" ]
+    paths: "frontend/**" # Chỉ chạy CI khi có thay đổi trong thư mục frontend
 
 jobs:
-  frontend-test:
+  build-and-test:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./frontend # Trỏ vào thư mục frontend của bạn
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout Repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js
+      # --- 1. CHUẨN BỊ MÔI TRƯỜNG NODE.JS ---
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '20' # Cài đặt Node.js phiên bản 20 (Chuẩn LTS hiện tại)
           cache: 'npm'
-          cache-dependency-path: './frontend/package-lock.json'
 
+      # --- 2. TẢI THƯ VIỆN & CHẠY TEST ---
       - name: Install Dependencies
-        run: npm ci
+        run: npm install
 
-      - name: Run Frontend Tests
-        id: run_fe_tests
-        run: npm test
+      - name: Run Vitest (Unit Tests)
+        id: run_tests
+        # Lệnh 'npx vitest run' ép Vitest chạy 1 lần rồi tắt (không bị treo ở chế độ watch)
+        # Lưu log lỗi vào file vitest-log.txt để trích xuất gửi lên Jira
+        run: npx vitest run 2>&1 | tee vitest-log.txt
 
-      # --- PHẦN TỰ ĐỘNG BÁO LỖI SANG JIRA ---
-      - name: Login to Jira
+      # --- 3. TRÍCH XUẤT THÔNG TIN CHO JIRA ---
+      - name: Extract Issue Key
+        if: always()
+        shell: bash
+        run: |
+          ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
+          echo "JIRA_ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
+
+      - name: Extract Error Detail
         if: failure()
+        shell: bash
+        run: |
+          # Tìm dòng chứa chữ 'FAIL' và lấy 5 dòng tiếp theo để làm log lỗi
+          ERROR_MSG=$(grep -A 5 "FAIL" vitest-log.txt | head -n 6)
+          if [ -z "$ERROR_MSG" ]; then ERROR_MSG="Không thể trích xuất lỗi tự động. Vui lòng xem link đính kèm."; fi
+          echo "JIRA_ERROR_MSG=$ERROR_MSG" >> $GITHUB_ENV
+
+      # --- 4. TƯƠNG TÁC VỚI JIRA ---
+      - name: Login to Jira
+        if: always() 
         uses: atlassian/gajira-login@v3
         env:
           JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
           JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
           JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
-
-      - name: Extract Issue Key
-        if: failure()
-        shell: bash
-        run: |
-          ISSUE_KEY=$(echo "${{ github.ref_name }}" | grep -oE "DNCK-[0-9]+")
-          echo "JIRA_ISSUE_KEY=$ISSUE_KEY" >> $GITHUB_ENV
 
       - name: Create Bug on Jira
         if: failure()
@@ -52,17 +63,28 @@ jobs:
         with:
           project: DNCK
           issuetype: Bug
-          summary: "🎨 [FE] Lỗi Giao diện tại nhánh ${{ github.ref_name }}"
-          description: "Phát hiện lỗi khi chạy Test trên Frontend (Vite). Vui lòng kiểm tra màn hình và logic UI."
-          fields: '{"parent": {"key": "${{ env.JIRA_ISSUE_KEY }}"}}'
+          summary: "🚨 [FE] Lỗi Unit Test tại nhánh ${{ github.ref_name }}"
+          description: |
+            Hệ thống CI phát hiện lỗi Frontend. Liên quan đến Task: ${{ env.JIRA_ISSUE_KEY }}.
+            
+            🔍 **Chi tiết nguyên nhân (Trích xuất):**
+            {code:javascript}
+            ${{ env.JIRA_ERROR_MSG }}
+            {code}
+            
+            🔗 **Link xem toàn bộ Log trên GitHub:**
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
 
-      - name: Transition Issue to Done
-        if: success() 
+      - name: Transition Issue to In Progress
+        if: failure()
         uses: atlassian/gajira-transition@v3
         with:
           issue: ${{ env.JIRA_ISSUE_KEY }}
-          transition: "DONE"
-        env:
-          JIRA_BASE_URL: ${{ secrets.JIRA_BASE_URL }}
-          JIRA_USER_EMAIL: ${{ secrets.JIRA_USER_EMAIL }}
-          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          transition: "Test Fail"
+
+      - name: Transition Issue to Done
+        if: success()
+        uses: atlassian/gajira-transition@v3
+        with:
+          issue: ${{ env.JIRA_ISSUE_KEY }}
+          transition: "Test success"
