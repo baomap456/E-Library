@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getStoredToken } from './session';
 
 // 1. Khởi tạo một đối tượng axios với cấu hình mặc định
 const axiosClient = axios.create({
@@ -12,7 +13,7 @@ const axiosClient = axios.create({
 axiosClient.interceptors.request.use(
     (config) => {
         // Móc Token từ localStorage ra
-        const token = localStorage.getItem('token');
+        const token = getStoredToken();
 
         // Nếu có Token, tự động gắn vào Header của request
         if (token) {
@@ -36,6 +37,8 @@ axiosClient.interceptors.response.use(
         if (error.response?.status === 401) {
             localStorage.removeItem('token');
             localStorage.removeItem('user');
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
             window.location.href = '/login';
         }
         return Promise.reject(error);

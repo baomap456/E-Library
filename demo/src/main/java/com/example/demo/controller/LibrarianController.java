@@ -1,0 +1,117 @@
+package com.example.demo.controller;
+
+import java.util.List;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
+import com.example.demo.dto.librarian.LibrarianBookRequest;
+import com.example.demo.dto.librarian.LibrarianBookResponse;
+import com.example.demo.dto.librarian.LibrarianCheckinRequest;
+import com.example.demo.dto.librarian.LibrarianCheckinResponse;
+import com.example.demo.dto.librarian.LibrarianCheckoutRequest;
+import com.example.demo.dto.librarian.LibrarianCheckoutResponse;
+import com.example.demo.dto.librarian.LibrarianDashboardResponse;
+import com.example.demo.dto.librarian.LibrarianDebtorResponse;
+import com.example.demo.dto.librarian.LibrarianDeleteBookResponse;
+import com.example.demo.dto.librarian.LibrarianIncidentRequest;
+import com.example.demo.dto.librarian.LibrarianIncidentResponse;
+import com.example.demo.dto.librarian.LibrarianLocationRequest;
+import com.example.demo.dto.librarian.LibrarianLocationResponse;
+import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
+import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
+import com.example.demo.service.LibrarianService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+
+@RestController
+@RequestMapping("/api/librarian")
+@RequiredArgsConstructor
+public class LibrarianController {
+
+    private final LibrarianService librarianService;
+
+    @GetMapping("/dashboard")
+    public ResponseEntity<LibrarianDashboardResponse> dashboard() {
+        return ResponseEntity.ok(librarianService.dashboard());
+    }
+
+    @GetMapping("/books")
+    public ResponseEntity<List<LibrarianBookResponse>> listBooks() {
+        return ResponseEntity.ok(librarianService.listBooks());
+    }
+
+    @PostMapping("/books")
+    public ResponseEntity<LibrarianBookResponse> createBook(@Valid @RequestBody LibrarianBookRequest request) {
+        return ResponseEntity.ok(librarianService.createBook(request));
+    }
+
+    @PutMapping("/books/{id}")
+    public ResponseEntity<LibrarianBookResponse> updateBook(@PathVariable Long id, @Valid @RequestBody LibrarianBookRequest request) {
+        return ResponseEntity.ok(librarianService.updateBook(id, request));
+    }
+
+    @DeleteMapping("/books/{id}")
+    public ResponseEntity<LibrarianDeleteBookResponse> deleteBook(@PathVariable Long id) {
+        return ResponseEntity.ok(librarianService.deleteBook(id));
+    }
+
+    @PostMapping("/checkout")
+    public ResponseEntity<LibrarianCheckoutResponse> checkout(@Valid @RequestBody LibrarianCheckoutRequest request) {
+        return ResponseEntity.ok(librarianService.checkout(request));
+    }
+
+    @PostMapping("/checkin")
+    public ResponseEntity<LibrarianCheckinResponse> checkin(@Valid @RequestBody LibrarianCheckinRequest request) {
+        return ResponseEntity.ok(librarianService.checkin(request));
+    }
+
+    @GetMapping("/locations")
+    public ResponseEntity<List<LibrarianLocationResponse>> locations() {
+        return ResponseEntity.ok(librarianService.locations());
+    }
+
+    @PostMapping("/locations")
+    public ResponseEntity<LibrarianLocationResponse> createLocation(@Valid @RequestBody LibrarianLocationRequest request) {
+        return ResponseEntity.ok(librarianService.createLocation(request));
+    }
+
+    @GetMapping("/renewal-requests")
+    public ResponseEntity<List<LibrarianRenewalRequestResponse>> renewalRequests() {
+        return ResponseEntity.ok(librarianService.renewalRequests());
+    }
+
+    @PostMapping("/renewal-requests/{recordId}/approve")
+    public ResponseEntity<LibrarianApproveRenewResponse> approveRenew(@PathVariable Long recordId) {
+        return ResponseEntity.ok(librarianService.approveRenew(recordId));
+    }
+
+    @PostMapping("/renewal-requests/{recordId}/reject")
+    public ResponseEntity<LibrarianRejectRenewResponse> rejectRenew(@PathVariable Long recordId) {
+        return ResponseEntity.ok(librarianService.rejectRenew(recordId));
+    }
+
+    @GetMapping("/fines/debtors")
+    public ResponseEntity<List<LibrarianDebtorResponse>> debtors() {
+        return ResponseEntity.ok(librarianService.debtors());
+    }
+
+    @GetMapping("/incidents")
+    public ResponseEntity<List<LibrarianIncidentResponse>> incidents() {
+        return ResponseEntity.ok(librarianService.incidents());
+    }
+
+    @PostMapping("/incidents")
+    public ResponseEntity<LibrarianIncidentResponse> createIncident(@Valid @RequestBody LibrarianIncidentRequest request) {
+        return ResponseEntity.ok(librarianService.createIncident(request));
+    }
+}

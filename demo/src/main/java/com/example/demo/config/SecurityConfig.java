@@ -2,6 +2,7 @@ package com.example.demo.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -11,12 +12,18 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import lombok.RequiredArgsConstructor;
+
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -24,16 +31,18 @@ public class SecurityConfig {
             .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì chúng ta dùng JWT
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))    // Cấu hình CORS để React gọi API không bị chặn
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/v1/auth/**").permitAll() // Mở cửa tự do cho Đăng nhập/Đăng ký
-                .requestMatchers("/api/v1/public/**").permitAll() // Các API public (xem danh sách sách)
-                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN") // Chỉ Admin được vào
-                .anyRequest().authenticated() // Tất cả các request khác phải có thẻ (Token)
+                .requestMatchers("/api/auth/**").permitAll()
+                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/catalog/home", "/api/catalog/books", "/api/catalog/books/*", "/api/catalog/books/*/location-map", "/api/catalog/shelves").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/digital/documents", "/api/digital/documents/*/reader-config").permitAll()
+                .requestMatchers("/api/librarian/**").hasAnyRole("LIBRARIAN", "ADMIN")
+                .requestMatchers("/api/**").authenticated()
+                .anyRequest().authenticated()
             )
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Không lưu session trên server
-            );
-
-        // Chú ý: Ở bước sau chúng ta sẽ thêm JwtFilter vào đây
+            )
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

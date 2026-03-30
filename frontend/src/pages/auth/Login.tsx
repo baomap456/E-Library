@@ -8,7 +8,10 @@ import {
     Button,
     Alert,
     CircularProgress,
-    Paper
+    Paper,
+    Checkbox,
+    FormControlLabel,
+    Link
 } from '@mui/material';
 
 // 👇 IMPORT AXIOS CLIENT BẠN VỪA TẠO
@@ -20,6 +23,7 @@ import axios from 'axios';
 const Login: React.FC = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [rememberMe, setRememberMe] = useState(true);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -38,16 +42,23 @@ const Login: React.FC = () => {
                 password
             });
 
-            // Nếu Backend trả về 200 OK, Axios sẽ tự động chạy xuống dòng này
-            // 1. Lưu JWT và thông tin User vào két sắt của trình duyệt
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('user', JSON.stringify({
+            // Lưu thông tin phiên người dùng.
+            const storage = rememberMe ? localStorage : sessionStorage;
+            storage.setItem('token', data.token);
+            storage.setItem('user', JSON.stringify({
                 username: data.username,
-                fullName: data.fullName
+                fullName: data.fullName,
+                roles: data.roles || ['ROLE_MEMBER']
             }));
+            if (rememberMe) {
+                sessionStorage.removeItem('token');
+                sessionStorage.removeItem('user');
+            } else {
+                localStorage.removeItem('token');
+                localStorage.removeItem('user');
+            }
 
-            // 2. Chuyển hướng sang trang Dashboard
-            navigate('/dashboard');
+            navigate('/app/auth-personal');
 
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
@@ -104,6 +115,16 @@ const Login: React.FC = () => {
                         onChange={(e) => setPassword(e.target.value)}
                     />
 
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                        <FormControlLabel
+                            control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
+                            label="Ghi nhớ đăng nhập"
+                        />
+                        <Link href="#" underline="hover" sx={{ fontWeight: 600 }}>
+                            Quên mật khẩu?
+                        </Link>
+                    </Box>
+
                     <Button
                         type="submit"
                         fullWidth
@@ -112,6 +133,15 @@ const Login: React.FC = () => {
                         sx={{ mt: 3, mb: 2, height: '48px', fontSize: '16px' }}
                     >
                         {isLoading ? <CircularProgress size={24} color="inherit" /> : 'Đăng Nhập'}
+                    </Button>
+
+                    <Button
+                        fullWidth
+                        variant="text"
+                        onClick={() => navigate('/register')}
+                        sx={{ textTransform: 'none', fontWeight: 700 }}
+                    >
+                        Chưa có tài khoản? Đăng ký ngay
                     </Button>
                 </Box>
             </Paper>
