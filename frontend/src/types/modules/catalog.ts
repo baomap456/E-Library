@@ -7,6 +7,8 @@ export interface CatalogBookItem {
     publishYear: number;
     coverImageUrl: string;
     status: 'AVAILABLE' | 'UNAVAILABLE';
+    physicalAvailableItems: number;
+    pendingRequests: number;
     availableItems: number;
     digital: boolean;
 }

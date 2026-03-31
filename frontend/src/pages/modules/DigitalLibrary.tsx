@@ -11,6 +11,7 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { hasRole } from '../../api/session';
 import { useDigitalLibrary } from '../../hooks/modules/useDigitalLibrary';
 
 export default function DigitalLibrary() {
@@ -26,6 +27,23 @@ export default function DigitalLibrary() {
         loadDocs,
     } = useDigitalLibrary();
 
+    const userRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
+    const user = userRaw ? JSON.parse(userRaw) : null;
+    const isLibrarian = hasRole(user, ['ROLE_LIBRARIAN']);
+
+    if (isLibrarian) {
+        return (
+            <Box>
+                <Typography variant="h4" sx={{ mb: 1 }}>
+                    Tài liệu số
+                </Typography>
+                <Alert severity="info">
+                    Thủ thư không có quyền truy cập thư viện số. Vui lòng sử dụng chức năng "Quản trị thư viện" để quản lý tài liệu.
+                </Alert>
+            </Box>
+        );
+    }
+
     if (loading) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
@@ -37,10 +55,10 @@ export default function DigitalLibrary() {
     return (
         <Box>
             <Typography variant="h4" sx={{ mb: 1 }}>
-                Module 4: Digital Library
+                Thư viện số
             </Typography>
             <Typography color="text.secondary" sx={{ mb: 3 }}>
-                Danh mục tài liệu số và trình đọc PDF toàn màn hình.
+                Đọc tài liệu số trực tuyến và tìm tài liệu theo năm/chủ đề.
             </Typography>
 
             {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}

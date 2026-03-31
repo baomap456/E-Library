@@ -19,9 +19,11 @@ import com.example.demo.mapper.CatalogMapper;
 import com.example.demo.model.Book;
 import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
+import com.example.demo.model.BorrowRequestStatus;
 import com.example.demo.model.User;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BookRepository;
+import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.service.CatalogService;
 import com.example.demo.service.ModuleStateService;
 import com.example.demo.service.UserContextService;
@@ -34,6 +36,7 @@ public class CatalogServiceImpl implements CatalogService {
 
     private final BookRepository bookRepository;
     private final BookItemRepository bookItemRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
     private final ModuleStateService moduleStateService;
     private final UserContextService userContextService;
         private final CatalogMapper catalogMapper;
@@ -64,9 +67,16 @@ public class CatalogServiceImpl implements CatalogService {
                 .filter(book -> publishYear == null || book.getPublishYear() == publishYear)
                 .filter(book -> digital == null || book.isDigital() == digital)
                 .map(book -> {
-                    long availableItems = bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE);
+                    long physicalAvailable = bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE);
+                    long pendingRequests = borrowRequestRepository.countByStatusAndBookItemBookId(BorrowRequestStatus.PENDING, book.getId());
+                    long availableItems = Math.max(0, physicalAvailable - pendingRequests);
                     String inventoryStatus = availableItems > 0 ? "AVAILABLE" : "UNAVAILABLE";
-                                        return catalogMapper.toBookSearchResponse(book, availableItems, inventoryStatus);
+                    return catalogMapper.toBookSearchResponse(
+                            book,
+                            physicalAvailable,
+                            pendingRequests,
+                            availableItems,
+                            inventoryStatus);
                 })
                 .filter(book -> status == null || Objects.equals(book.status(), status.toUpperCase()))
                 .toList();

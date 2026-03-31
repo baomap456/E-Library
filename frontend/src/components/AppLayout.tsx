@@ -16,12 +16,12 @@ import { hasRole } from '../api/session';
 const drawerWidth = 280;
 
 const navItems = [
-    { label: 'Module 1: Authentication & Personal', path: '/app/auth-personal', librarianOnly: false },
-    { label: 'Module 2: Catalog & Discovery', path: '/app/catalog', librarianOnly: false },
-    { label: 'Module 3: Borrowing & Reservation', path: '/app/borrowing', librarianOnly: false },
-    { label: 'Module 4: Digital Library', path: '/app/digital', librarianOnly: false },
-    { label: 'Module 5: Librarian Panel', path: '/app/librarian', librarianOnly: true },
-    { label: 'Module 6: Inventory & Reports', path: '/app/reports', librarianOnly: true },
+    { label: 'Tài khoản của tôi', path: '/app/auth-personal', librarianOnly: false },
+    { label: 'Tra cứu sách', path: '/app/catalog', librarianOnly: false },
+    { label: 'Mượn trả của tôi', path: '/app/borrowing', librarianOnly: false, memberOnly: true },
+    { label: 'Thư viện số', path: '/app/digital', librarianOnly: false, memberOnly: true },
+    { label: 'Quản trị thư viện', path: '/app/librarian', librarianOnly: true },
+    { label: 'Báo cáo kho', path: '/app/reports', librarianOnly: true },
 ];
 
 export default function AppLayout() {
@@ -51,7 +51,7 @@ export default function AppLayout() {
             >
                 <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
                     <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                        E-Library Workspace
+                        Cổng bạn đọc E-Library
                     </Typography>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                         <Avatar sx={{ width: 34, height: 34, bgcolor: '#f27b22' }}>
@@ -83,11 +83,18 @@ export default function AppLayout() {
                 }}
             >
                 <Typography variant="h5" sx={{ fontWeight: 800, p: 1, mb: 1 }}>
-                    Smart Library
+                    E-Library
                 </Typography>
                 <List>
                     {navItems
-                        .filter((item) => !item.librarianOnly || isLibrarian)
+                        .filter((item) => {
+                            // Show librarian-only pages only to librarians
+                            if (item.librarianOnly) return isLibrarian;
+                            // Hide member-only pages from librarians
+                            if (item.memberOnly) return !isLibrarian;
+                            // Show general pages to everyone
+                            return true;
+                        })
                         .map((item) => {
                             const active = location.pathname === item.path;
                             return (

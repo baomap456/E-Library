@@ -11,6 +11,8 @@ public record CatalogBookSearchResponse(
         Integer publishYear,
         String coverImageUrl,
         String status,
+        Long physicalAvailableItems,
+        Long pendingRequests,
         Long availableItems,
         Boolean digital) {
 }

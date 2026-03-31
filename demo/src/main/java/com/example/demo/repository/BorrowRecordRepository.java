@@ -15,5 +15,9 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
 
     Optional<BorrowRecord> findFirstByBookItemBarcodeAndReturnDateIsNull(String barcode);
 
+    boolean existsByUserIdAndBookItemBookIdAndReturnDateIsNull(Long userId, Long bookId);
+
+    long countByUserIdAndReturnDateIsNull(Long userId);
+
     long countByBorrowDateBetween(LocalDateTime start, LocalDateTime end);
 }

@@ -13,8 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
+import com.example.demo.dto.librarian.LibrarianAuthorRequest;
+import com.example.demo.dto.librarian.LibrarianAuthorResponse;
 import com.example.demo.dto.librarian.LibrarianBookRequest;
 import com.example.demo.dto.librarian.LibrarianBookResponse;
+import com.example.demo.dto.librarian.LibrarianCategoryRequest;
+import com.example.demo.dto.librarian.LibrarianCategoryResponse;
 import com.example.demo.dto.librarian.LibrarianCheckinRequest;
 import com.example.demo.dto.librarian.LibrarianCheckinResponse;
 import com.example.demo.dto.librarian.LibrarianCheckoutRequest;
@@ -83,6 +87,59 @@ public class LibrarianController {
     @PostMapping("/locations")
     public ResponseEntity<LibrarianLocationResponse> createLocation(@Valid @RequestBody LibrarianLocationRequest request) {
         return ResponseEntity.ok(librarianService.createLocation(request));
+    }
+
+    @PutMapping("/locations/{id}")
+    public ResponseEntity<LibrarianLocationResponse> updateLocation(@PathVariable Integer id, @Valid @RequestBody LibrarianLocationRequest request) {
+        return ResponseEntity.ok(librarianService.updateLocation(id, request));
+    }
+
+    @DeleteMapping("/locations/{id}")
+    public ResponseEntity<Void> deleteLocation(@PathVariable Integer id) {
+        librarianService.deleteLocation(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/authors")
+    public ResponseEntity<List<LibrarianAuthorResponse>> authors() {
+        return ResponseEntity.ok(librarianService.authors());
+    }
+
+    @PostMapping("/authors")
+    public ResponseEntity<LibrarianAuthorResponse> createAuthor(@Valid @RequestBody LibrarianAuthorRequest request) {
+        return ResponseEntity.ok(librarianService.createAuthor(request));
+    }
+
+    @PutMapping("/authors/{id}")
+    public ResponseEntity<LibrarianAuthorResponse> updateAuthor(@PathVariable Integer id, @Valid @RequestBody LibrarianAuthorRequest request) {
+        return ResponseEntity.ok(librarianService.updateAuthor(id, request));
+    }
+
+    @DeleteMapping("/authors/{id}")
+    public ResponseEntity<Void> deleteAuthor(@PathVariable Integer id) {
+        librarianService.deleteAuthor(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @GetMapping("/categories")
+    public ResponseEntity<List<LibrarianCategoryResponse>> categories() {
+        return ResponseEntity.ok(librarianService.categories());
+    }
+
+    @PostMapping("/categories")
+    public ResponseEntity<LibrarianCategoryResponse> createCategory(@Valid @RequestBody LibrarianCategoryRequest request) {
+        return ResponseEntity.ok(librarianService.createCategory(request));
+    }
+
+    @PutMapping("/categories/{id}")
+    public ResponseEntity<LibrarianCategoryResponse> updateCategory(@PathVariable Integer id, @Valid @RequestBody LibrarianCategoryRequest request) {
+        return ResponseEntity.ok(librarianService.updateCategory(id, request));
+    }
+
+    @DeleteMapping("/categories/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable Integer id) {
+        librarianService.deleteCategory(id);
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/renewal-requests")

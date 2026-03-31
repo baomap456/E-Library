@@ -17,3 +17,19 @@ export interface LibrarianDebtor {
     bookTitle: string;
     fineAmount: number;
 }
+
+export interface LibrarianAuthor {
+    id: number;
+    name: string;
+}
+
+export interface LibrarianCategory {
+    id: number;
+    name: string;
+}
+
+export interface LibrarianLocation {
+    id: number;
+    roomName: string;
+    shelfNumber: string;
+}

@@ -9,8 +9,10 @@ import com.example.demo.dto.AuthResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.mapper.AuthMapper;
+import com.example.demo.model.MembershipType;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
+import com.example.demo.repository.MembershipTypeRepository;
 import com.example.demo.repository.RoleRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuthService;
@@ -24,6 +26,7 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final MembershipTypeRepository membershipTypeRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthMapper authMapper;
@@ -64,7 +67,19 @@ public class AuthServiceImpl implements AuthService {
                     role.setName("ROLE_MEMBER");
                     return roleRepository.save(role);
                 });
+        MembershipType defaultMembership = membershipTypeRepository.findByName("Free")
+            .orElseGet(() -> {
+                MembershipType membershipType = new MembershipType();
+                membershipType.setName("Free");
+                membershipType.setPaid(false);
+                membershipType.setMaxBooks(3);
+                membershipType.setBorrowDurationDays(14);
+                membershipType.setFineRatePerDay(5000.0);
+                membershipType.setPrivilegeNote("Goi mien phi phu hop nhu cau co ban");
+                return membershipTypeRepository.save(membershipType);
+            });
         user.setRoles(Set.of(defaultRole));
+        user.setMembershipType(defaultMembership);
 
         userRepository.save(user);
         String jwtToken = jwtService.generateToken(user);

@@ -12,6 +12,7 @@ import com.example.demo.dto.borrowing.PayFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineResponse;
 import com.example.demo.dto.borrowing.RenewRecordResponse;
+import com.example.demo.dto.borrowing.WaitlistItemResponse;
 import com.example.demo.dto.borrowing.WaitlistRequest;
 import com.example.demo.dto.borrowing.WaitlistResponse;
 
@@ -23,6 +24,8 @@ public interface BorrowingService {
     CartItemActionResponse removeCartItem(Long bookId, String username);
 
     List<BorrowRecordResponse> getRecords(String username);
+
+    List<WaitlistItemResponse> getMyWaitlist(String username);
 
     RenewRecordResponse renew(Long recordId);
 

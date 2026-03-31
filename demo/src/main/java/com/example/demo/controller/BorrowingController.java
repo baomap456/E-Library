@@ -23,6 +23,7 @@ import com.example.demo.dto.borrowing.PayFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineResponse;
 import com.example.demo.dto.borrowing.RenewRecordResponse;
+import com.example.demo.dto.borrowing.WaitlistItemResponse;
 import com.example.demo.dto.borrowing.WaitlistRequest;
 import com.example.demo.dto.borrowing.WaitlistResponse;
 import com.example.demo.service.BorrowingService;
@@ -57,6 +58,11 @@ public class BorrowingController {
     @GetMapping("/records")
     public ResponseEntity<List<BorrowRecordResponse>> records(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getRecords(username));
+    }
+
+    @GetMapping("/waitlist/me")
+    public ResponseEntity<List<WaitlistItemResponse>> myWaitlist(@RequestParam(required = false) String username) {
+        return ResponseEntity.ok(borrowingService.getMyWaitlist(username));
     }
 
     @PatchMapping("/records/{recordId}/renew")

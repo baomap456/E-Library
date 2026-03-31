@@ -34,6 +34,10 @@ public class UserContextService {
         return fallbackUser();
     }
 
+    public User getCurrentUser() {
+        return resolveUser(null);
+    }
+
     private User fallbackUser() {
         return userRepository.findFirstByOrderByIdAsc()
                 .orElseThrow(() -> new IllegalArgumentException("Chưa có người dùng trong hệ thống"));

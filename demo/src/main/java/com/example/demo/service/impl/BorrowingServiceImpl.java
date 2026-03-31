@@ -2,6 +2,7 @@ package com.example.demo.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 
@@ -18,14 +19,18 @@ import com.example.demo.dto.borrowing.PayFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineRequest;
 import com.example.demo.dto.borrowing.RecalculateFineResponse;
 import com.example.demo.dto.borrowing.RenewRecordResponse;
+import com.example.demo.dto.borrowing.WaitlistItemResponse;
 import com.example.demo.dto.borrowing.WaitlistRequest;
 import com.example.demo.dto.borrowing.WaitlistResponse;
 import com.example.demo.mapper.BorrowingMapper;
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.BorrowRequestStatus;
 import com.example.demo.model.FinePayment;
+import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.repository.BorrowRecordRepository;
+import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.repository.FinePaymentRepository;
 import com.example.demo.service.BorrowingService;
 import com.example.demo.service.ModuleStateService;
@@ -43,6 +48,7 @@ public class BorrowingServiceImpl implements BorrowingService {
     private final UserContextService userContextService;
     private final ModuleStateService moduleStateService;
     private final BorrowRecordRepository borrowRecordRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
     private final FinePaymentRepository finePaymentRepository;
     private final BookRepository bookRepository;
     private final BorrowingMapper borrowingMapper;
@@ -63,6 +69,12 @@ public class BorrowingServiceImpl implements BorrowingService {
             throw new IllegalArgumentException("bookId không được để trống");
         }
         User user = userContextService.resolveUser(request.username());
+        
+        // Prevent librarians from borrowing
+        if (isLibrarian(user)) {
+            throw new IllegalArgumentException("Thủ thư không thể mượn sách. Vui lòng sử dụng chức năng duyệt yêu cầu mượn");
+        }
+        
         moduleStateService.addToCart(user.getId(), request.bookId());
         return new CartItemActionResponse("Đã thêm sách vào giỏ đặt mượn", request.bookId());
     }
@@ -79,6 +91,20 @@ public class BorrowingServiceImpl implements BorrowingService {
         User user = userContextService.resolveUser(username);
         return borrowRecordRepository.findByUserIdOrderByBorrowDateDesc(user.getId()).stream()
             .map(borrowingMapper::toBorrowRecordResponse)
+                .toList();
+    }
+
+    @Override
+    public List<WaitlistItemResponse> getMyWaitlist(String username) {
+        User user = userContextService.resolveUser(username);
+        return moduleStateService.getWaitlistBookIdsForUser(user.getId()).stream()
+                .map(bookId -> {
+                    String title = bookRepository.findById(bookId)
+                            .map(book -> book.getTitle())
+                            .orElse("Sách #" + bookId);
+                    int position = moduleStateService.waitlistPosition(user.getId(), bookId);
+                    return new WaitlistItemResponse(bookId, title, position);
+                })
                 .toList();
     }
 
@@ -100,6 +126,21 @@ public class BorrowingServiceImpl implements BorrowingService {
             throw new IllegalArgumentException("bookId không được để trống");
         }
         User user = userContextService.resolveUser(request.username());
+
+        boolean hasBorrowSlipForBook = borrowRequestRepository.existsByStatusInAndUserIdAndBookItemBookId(
+                EnumSet.of(BorrowRequestStatus.PENDING, BorrowRequestStatus.APPROVED),
+                user.getId(),
+                request.bookId());
+        if (hasBorrowSlipForBook) {
+            throw new IllegalArgumentException("Bạn đã có phiếu mượn cho sách này, không thể tham gia hàng chờ");
+        }
+
+        boolean hasActiveBorrowForBook = borrowRecordRepository
+                .existsByUserIdAndBookItemBookIdAndReturnDateIsNull(user.getId(), request.bookId());
+        if (hasActiveBorrowForBook) {
+            throw new IllegalArgumentException("Bạn đang mượn sách này, không thể tham gia hàng chờ");
+        }
+
         moduleStateService.joinWaitlist(user.getId(), request.bookId());
         int position = moduleStateService.waitlistPosition(user.getId(), request.bookId());
         return new WaitlistResponse("Đăng ký danh sách chờ thành công", request.bookId(), position);
@@ -163,5 +204,11 @@ public class BorrowingServiceImpl implements BorrowingService {
         }
 
         return new RecalculateFineResponse(request.recordId(), record.getFineAmount());
+    }
+
+    private boolean isLibrarian(User user) {
+        return user.getRoles().stream()
+                .map(Role::getName)
+                .anyMatch(name -> name.equals("ROLE_LIBRARIAN"));
     }
 }

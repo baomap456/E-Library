@@ -44,6 +44,13 @@ public class ModuleStateService {
         return index >= 0 ? index + 1 : 0;
     }
 
+    public List<Long> getWaitlistBookIdsForUser(Long userId) {
+        return waitlistsByBook.entrySet().stream()
+                .filter(entry -> entry.getValue().contains(userId))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
     public Map<String, Object> addIncident(Map<String, Object> incident) {
         Map<String, Object> toSave = new HashMap<>(incident);
         toSave.put("id", (long) (incidentReports.size() + 1));

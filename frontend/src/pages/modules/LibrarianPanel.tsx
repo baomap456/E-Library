@@ -1,41 +1,127 @@
 import {
     Alert,
     Box,
-    Button,
-    Card,
-    CardContent,
     CircularProgress,
-    Grid,
-    Stack,
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableRow,
-    TextField,
-    Typography,
+    Tab,
+    Tabs,
 } from '@mui/material';
+import BorrowRequestReviewDialog from '../../components/librarian/BorrowRequestReviewDialog';
+import LibrarianBorrowRequestsTab from '../../components/librarian/LibrarianBorrowRequestsTab';
+import LibrarianManagementTab from '../../components/librarian/LibrarianManagementTab';
+import LibrarianPageHeader from '../../components/librarian/LibrarianPageHeader';
 import { useLibrarianPanel } from '../../hooks/modules/useLibrarianPanel';
+import { useBorrowRequestReview } from '../../hooks/modules/useBorrowRequestReview';
+import { useLibrarianPanelUiState } from '../../hooks/modules/useLibrarianPanelUiState';
 
 export default function LibrarianPanel() {
+
     const {
         dashboard,
         books,
         debtors,
+        authors,
+        categories,
+        locations,
         barcode,
         setBarcode,
         username,
         setUsername,
         incident,
         setIncident,
+        newAuthor,
+        setNewAuthor,
+        newCategory,
+        setNewCategory,
+        newRoom,
+        setNewRoom,
+        newShelf,
+        setNewShelf,
         loading,
         error,
         handleCheckout,
         handleCheckin,
         handleIncident,
+        handleCreateAuthor,
+        handleUpdateAuthor,
+        handleDeleteAuthor,
+        handleCreateCategory,
+        handleUpdateCategory,
+        handleDeleteCategory,
+        handleCreateLocation,
+        handleUpdateLocation,
+        handleDeleteLocation,
     } = useLibrarianPanel();
 
-    if (loading) {
+    const {
+        requests,
+        pendingCount,
+        loading: requestsLoading,
+        error: requestsError,
+        filterStatus,
+        setFilterStatus,
+        handleApprove,
+        handleReject,
+    } = useBorrowRequestReview();
+
+    const {
+        tabValue,
+        setTabValue,
+        selectedRequest,
+        setSelectedRequest,
+        reviewNote,
+        setReviewNote,
+        reviewAction,
+        setReviewAction,
+        bookPage,
+        setBookPage,
+        bookRowsPerPage,
+        setBookRowsPerPage,
+        pagedBooks,
+        debtorPage,
+        setDebtorPage,
+        debtorRowsPerPage,
+        setDebtorRowsPerPage,
+        pagedDebtors,
+        requestPage,
+        setRequestPage,
+        requestRowsPerPage,
+        setRequestRowsPerPage,
+        pagedRequests,
+        authorSearch,
+        setAuthorSearch,
+        authorPage,
+        setAuthorPage,
+        authorRowsPerPage,
+        setAuthorRowsPerPage,
+        filteredAuthors,
+        pagedAuthors,
+        categorySearch,
+        setCategorySearch,
+        categoryPage,
+        setCategoryPage,
+        categoryRowsPerPage,
+        setCategoryRowsPerPage,
+        filteredCategories,
+        pagedCategories,
+        locationSearch,
+        setLocationSearch,
+        locationPage,
+        setLocationPage,
+        locationRowsPerPage,
+        setLocationRowsPerPage,
+        filteredLocations,
+        pagedLocations,
+    } = useLibrarianPanelUiState({
+        books,
+        debtors,
+        requests,
+        authors,
+        categories,
+        locations,
+        filterStatus,
+    });
+
+    if (loading && tabValue !== 1) {
         return (
             <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
                 <CircularProgress />
@@ -43,131 +129,150 @@ export default function LibrarianPanel() {
         );
     }
 
+    const handleReviewSubmit = async () => {
+        if (selectedRequest) {
+            if (reviewAction === 'approve') {
+                await handleApprove(selectedRequest, reviewNote);
+            } else {
+                await handleReject(selectedRequest, reviewNote);
+            }
+            setSelectedRequest(null);
+            setReviewNote('');
+        }
+    };
+
     return (
         <Box>
-            <Typography variant="h4" sx={{ mb: 1 }}>Module 5: Librarian Panel</Typography>
-            <Typography color="text.secondary" sx={{ mb: 3 }}>
-                Dashboard quản trị, CRUD đầu sách, check-in/check-out, vị trí kệ, yêu cầu gia hạn và sự cố.
-            </Typography>
+            <LibrarianPageHeader />
 
-            {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
+            {(error || requestsError) && <Alert severity="warning" sx={{ mb: 2 }}>{error || requestsError}</Alert>}
 
-            <Grid container spacing={2.2}>
-                <Grid size={{ xs: 12 }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 1.2 }}>Dashboard quản trị</Typography>
-                            <Grid container spacing={1.2}>
-                                <Grid size={{ xs: 12, sm: 4 }}><Metric title="Tổng sách" value={String(dashboard?.totalBooks || 0)} /></Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}><Metric title="Đang cho mượn" value={String(dashboard?.borrowingNow || 0)} /></Grid>
-                                <Grid size={{ xs: 12, sm: 4 }}><Metric title="Lượt mượn hôm nay" value={String(dashboard?.borrowingsToday || 0)} /></Grid>
-                            </Grid>
-                        </CardContent>
-                    </Card>
-                </Grid>
+            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+                <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
+                    <Tab label="Quản lý mượn trả" />
+                    <Tab label={`Duyệt yêu cầu${pendingCount > 0 ? ` (${pendingCount})` : ''}`} />
+                </Tabs>
+            </Box>
 
-                <Grid size={{ xs: 12, md: 8 }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 1.2 }}>Quản lý đầu sách (CRUD)</Typography>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>ID</TableCell>
-                                        <TableCell>Tên sách</TableCell>
-                                        <TableCell>Năm</TableCell>
-                                        <TableCell>NXB</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {books.slice(0, 8).map((book) => (
-                                        <TableRow key={book.id}>
-                                            <TableCell>{book.id}</TableCell>
-                                            <TableCell>{book.title}</TableCell>
-                                            <TableCell>{book.publishYear}</TableCell>
-                                            <TableCell>{book.publisher}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </Grid>
+            {tabValue === 0 && (
+                <LibrarianManagementTab
+                    dashboard={dashboard}
+                    pagedBooks={pagedBooks}
+                    booksCount={books.length}
+                    bookPage={bookPage}
+                    bookRowsPerPage={bookRowsPerPage}
+                    onBookPageChange={(_, nextPage) => setBookPage(nextPage)}
+                    onBookRowsPerPageChange={(event) => {
+                        setBookRowsPerPage(parseInt(event.target.value, 10));
+                        setBookPage(0);
+                    }}
+                    username={username}
+                    barcode={barcode}
+                    onUsernameChange={setUsername}
+                    onBarcodeChange={setBarcode}
+                    onCheckout={() => void handleCheckout()}
+                    onCheckin={() => void handleCheckin()}
+                    incident={incident}
+                    onIncidentChange={setIncident}
+                    onCreateIncident={() => void handleIncident()}
+                    pagedDebtors={pagedDebtors}
+                    debtorsCount={debtors.length}
+                    debtorPage={debtorPage}
+                    debtorRowsPerPage={debtorRowsPerPage}
+                    onDebtorPageChange={(_, nextPage) => setDebtorPage(nextPage)}
+                    onDebtorRowsPerPageChange={(event) => {
+                        setDebtorRowsPerPage(parseInt(event.target.value, 10));
+                        setDebtorPage(0);
+                    }}
+                    authorSearch={authorSearch}
+                    onAuthorSearchChange={setAuthorSearch}
+                    newAuthor={newAuthor}
+                    onNewAuthorChange={setNewAuthor}
+                    onCreateAuthor={() => void handleCreateAuthor()}
+                    pagedAuthors={pagedAuthors}
+                    filteredAuthorsCount={filteredAuthors.length}
+                    authorPage={authorPage}
+                    authorRowsPerPage={authorRowsPerPage}
+                    onAuthorPageChange={(_, nextPage) => setAuthorPage(nextPage)}
+                    onAuthorRowsPerPageChange={(event) => {
+                        setAuthorRowsPerPage(parseInt(event.target.value, 10));
+                        setAuthorPage(0);
+                    }}
+                    onUpdateAuthor={(id, name) => void handleUpdateAuthor(id, name)}
+                    onDeleteAuthor={(id) => void handleDeleteAuthor(id)}
+                    categorySearch={categorySearch}
+                    onCategorySearchChange={setCategorySearch}
+                    newCategory={newCategory}
+                    onNewCategoryChange={setNewCategory}
+                    onCreateCategory={() => void handleCreateCategory()}
+                    pagedCategories={pagedCategories}
+                    filteredCategoriesCount={filteredCategories.length}
+                    categoryPage={categoryPage}
+                    categoryRowsPerPage={categoryRowsPerPage}
+                    onCategoryPageChange={(_, nextPage) => setCategoryPage(nextPage)}
+                    onCategoryRowsPerPageChange={(event) => {
+                        setCategoryRowsPerPage(parseInt(event.target.value, 10));
+                        setCategoryPage(0);
+                    }}
+                    onUpdateCategory={(id, name) => void handleUpdateCategory(id, name)}
+                    onDeleteCategory={(id) => void handleDeleteCategory(id)}
+                    locationSearch={locationSearch}
+                    onLocationSearchChange={setLocationSearch}
+                    newRoom={newRoom}
+                    onNewRoomChange={setNewRoom}
+                    newShelf={newShelf}
+                    onNewShelfChange={setNewShelf}
+                    onCreateLocation={() => void handleCreateLocation()}
+                    pagedLocations={pagedLocations}
+                    filteredLocationsCount={filteredLocations.length}
+                    locationPage={locationPage}
+                    locationRowsPerPage={locationRowsPerPage}
+                    onLocationPageChange={(_, nextPage) => setLocationPage(nextPage)}
+                    onLocationRowsPerPageChange={(event) => {
+                        setLocationRowsPerPage(parseInt(event.target.value, 10));
+                        setLocationPage(0);
+                    }}
+                    onUpdateLocation={(id, roomName, shelfNumber) => void handleUpdateLocation(id, roomName, shelfNumber)}
+                    onDeleteLocation={(id) => void handleDeleteLocation(id)}
+                />
+            )}
 
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 1.2 }}>Check-out / Check-in</Typography>
-                            <Stack spacing={1.2}>
-                                <TextField label="Username" fullWidth value={username} onChange={(e) => setUsername(e.target.value)} />
-                                <TextField label="Mã sách (barcode)" fullWidth value={barcode} onChange={(e) => setBarcode(e.target.value)} />
-                                <Button variant="contained" onClick={() => void handleCheckout()}>Xác nhận giao sách</Button>
-                                <Button variant="outlined" onClick={() => void handleCheckin()}>Xác nhận trả sách</Button>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
+            {tabValue === 1 && (
+                <LibrarianBorrowRequestsTab
+                    loading={requestsLoading}
+                    requests={requests}
+                    pendingCount={pendingCount}
+                    filterStatus={filterStatus}
+                    onFilterStatusChange={setFilterStatus}
+                    pagedRequests={pagedRequests}
+                    requestPage={requestPage}
+                    requestRowsPerPage={requestRowsPerPage}
+                    onRequestPageChange={(_, nextPage) => setRequestPage(nextPage)}
+                    onRequestRowsPerPageChange={(event) => {
+                        setRequestRowsPerPage(parseInt(event.target.value, 10));
+                        setRequestPage(0);
+                    }}
+                    onOpenApprove={(id) => {
+                        setSelectedRequest(id);
+                        setReviewAction('approve');
+                        setReviewNote('');
+                    }}
+                    onOpenReject={(id) => {
+                        setSelectedRequest(id);
+                        setReviewAction('reject');
+                        setReviewNote('');
+                    }}
+                />
+            )}
 
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 1.2 }}>Quản lý phí phạt</Typography>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Reader</TableCell>
-                                        <TableCell>Sách</TableCell>
-                                        <TableCell align="right">Phí</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {debtors.map((debtor) => (
-                                        <TableRow key={debtor.recordId}>
-                                            <TableCell>{debtor.username}</TableCell>
-                                            <TableCell>{debtor.bookTitle}</TableCell>
-                                            <TableCell align="right">{(debtor.fineAmount || 0).toLocaleString('vi-VN')}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </CardContent>
-                    </Card>
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 6 }}>
-                    <Card>
-                        <CardContent>
-                            <Typography variant="h6" sx={{ mb: 1.2 }}>Lập biên bản sự cố</Typography>
-                            <Stack spacing={1.2}>
-                                <TextField
-                                    label="Biên bản sự cố"
-                                    multiline
-                                    minRows={4}
-                                    value={incident}
-                                    onChange={(e) => setIncident(e.target.value)}
-                                />
-                                <Button variant="contained" color="secondary" onClick={() => void handleIncident()}>Lập biên bản</Button>
-                            </Stack>
-                        </CardContent>
-                    </Card>
-                </Grid>
-            </Grid>
-        </Box>
-    );
-}
-
-function Metric({ title, value }: { title: string; value: string }) {
-    return (
-        <Box
-            sx={{
-                p: 2,
-                borderRadius: 2,
-                background: 'linear-gradient(180deg, #ffffff, #eef4ff)',
-                border: '1px solid #dde6fb',
-            }}
-        >
-            <Typography variant="body2" color="text.secondary">{title}</Typography>
-            <Typography variant="h5" sx={{ fontWeight: 800 }}>{value}</Typography>
+            <BorrowRequestReviewDialog
+                open={selectedRequest !== null}
+                action={reviewAction}
+                note={reviewNote}
+                onChangeNote={setReviewNote}
+                onClose={() => setSelectedRequest(null)}
+                onSubmit={handleReviewSubmit}
+            />
         </Box>
     );
 }

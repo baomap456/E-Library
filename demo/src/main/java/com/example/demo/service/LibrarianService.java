@@ -3,8 +3,12 @@ package com.example.demo.service;
 import java.util.List;
 
 import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
+import com.example.demo.dto.librarian.LibrarianAuthorRequest;
+import com.example.demo.dto.librarian.LibrarianAuthorResponse;
 import com.example.demo.dto.librarian.LibrarianBookRequest;
 import com.example.demo.dto.librarian.LibrarianBookResponse;
+import com.example.demo.dto.librarian.LibrarianCategoryRequest;
+import com.example.demo.dto.librarian.LibrarianCategoryResponse;
 import com.example.demo.dto.librarian.LibrarianCheckinRequest;
 import com.example.demo.dto.librarian.LibrarianCheckinResponse;
 import com.example.demo.dto.librarian.LibrarianCheckoutRequest;
@@ -37,6 +41,26 @@ public interface LibrarianService {
     List<LibrarianLocationResponse> locations();
 
     LibrarianLocationResponse createLocation(LibrarianLocationRequest request);
+
+    LibrarianLocationResponse updateLocation(Integer id, LibrarianLocationRequest request);
+
+    void deleteLocation(Integer id);
+
+    List<LibrarianAuthorResponse> authors();
+
+    LibrarianAuthorResponse createAuthor(LibrarianAuthorRequest request);
+
+    LibrarianAuthorResponse updateAuthor(Integer id, LibrarianAuthorRequest request);
+
+    void deleteAuthor(Integer id);
+
+    List<LibrarianCategoryResponse> categories();
+
+    LibrarianCategoryResponse createCategory(LibrarianCategoryRequest request);
+
+    LibrarianCategoryResponse updateCategory(Integer id, LibrarianCategoryRequest request);
+
+    void deleteCategory(Integer id);
 
     List<LibrarianRenewalRequestResponse> renewalRequests();
 

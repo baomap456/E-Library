@@ -16,3 +16,9 @@ export interface BorrowingFinesResponse {
     unpaidCount: number;
     paidHistory: Array<{ paymentId: number; amount: number; paidAt: string }>;
 }
+
+export interface BorrowingWaitlistItem {
+    bookId: number;
+    title: string;
+    position: number;
+}

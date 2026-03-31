@@ -19,6 +19,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -58,6 +59,19 @@ public class User implements UserDetails {
         inverseJoinColumns = @JoinColumn(name = "role_id")
     )
     private Set<Role> roles = new HashSet<>();
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "membership_type_id")
+    private MembershipType membershipType;
+
+    @Column(name = "membership_activated_at")
+    private LocalDateTime membershipActivatedAt;
+
+    @Column(name = "membership_expires_at")
+    private LocalDateTime membershipExpiresAt;
+
+    @Column(name = "membership_reminder_sent_at")
+    private LocalDateTime membershipReminderSentAt;
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {

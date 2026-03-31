@@ -20,7 +20,12 @@ public class CatalogMapper {
                 book.getCoverImageUrl() == null ? "" : book.getCoverImageUrl());
     }
 
-    public CatalogBookSearchResponse toBookSearchResponse(Book book, long availableItems, String inventoryStatus) {
+    public CatalogBookSearchResponse toBookSearchResponse(
+            Book book,
+            long physicalAvailableItems,
+            long pendingRequests,
+            long availableItems,
+            String inventoryStatus) {
         return new CatalogBookSearchResponse(
                 book.getId(),
                 book.getTitle(),
@@ -30,6 +35,8 @@ public class CatalogMapper {
                 book.getPublishYear(),
                 book.getCoverImageUrl() == null ? "" : book.getCoverImageUrl(),
                 inventoryStatus,
+                physicalAvailableItems,
+                pendingRequests,
                 availableItems,
                 book.isDigital());
     }

@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
+import axios from 'axios';
 import {
     fetchCatalogBookDetail,
     fetchCatalogBooks,
     fetchCatalogHome,
-    reserveCatalogBook,
 } from '../../api/modules/catalogApi';
+import { joinBorrowingWaitlist, submitBorrowRequest } from '../../api/modules/borrowingApi';
 import type {
     CatalogBookDetailResponse,
     CatalogBookItem,
@@ -83,16 +84,34 @@ export function useCatalogDiscovery() {
         void fetchDetail();
     }, [selectedBook?.id]);
 
-    const handleReserve = async () => {
-        if (!selectedBook?.id) {
+    const handleReserve = async (bookId?: number) => {
+        const targetBookId = bookId ?? selectedBook?.id;
+        if (!targetBookId) {
             return;
         }
         try {
-            await reserveCatalogBook(selectedBook.id);
+            await submitBorrowRequest(targetBookId);
+            await loadBooks();
             setError('');
-            alert('Đã thêm vào giỏ đặt mượn.');
+            alert('Đã gửi yêu cầu mượn. Thủ thư sẽ xem xét và duyệt yêu cầu của bạn.');
         } catch {
-            setError('Đặt mượn thất bại. Hãy đăng nhập lại và thử tiếp.');
+            setError('Gửi yêu cầu mượn thất bại. Hãy đăng nhập lại và thử tiếp.');
+        }
+    };
+
+    const handleJoinWaitlist = async (bookId: number) => {
+        try {
+            await joinBorrowingWaitlist(bookId);
+            await loadBooks();
+            setError('');
+            alert('Đã tham gia hàng chờ thành công. Khi có sách, hệ thống sẽ thông báo cho bạn.');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const message = (err.response?.data as { message?: string } | undefined)?.message;
+                setError(message || 'Không thể tham gia hàng chờ cho sách này.');
+            } else {
+                setError('Không thể tham gia hàng chờ cho sách này.');
+            }
         }
     };
 
@@ -108,5 +127,6 @@ export function useCatalogDiscovery() {
         setSelectedBookId,
         loadBooks,
         handleReserve,
+        handleJoinWaitlist,
     };
 }

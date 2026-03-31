@@ -8,8 +8,12 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
+import com.example.demo.dto.librarian.LibrarianAuthorRequest;
+import com.example.demo.dto.librarian.LibrarianAuthorResponse;
 import com.example.demo.dto.librarian.LibrarianBookRequest;
 import com.example.demo.dto.librarian.LibrarianBookResponse;
+import com.example.demo.dto.librarian.LibrarianCategoryRequest;
+import com.example.demo.dto.librarian.LibrarianCategoryResponse;
 import com.example.demo.dto.librarian.LibrarianCheckinRequest;
 import com.example.demo.dto.librarian.LibrarianCheckinResponse;
 import com.example.demo.dto.librarian.LibrarianCheckoutRequest;
@@ -24,15 +28,19 @@ import com.example.demo.dto.librarian.LibrarianLocationResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
 import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.mapper.LibrarianMapper;
+import com.example.demo.model.Author;
 import com.example.demo.model.Book;
 import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.Category;
 import com.example.demo.model.Location;
 import com.example.demo.model.User;
+import com.example.demo.repository.AuthorRepository;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.repository.BorrowRecordRepository;
+import com.example.demo.repository.CategoryRepository;
 import com.example.demo.repository.LocationRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.LibrarianService;
@@ -51,6 +59,8 @@ public class LibrarianServiceImpl implements LibrarianService {
     private final BorrowRecordRepository borrowRecordRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
+    private final AuthorRepository authorRepository;
+    private final CategoryRepository categoryRepository;
     private final ModuleStateService moduleStateService;
     private final LibrarianMapper librarianMapper;
 
@@ -149,6 +159,78 @@ public class LibrarianServiceImpl implements LibrarianService {
         location.setShelfNumber(request.shelfNumber());
         Location saved = locationRepository.save(location);
         return librarianMapper.toLocationResponse(saved);
+    }
+
+    @Override
+    public LibrarianLocationResponse updateLocation(Integer id, LibrarianLocationRequest request) {
+        Location location = locationRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vị trí"));
+        location.setRoomName(request.roomName());
+        location.setShelfNumber(request.shelfNumber());
+        return librarianMapper.toLocationResponse(locationRepository.save(location));
+    }
+
+    @Override
+    public void deleteLocation(Integer id) {
+        locationRepository.deleteById(id);
+    }
+
+    @Override
+    public List<LibrarianAuthorResponse> authors() {
+        return authorRepository.findAll().stream()
+                .map(author -> new LibrarianAuthorResponse(author.getId(), author.getName()))
+                .toList();
+    }
+
+    @Override
+    public LibrarianAuthorResponse createAuthor(LibrarianAuthorRequest request) {
+        Author author = new Author();
+        author.setName(request.name());
+        Author saved = authorRepository.save(author);
+        return new LibrarianAuthorResponse(saved.getId(), saved.getName());
+    }
+
+    @Override
+    public LibrarianAuthorResponse updateAuthor(Integer id, LibrarianAuthorRequest request) {
+        Author author = authorRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tác giả"));
+        author.setName(request.name());
+        Author saved = authorRepository.save(author);
+        return new LibrarianAuthorResponse(saved.getId(), saved.getName());
+    }
+
+    @Override
+    public void deleteAuthor(Integer id) {
+        authorRepository.deleteById(id);
+    }
+
+    @Override
+    public List<LibrarianCategoryResponse> categories() {
+        return categoryRepository.findAll().stream()
+                .map(category -> new LibrarianCategoryResponse(category.getId(), category.getName()))
+                .toList();
+    }
+
+    @Override
+    public LibrarianCategoryResponse createCategory(LibrarianCategoryRequest request) {
+        Category category = new Category();
+        category.setName(request.name());
+        Category saved = categoryRepository.save(category);
+        return new LibrarianCategoryResponse(saved.getId(), saved.getName());
+    }
+
+    @Override
+    public LibrarianCategoryResponse updateCategory(Integer id, LibrarianCategoryRequest request) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thể loại"));
+        category.setName(request.name());
+        Category saved = categoryRepository.save(category);
+        return new LibrarianCategoryResponse(saved.getId(), saved.getName());
+    }
+
+    @Override
+    public void deleteCategory(Integer id) {
+        categoryRepository.deleteById(id);
     }
 
     @Override

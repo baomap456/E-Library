@@ -1,5 +1,6 @@
 package com.example.demo.model;
 
+import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -15,7 +16,10 @@ public class MembershipType {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Integer id;
     private String name;
+    private boolean paid;
     private int maxBooks;
     private int borrowDurationDays;
     private double fineRatePerDay;
+    @Column(length = 500)
+    private String privilegeNote;
 }
