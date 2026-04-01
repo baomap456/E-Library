@@ -9,6 +9,11 @@ export interface BorrowingRecord {
     dueDate: string;
     returnDate: string;
     status: string;
+    renewalCount: number;
+    maxRenewals: number;
+    canRenew: boolean;
+    renewDisabledReason: string | null;
+    daysUntilDue: number;
 }
 
 export interface BorrowingFinesResponse {
@@ -18,7 +23,16 @@ export interface BorrowingFinesResponse {
 }
 
 export interface BorrowingWaitlistItem {
+    reservationId: number;
     bookId: number;
     title: string;
+    position: number;
+    status: 'PENDING' | 'NOTIFIED' | 'COMPLETED' | 'EXPIRED' | 'CANCELLED';
+    expiryDate: string | null;
+}
+
+export interface BorrowingWaitlistJoinResponse {
+    message: string;
+    bookId: number;
     position: number;
 }

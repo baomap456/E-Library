@@ -16,7 +16,7 @@ import com.example.demo.model.Location;
 @Component
 public class LibrarianMapper {
 
-    public LibrarianBookResponse toBookResponse(Book book) {
+    public LibrarianBookResponse toBookResponse(Book book, long availableCopies, String availableBarcode) {
         return new LibrarianBookResponse(
                 book.getId(),
                 book.getTitle(),
@@ -24,7 +24,10 @@ public class LibrarianMapper {
                 book.getPublishYear(),
                 book.getPublisher(),
                 book.getCoverImageUrl(),
-                book.isDigital());
+                book.isDigital(),
+                book.getCanTakeHome(),
+                availableCopies,
+                availableBarcode);
     }
 
     public LibrarianLocationResponse toLocationResponse(Location location) {

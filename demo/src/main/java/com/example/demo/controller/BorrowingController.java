@@ -75,6 +75,13 @@ public class BorrowingController {
         return ResponseEntity.ok(borrowingService.joinWaitlist(request));
     }
 
+    @DeleteMapping("/waitlist/{reservationId}")
+    public ResponseEntity<WaitlistResponse> cancelWaitlist(
+            @PathVariable Long reservationId,
+            @RequestParam(required = false) String username) {
+        return ResponseEntity.ok(borrowingService.cancelReservation(reservationId, username));
+    }
+
     @GetMapping("/fines")
     public ResponseEntity<FinesResponse> fines(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getFines(username));

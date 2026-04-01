@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import axios from 'axios';
 import {
+    cancelBorrowingWaitlist,
     cancelBorrowRequest,
     fetchBorrowingData,
     fetchMyWaitlist,
@@ -41,6 +42,7 @@ export function useBorrowingReservation() {
         return date.toISOString().slice(0, 10);
     });
     const [loading, setLoading] = useState(true);
+    const [renewingRecordId, setRenewingRecordId] = useState<number | null>(null);
     const [error, setError] = useState('');
 
     const activeRecords = useMemo(() => records.filter((r) => !r.returnDate), [records]);
@@ -54,6 +56,11 @@ export function useBorrowingReservation() {
     const membershipLimitMessage = reachedMembershipLimit
         ? `Bạn đã đạt giới hạn gói (${activeBorrowLoad}/${membershipMaxBooks}). Không thể lập thêm phiếu mượn.`
         : '';
+    const overdueRecords = useMemo(
+        () => records.filter((record) => !record.returnDate && (record.status === 'OVERDUE' || record.daysUntilDue < 0)),
+        [records],
+    );
+    const hasOverdueRecords = overdueRecords.length > 0;
 
     const loadData = async () => {
         const user = getStoredUser();
@@ -90,10 +97,19 @@ export function useBorrowingReservation() {
 
     const handleRenew = async (recordId: number) => {
         try {
+            setRenewingRecordId(recordId);
             await renewBorrowingRecord(recordId);
+            setError('');
             await loadData();
-        } catch {
-            setError('Gia hạn thất bại.');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const message = (err.response?.data as { message?: string } | undefined)?.message;
+                setError(message || 'Gia hạn thất bại.');
+            } else {
+                setError('Gia hạn thất bại.');
+            }
+        } finally {
+            setRenewingRecordId(null);
         }
     };
 
@@ -119,10 +135,10 @@ export function useBorrowingReservation() {
 
     const handleJoinWaitlist = async (bookId: number) => {
         try {
-            await joinBorrowingWaitlist(bookId);
+            const response = await joinBorrowingWaitlist(bookId);
             setError('');
             await loadData();
-            alert('Đã tham gia hàng chờ thành công.');
+            alert(`Bạn đứng thứ ${response.position} trong danh sách chờ cho cuốn sách này.`);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const message = (err.response?.data as { message?: string } | undefined)?.message;
@@ -144,6 +160,22 @@ export function useBorrowingReservation() {
         }
     };
 
+    const handleCancelWaitlist = async (reservationId: number) => {
+        try {
+            await cancelBorrowingWaitlist(reservationId);
+            setError('');
+            await loadData();
+            alert('Đã hủy đặt trước thành công.');
+        } catch (err: unknown) {
+            if (axios.isAxiosError(err)) {
+                const message = (err.response?.data as { message?: string } | undefined)?.message;
+                setError(message || 'Không thể hủy đặt trước này.');
+            } else {
+                setError('Không thể hủy đặt trước này.');
+            }
+        }
+    };
+
     return {
         cart,
         records,
@@ -156,13 +188,16 @@ export function useBorrowingReservation() {
         waitlist,
         myRequests,
         loading,
+        renewingRecordId,
         error,
         activeRecords,
+        hasOverdueRecords,
         reachedMembershipLimit,
         membershipLimitMessage,
         handleRenew,
         handleCreateBorrowRequest,
         handleJoinWaitlist,
+        handleCancelWaitlist,
         handleCancelRequest,
     };
 }

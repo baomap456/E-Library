@@ -7,5 +7,9 @@ public record LibrarianDebtorResponse(
         String username,
         String bookTitle,
         Double fineAmount,
-        LocalDateTime dueDate) {
+        LocalDateTime dueDate,
+        Double outstandingDebt,
+        Boolean borrowingLocked,
+        Long overdueDays,
+        Boolean overdue) {
 }

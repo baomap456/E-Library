@@ -10,5 +10,10 @@ public record BorrowRecordResponse(
         LocalDateTime dueDate,
         LocalDateTime returnDate,
         String status,
-        Double fineAmount) {
+        Double fineAmount,
+        Integer renewalCount,
+        Integer maxRenewals,
+        Boolean canRenew,
+        String renewDisabledReason,
+        Long daysUntilDue) {
 }

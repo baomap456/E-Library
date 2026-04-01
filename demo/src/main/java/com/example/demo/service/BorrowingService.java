@@ -31,6 +31,8 @@ public interface BorrowingService {
 
     WaitlistResponse joinWaitlist(WaitlistRequest request);
 
+    WaitlistResponse cancelReservation(Long reservationId, String username);
+
     FinesResponse getFines(String username);
 
     FinePaymentResponse payFine(PayFineRequest request);

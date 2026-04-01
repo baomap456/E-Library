@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Client } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 import { fetchAuthPersonalData, renewMembership, upgradeMembership } from '../../api/modules/authPersonalApi';
 import type {
     CardResponse,
@@ -18,6 +20,24 @@ export function useAuthPersonal() {
     const [upgrading, setUpgrading] = useState(false);
     const [renewing, setRenewing] = useState(false);
     const [error, setError] = useState('');
+
+    const appendRealtimeNotification = (payload: NotificationResponse) => {
+        setNotifications((previous) => {
+            if (previous.some((item) => item.id === payload.id)) {
+                return previous;
+            }
+            return [payload, ...previous];
+        });
+    };
+
+    const handleRealtimeFrame = (body: string) => {
+        try {
+            const payload = JSON.parse(body) as NotificationResponse;
+            appendRealtimeNotification(payload);
+        } catch {
+            // Ignore malformed realtime messages to keep profile page stable.
+        }
+    };
 
     const loadData = async () => {
         const data = await fetchAuthPersonalData();
@@ -43,6 +63,28 @@ export function useAuthPersonal() {
 
         void fetchData();
     }, []);
+
+    useEffect(() => {
+        if (!profile?.id) {
+            return;
+        }
+
+        const wsUrl = 'http://localhost:8081/ws';
+        const client = new Client({
+            webSocketFactory: () => new SockJS(wsUrl),
+            reconnectDelay: 5000,
+            onConnect: () => {
+                client.subscribe(`/topic/notifications/${profile.id}`, (frame) => {
+                    handleRealtimeFrame(frame.body);
+                });
+            },
+        });
+
+        client.activate();
+        return () => {
+            client.deactivate();
+        };
+    }, [profile?.id]);
 
     const handleUpgrade = async (targetPackage: string) => {
         setUpgrading(true);

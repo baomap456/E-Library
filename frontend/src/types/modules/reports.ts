@@ -17,6 +17,74 @@ export interface ReportsFinancial {
     cardFeeRevenue: number;
 }
 
+export interface ReportsTopBookItem {
+    bookId: number;
+    title: string;
+    borrowCount: number;
+}
+
+export interface ReportsCategoryShare {
+    category: string;
+    percentage: number;
+    bookCount: number;
+}
+
+export interface ReportsMonthlyUserGrowth {
+    month: string;
+    newUsers: number;
+}
+
+export interface ReportsKpi {
+    period: string;
+    totalBorrows: number;
+    borrowingRate: number;
+    overdueUserRate: number;
+    membershipRevenue: number;
+    fineRevenue: number;
+    topBorrowedBooks: ReportsTopBookItem[];
+    topUnborrowedBooks: ReportsTopBookItem[];
+    categoryDistribution: ReportsCategoryShare[];
+    newMembersByMonth: ReportsMonthlyUserGrowth[];
+}
+
+export interface ReportsAuditLog {
+    id: number;
+    actor: string;
+    action: string;
+    targetType: string;
+    targetId: string;
+    details: string;
+    createdAt: string;
+}
+
+export interface ReportsPhysicalAuditResponse {
+    barcode: string;
+    systemStatus: string;
+    observedState: string;
+    result: string;
+    message: string;
+}
+
+export interface ReportsDigitalAuditItem {
+    bookId: number;
+    title: string;
+    fileUrl: string;
+    healthy: boolean;
+    detail: string;
+}
+
+export interface ReportsDigitalAuditResponse {
+    checkedCount: number;
+    brokenCount: number;
+    items: ReportsDigitalAuditItem[];
+}
+
+export interface ReportsDiscardBooksResponse {
+    message: string;
+    discardedBookIds: number[];
+    discardedCount: number;
+}
+
 export interface ReportsExportResponse {
     downloadPath: string;
 }

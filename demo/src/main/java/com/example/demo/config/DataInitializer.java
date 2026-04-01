@@ -58,6 +58,12 @@ public class DataInitializer implements ApplicationRunner {
             return roleRepository.save(role);
         });
 
+        roleRepository.findByName("ROLE_GUEST").orElseGet(() -> {
+            Role role = new Role();
+            role.setName("ROLE_GUEST");
+            return roleRepository.save(role);
+        });
+
         Role librarianRole = roleRepository.findByName("ROLE_LIBRARIAN")
             .orElseThrow(() -> new IllegalStateException("Không tìm thấy ROLE_LIBRARIAN"));
 
@@ -265,6 +271,7 @@ public class DataInitializer implements ApplicationRunner {
         book.setCategory(category);
         book.setAuthors(authors);
         book.setDigital(isDigital);
+        book.setCanTakeHome(!isDigital);
         return bookRepository.save(book);
     }
 

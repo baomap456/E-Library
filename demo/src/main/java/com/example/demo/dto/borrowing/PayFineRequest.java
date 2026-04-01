@@ -8,6 +8,8 @@ public record PayFineRequest(
         @NotNull(message = "recordId không được để trống")
         @Positive(message = "recordId phải lớn hơn 0")
         Long recordId,
+        @Positive(message = "amount phải lớn hơn 0")
+        Double amount,
         @Size(max = 30, message = "paymentMethod tối đa 30 ký tự")
         String paymentMethod) {
 }

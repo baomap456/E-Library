@@ -1,4 +1,5 @@
 import {
+    Button,
     Card,
     CardContent,
     Table,
@@ -10,11 +11,12 @@ import {
 } from '@mui/material';
 import type { BorrowingWaitlistItem } from '../../types/modules/borrowing';
 
-type Props = {
+type Props = Readonly<{
     waitlist: BorrowingWaitlistItem[];
-};
+    onCancelReservation: (reservationId: number) => Promise<void>;
+}>;
 
-export default function BorrowingWaitlistCard({ waitlist }: Props) {
+export default function BorrowingWaitlistCard({ waitlist, onCancelReservation }: Props) {
     return (
         <Card>
             <CardContent>
@@ -23,19 +25,35 @@ export default function BorrowingWaitlistCard({ waitlist }: Props) {
                     <TableHead>
                         <TableRow>
                             <TableCell>Tên sách</TableCell>
+                            <TableCell>Trạng thái</TableCell>
                             <TableCell align="right">Vị trí chờ</TableCell>
+                            <TableCell align="right">Hạn nhận</TableCell>
+                            <TableCell align="right">Thao tác</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {waitlist.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={2}>Bạn chưa tham gia hàng chờ nào.</TableCell>
+                                <TableCell colSpan={5}>Bạn chưa tham gia hàng chờ nào.</TableCell>
                             </TableRow>
                         )}
                         {waitlist.map((item) => (
-                            <TableRow key={item.bookId}>
+                            <TableRow key={item.reservationId}>
                                 <TableCell>{item.title}</TableCell>
+                                <TableCell>{item.status === 'NOTIFIED' ? 'Đã thông báo nhận' : 'Đang chờ'}</TableCell>
                                 <TableCell align="right">#{item.position}</TableCell>
+                                <TableCell align="right">
+                                    {item.expiryDate ? new Date(item.expiryDate).toLocaleString() : '-'}
+                                </TableCell>
+                                <TableCell align="right">
+                                    <Button
+                                        size="small"
+                                        color="error"
+                                        onClick={() => void onCancelReservation(item.reservationId)}
+                                    >
+                                        Hủy đặt
+                                    </Button>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>

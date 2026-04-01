@@ -8,4 +8,6 @@ import com.example.demo.model.Book;
 
 public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByIsDigitalTrue();
+
+    List<Book> findByDiscardedFalse();
 }

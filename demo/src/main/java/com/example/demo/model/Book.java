@@ -36,6 +36,8 @@ public class Book {
     private int publishYear;
     private String coverImageUrl;
     private boolean isDigital = false;
+    private Boolean canTakeHome = true;
+    private boolean discarded = false;
 
     @ManyToOne
     @JoinColumn(name = "category_id")

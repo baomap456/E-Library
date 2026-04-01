@@ -7,5 +7,8 @@ public record LibrarianBookResponse(
         Integer publishYear,
         String publisher,
         String coverImageUrl,
-        Boolean digital) {
+        Boolean digital,
+        Boolean canTakeHome,
+        Long availableCopies,
+        String availableBarcode) {
 }

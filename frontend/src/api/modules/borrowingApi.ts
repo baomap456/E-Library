@@ -3,6 +3,7 @@ import type {
     BorrowingCartItem,
     BorrowingFinesResponse,
     BorrowingRecord,
+    BorrowingWaitlistJoinResponse,
     BorrowingWaitlistItem,
 } from '../../types/modules/borrowing';
 import type { ProfileResponse } from '../../types/modules/authPersonal';
@@ -23,15 +24,19 @@ export async function fetchBorrowingData(): Promise<{
 }
 
 export function renewBorrowingRecord(recordId: number) {
-    return axiosClient.patch(`/borrowing/records/${recordId}/renew`, {});
+    return axiosClient.patch<unknown, { message: string; newDueDate: string }>(`/borrowing/records/${recordId}/renew`, {});
 }
 
 export function joinBorrowingWaitlist(bookId: number) {
-    return axiosClient.post('/borrowing/waitlist', { bookId });
+    return axiosClient.post<unknown, BorrowingWaitlistJoinResponse>('/borrowing/waitlist', { bookId });
 }
 
 export function fetchMyWaitlist() {
     return axiosClient.get<unknown, BorrowingWaitlistItem[]>('/borrowing/waitlist/me');
+}
+
+export function cancelBorrowingWaitlist(reservationId: number) {
+    return axiosClient.delete<unknown, BorrowingWaitlistJoinResponse>(`/borrowing/waitlist/${reservationId}`);
 }
 
 export function fetchMyProfileForBorrowing() {

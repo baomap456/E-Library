@@ -6,7 +6,7 @@ export interface CatalogBookItem {
     category: string;
     publishYear: number;
     coverImageUrl: string;
-    status: 'AVAILABLE' | 'UNAVAILABLE';
+    status: 'AVAILABLE' | 'BORROWED' | 'UNAVAILABLE';
     physicalAvailableItems: number;
     pendingRequests: number;
     availableItems: number;

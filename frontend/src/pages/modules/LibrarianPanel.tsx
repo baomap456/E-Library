@@ -5,6 +5,7 @@ import {
     Tab,
     Tabs,
 } from '@mui/material';
+import type { ChangeEvent, ComponentProps } from 'react';
 import BorrowRequestReviewDialog from '../../components/librarian/BorrowRequestReviewDialog';
 import LibrarianBorrowRequestsTab from '../../components/librarian/LibrarianBorrowRequestsTab';
 import LibrarianManagementTab from '../../components/librarian/LibrarianManagementTab';
@@ -13,23 +14,87 @@ import { useLibrarianPanel } from '../../hooks/modules/useLibrarianPanel';
 import { useBorrowRequestReview } from '../../hooks/modules/useBorrowRequestReview';
 import { useLibrarianPanelUiState } from '../../hooks/modules/useLibrarianPanelUiState';
 
+type RowsPerPageChangeEvent = ChangeEvent<HTMLInputElement | HTMLTextAreaElement>;
+type SetNumberState = (value: number) => void;
+
+const createRowsPerPageChangeHandler = (setRowsPerPage: SetNumberState, setPage: SetNumberState) =>
+    (event: RowsPerPageChangeEvent) => {
+        setRowsPerPage(Number.parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
 export default function LibrarianPanel() {
 
     const {
         dashboard,
         books,
         debtors,
+        digitalDocuments,
         authors,
         categories,
         locations,
+        borrowers,
+        membershipPackages,
         barcode,
         setBarcode,
         username,
         setUsername,
+        guestBorrowMode,
+        setGuestBorrowMode,
+        guestName,
+        setGuestName,
+        guestPhone,
+        setGuestPhone,
+        guestLoanType,
+        setGuestLoanType,
+        guestDepositAmount,
+        setGuestDepositAmount,
+        guestCitizenId,
+        setGuestCitizenId,
+        newUserUsername,
+        setNewUserUsername,
+        newUserPassword,
+        setNewUserPassword,
+        newUserEmail,
+        setNewUserEmail,
+        newUserFullName,
+        setNewUserFullName,
+        newUserStudentId,
+        setNewUserStudentId,
+        upgradeUsername,
+        setUpgradeUsername,
+        upgradeTargetPackage,
+        setUpgradeTargetPackage,
         incident,
         setIncident,
+        incidentRecordId,
+        setIncidentRecordId,
+        incidentType,
+        setIncidentType,
+        damageSeverity,
+        setDamageSeverity,
+        repairCost,
+        setRepairCost,
+        lostCompensationRate,
+        setLostCompensationRate,
         newAuthor,
         setNewAuthor,
+        digitalTitle,
+        setDigitalTitle,
+        digitalDescription,
+        setDigitalDescription,
+        digitalPublisher,
+        setDigitalPublisher,
+        digitalPublishYear,
+        setDigitalPublishYear,
+        digitalFileUrl,
+        setDigitalFileUrl,
+        digitalIsbn,
+        setDigitalIsbn,
+        debtPaymentRecordId,
+        setDebtPaymentRecordId,
+        debtPaymentAmount,
+        setDebtPaymentAmount,
         newCategory,
         setNewCategory,
         newRoom,
@@ -39,9 +104,17 @@ export default function LibrarianPanel() {
         loading,
         error,
         handleCheckout,
+        handleGuestCheckout,
         handleCheckin,
+        handleCreateUserDirect,
+        handleUpgradeAccountDirect,
         handleIncident,
+        handleReportBorrowIncident,
         handleCreateAuthor,
+        handleCreateDigitalDocument,
+        handleUpdateDigitalDocument,
+        handleDeleteDigitalDocument,
+        handlePartialDebtPayment,
         handleUpdateAuthor,
         handleDeleteAuthor,
         handleCreateCategory,
@@ -76,11 +149,17 @@ export default function LibrarianPanel() {
         setBookPage,
         bookRowsPerPage,
         setBookRowsPerPage,
+        bookAvailableOnly,
+        setBookAvailableOnly,
+        filteredBooksCount,
         pagedBooks,
         debtorPage,
         setDebtorPage,
         debtorRowsPerPage,
         setDebtorRowsPerPage,
+        debtorOverdueOnly,
+        setDebtorOverdueOnly,
+        filteredDebtorsCount,
         pagedDebtors,
         requestPage,
         setRequestPage,
@@ -141,6 +220,184 @@ export default function LibrarianPanel() {
         }
     };
 
+    const pendingLabel = pendingCount > 0 ? `Duyệt yêu cầu (${pendingCount})` : 'Duyệt yêu cầu';
+    const membershipPackageOptions = membershipPackages.map((item) => item.name);
+
+    const handleBookPageChange = (_: unknown, nextPage: number) => setBookPage(nextPage);
+    const handleDebtorPageChange = (_: unknown, nextPage: number) => setDebtorPage(nextPage);
+    const handleAuthorPageChange = (_: unknown, nextPage: number) => setAuthorPage(nextPage);
+    const handleCategoryPageChange = (_: unknown, nextPage: number) => setCategoryPage(nextPage);
+    const handleLocationPageChange = (_: unknown, nextPage: number) => setLocationPage(nextPage);
+    const handleRequestPageChange = (_: unknown, nextPage: number) => setRequestPage(nextPage);
+
+    const handleBookRowsPerPageChange = createRowsPerPageChangeHandler(setBookRowsPerPage, setBookPage);
+    const handleDebtorRowsPerPageChange = createRowsPerPageChangeHandler(setDebtorRowsPerPage, setDebtorPage);
+    const handleAuthorRowsPerPageChange = createRowsPerPageChangeHandler(setAuthorRowsPerPage, setAuthorPage);
+    const handleCategoryRowsPerPageChange = createRowsPerPageChangeHandler(setCategoryRowsPerPage, setCategoryPage);
+    const handleLocationRowsPerPageChange = createRowsPerPageChangeHandler(setLocationRowsPerPage, setLocationPage);
+    const handleRequestRowsPerPageChange = createRowsPerPageChangeHandler(setRequestRowsPerPage, setRequestPage);
+
+    const handleOpenApprove = (id: number) => {
+        setSelectedRequest(id);
+        setReviewAction('approve');
+        setReviewNote('');
+    };
+
+    const handleOpenReject = (id: number) => {
+        setSelectedRequest(id);
+        setReviewAction('reject');
+        setReviewNote('');
+    };
+
+    const managementTabProps: ComponentProps<typeof LibrarianManagementTab> = {
+        dashboard,
+        allBooks: books,
+        pagedBooks,
+        booksCount: filteredBooksCount,
+        bookAvailableOnly,
+        onBookAvailableOnlyChange: setBookAvailableOnly,
+        bookPage,
+        bookRowsPerPage,
+        onBookPageChange: handleBookPageChange,
+        onBookRowsPerPageChange: handleBookRowsPerPageChange,
+        username,
+        borrowers,
+        guestBorrowMode,
+        guestName,
+        guestPhone,
+        guestLoanType,
+        guestDepositAmount,
+        guestCitizenId,
+        barcode,
+        onUsernameChange: setUsername,
+        onGuestBorrowModeChange: setGuestBorrowMode,
+        onGuestNameChange: setGuestName,
+        onGuestPhoneChange: setGuestPhone,
+        onGuestLoanTypeChange: setGuestLoanType,
+        onGuestDepositAmountChange: setGuestDepositAmount,
+        onGuestCitizenIdChange: setGuestCitizenId,
+        onBarcodeChange: setBarcode,
+        onCheckout: () => { void handleCheckout(); },
+        onGuestCheckout: () => { void handleGuestCheckout(); },
+        onCheckin: () => { void handleCheckin(); },
+        newUserUsername,
+        newUserPassword,
+        newUserEmail,
+        newUserFullName,
+        newUserStudentId,
+        onNewUserUsernameChange: setNewUserUsername,
+        onNewUserPasswordChange: setNewUserPassword,
+        onNewUserEmailChange: setNewUserEmail,
+        onNewUserFullNameChange: setNewUserFullName,
+        onNewUserStudentIdChange: setNewUserStudentId,
+        onCreateUserDirect: () => { void handleCreateUserDirect(); },
+        upgradeUsername,
+        upgradeTargetPackage,
+        membershipPackageOptions,
+        onUpgradeUsernameChange: setUpgradeUsername,
+        onUpgradeTargetPackageChange: setUpgradeTargetPackage,
+        onUpgradeAccountDirect: () => { void handleUpgradeAccountDirect(); },
+        incident,
+        incidentRecordId,
+        incidentType,
+        damageSeverity,
+        repairCost,
+        lostCompensationRate,
+        onIncidentChange: setIncident,
+        onIncidentRecordIdChange: setIncidentRecordId,
+        onIncidentTypeChange: setIncidentType,
+        onDamageSeverityChange: setDamageSeverity,
+        onRepairCostChange: setRepairCost,
+        onLostCompensationRateChange: setLostCompensationRate,
+        onCreateIncident: () => { void handleIncident(); },
+        onReportBorrowIncident: () => { void handleReportBorrowIncident(); },
+        pagedDebtors,
+        debtorsCount: filteredDebtorsCount,
+        debtorOverdueOnly,
+        onDebtorOverdueOnlyChange: setDebtorOverdueOnly,
+        debtorPage,
+        debtorRowsPerPage,
+        debtPaymentRecordId,
+        debtPaymentAmount,
+        onDebtPaymentRecordIdChange: setDebtPaymentRecordId,
+        onDebtPaymentAmountChange: setDebtPaymentAmount,
+        onPartialDebtPayment: () => { void handlePartialDebtPayment(); },
+        onDebtorPageChange: handleDebtorPageChange,
+        onDebtorRowsPerPageChange: handleDebtorRowsPerPageChange,
+        authorSearch,
+        onAuthorSearchChange: setAuthorSearch,
+        newAuthor,
+        onNewAuthorChange: setNewAuthor,
+        onCreateAuthor: () => { void handleCreateAuthor(); },
+        pagedAuthors,
+        filteredAuthorsCount: filteredAuthors.length,
+        authorPage,
+        authorRowsPerPage,
+        onAuthorPageChange: handleAuthorPageChange,
+        onAuthorRowsPerPageChange: handleAuthorRowsPerPageChange,
+        onUpdateAuthor: (id, name) => void handleUpdateAuthor(id, name),
+        onDeleteAuthor: (id) => void handleDeleteAuthor(id),
+        categorySearch,
+        onCategorySearchChange: setCategorySearch,
+        newCategory,
+        onNewCategoryChange: setNewCategory,
+        onCreateCategory: () => { void handleCreateCategory(); },
+        pagedCategories,
+        filteredCategoriesCount: filteredCategories.length,
+        categoryPage,
+        categoryRowsPerPage,
+        onCategoryPageChange: handleCategoryPageChange,
+        onCategoryRowsPerPageChange: handleCategoryRowsPerPageChange,
+        onUpdateCategory: (id, name) => void handleUpdateCategory(id, name),
+        onDeleteCategory: (id) => void handleDeleteCategory(id),
+        locationSearch,
+        onLocationSearchChange: setLocationSearch,
+        newRoom,
+        onNewRoomChange: setNewRoom,
+        newShelf,
+        onNewShelfChange: setNewShelf,
+        onCreateLocation: () => { void handleCreateLocation(); },
+        pagedLocations,
+        filteredLocationsCount: filteredLocations.length,
+        locationPage,
+        locationRowsPerPage,
+        onLocationPageChange: handleLocationPageChange,
+        onLocationRowsPerPageChange: handleLocationRowsPerPageChange,
+        onUpdateLocation: (id, roomName, shelfNumber) => void handleUpdateLocation(id, roomName, shelfNumber),
+        onDeleteLocation: (id) => void handleDeleteLocation(id),
+        digitalDocuments,
+        digitalTitle,
+        digitalDescription,
+        digitalPublisher,
+        digitalPublishYear,
+        digitalFileUrl,
+        digitalIsbn,
+        onDigitalTitleChange: setDigitalTitle,
+        onDigitalDescriptionChange: setDigitalDescription,
+        onDigitalPublisherChange: setDigitalPublisher,
+        onDigitalPublishYearChange: setDigitalPublishYear,
+        onDigitalFileUrlChange: setDigitalFileUrl,
+        onDigitalIsbnChange: setDigitalIsbn,
+        onCreateDigitalDocument: () => { void handleCreateDigitalDocument(); },
+        onUpdateDigitalDocument: (id, payload) => { void handleUpdateDigitalDocument(id, payload); },
+        onDeleteDigitalDocument: (id) => { void handleDeleteDigitalDocument(id); },
+    };
+
+    const borrowRequestsTabProps: ComponentProps<typeof LibrarianBorrowRequestsTab> = {
+        loading: requestsLoading,
+        requests,
+        pendingCount,
+        filterStatus,
+        onFilterStatusChange: setFilterStatus,
+        pagedRequests,
+        requestPage,
+        requestRowsPerPage,
+        onRequestPageChange: handleRequestPageChange,
+        onRequestRowsPerPageChange: handleRequestRowsPerPageChange,
+        onOpenApprove: handleOpenApprove,
+        onOpenReject: handleOpenReject,
+    };
+
     return (
         <Box>
             <LibrarianPageHeader />
@@ -150,120 +407,13 @@ export default function LibrarianPanel() {
             <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
                 <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
                     <Tab label="Quản lý mượn trả" />
-                    <Tab label={`Duyệt yêu cầu${pendingCount > 0 ? ` (${pendingCount})` : ''}`} />
+                    <Tab label={pendingLabel} />
                 </Tabs>
             </Box>
 
-            {tabValue === 0 && (
-                <LibrarianManagementTab
-                    dashboard={dashboard}
-                    pagedBooks={pagedBooks}
-                    booksCount={books.length}
-                    bookPage={bookPage}
-                    bookRowsPerPage={bookRowsPerPage}
-                    onBookPageChange={(_, nextPage) => setBookPage(nextPage)}
-                    onBookRowsPerPageChange={(event) => {
-                        setBookRowsPerPage(parseInt(event.target.value, 10));
-                        setBookPage(0);
-                    }}
-                    username={username}
-                    barcode={barcode}
-                    onUsernameChange={setUsername}
-                    onBarcodeChange={setBarcode}
-                    onCheckout={() => void handleCheckout()}
-                    onCheckin={() => void handleCheckin()}
-                    incident={incident}
-                    onIncidentChange={setIncident}
-                    onCreateIncident={() => void handleIncident()}
-                    pagedDebtors={pagedDebtors}
-                    debtorsCount={debtors.length}
-                    debtorPage={debtorPage}
-                    debtorRowsPerPage={debtorRowsPerPage}
-                    onDebtorPageChange={(_, nextPage) => setDebtorPage(nextPage)}
-                    onDebtorRowsPerPageChange={(event) => {
-                        setDebtorRowsPerPage(parseInt(event.target.value, 10));
-                        setDebtorPage(0);
-                    }}
-                    authorSearch={authorSearch}
-                    onAuthorSearchChange={setAuthorSearch}
-                    newAuthor={newAuthor}
-                    onNewAuthorChange={setNewAuthor}
-                    onCreateAuthor={() => void handleCreateAuthor()}
-                    pagedAuthors={pagedAuthors}
-                    filteredAuthorsCount={filteredAuthors.length}
-                    authorPage={authorPage}
-                    authorRowsPerPage={authorRowsPerPage}
-                    onAuthorPageChange={(_, nextPage) => setAuthorPage(nextPage)}
-                    onAuthorRowsPerPageChange={(event) => {
-                        setAuthorRowsPerPage(parseInt(event.target.value, 10));
-                        setAuthorPage(0);
-                    }}
-                    onUpdateAuthor={(id, name) => void handleUpdateAuthor(id, name)}
-                    onDeleteAuthor={(id) => void handleDeleteAuthor(id)}
-                    categorySearch={categorySearch}
-                    onCategorySearchChange={setCategorySearch}
-                    newCategory={newCategory}
-                    onNewCategoryChange={setNewCategory}
-                    onCreateCategory={() => void handleCreateCategory()}
-                    pagedCategories={pagedCategories}
-                    filteredCategoriesCount={filteredCategories.length}
-                    categoryPage={categoryPage}
-                    categoryRowsPerPage={categoryRowsPerPage}
-                    onCategoryPageChange={(_, nextPage) => setCategoryPage(nextPage)}
-                    onCategoryRowsPerPageChange={(event) => {
-                        setCategoryRowsPerPage(parseInt(event.target.value, 10));
-                        setCategoryPage(0);
-                    }}
-                    onUpdateCategory={(id, name) => void handleUpdateCategory(id, name)}
-                    onDeleteCategory={(id) => void handleDeleteCategory(id)}
-                    locationSearch={locationSearch}
-                    onLocationSearchChange={setLocationSearch}
-                    newRoom={newRoom}
-                    onNewRoomChange={setNewRoom}
-                    newShelf={newShelf}
-                    onNewShelfChange={setNewShelf}
-                    onCreateLocation={() => void handleCreateLocation()}
-                    pagedLocations={pagedLocations}
-                    filteredLocationsCount={filteredLocations.length}
-                    locationPage={locationPage}
-                    locationRowsPerPage={locationRowsPerPage}
-                    onLocationPageChange={(_, nextPage) => setLocationPage(nextPage)}
-                    onLocationRowsPerPageChange={(event) => {
-                        setLocationRowsPerPage(parseInt(event.target.value, 10));
-                        setLocationPage(0);
-                    }}
-                    onUpdateLocation={(id, roomName, shelfNumber) => void handleUpdateLocation(id, roomName, shelfNumber)}
-                    onDeleteLocation={(id) => void handleDeleteLocation(id)}
-                />
-            )}
+            {tabValue === 0 && <LibrarianManagementTab {...managementTabProps} />}
 
-            {tabValue === 1 && (
-                <LibrarianBorrowRequestsTab
-                    loading={requestsLoading}
-                    requests={requests}
-                    pendingCount={pendingCount}
-                    filterStatus={filterStatus}
-                    onFilterStatusChange={setFilterStatus}
-                    pagedRequests={pagedRequests}
-                    requestPage={requestPage}
-                    requestRowsPerPage={requestRowsPerPage}
-                    onRequestPageChange={(_, nextPage) => setRequestPage(nextPage)}
-                    onRequestRowsPerPageChange={(event) => {
-                        setRequestRowsPerPage(parseInt(event.target.value, 10));
-                        setRequestPage(0);
-                    }}
-                    onOpenApprove={(id) => {
-                        setSelectedRequest(id);
-                        setReviewAction('approve');
-                        setReviewNote('');
-                    }}
-                    onOpenReject={(id) => {
-                        setSelectedRequest(id);
-                        setReviewAction('reject');
-                        setReviewNote('');
-                    }}
-                />
-            )}
+            {tabValue === 1 && <LibrarianBorrowRequestsTab {...borrowRequestsTabProps} />}
 
             <BorrowRequestReviewDialog
                 open={selectedRequest !== null}

@@ -34,6 +34,15 @@ public class BorrowRecord {
     private LocalDateTime returnDate;  // Ngày thực tế trả
 
     private Double fineAmount = 0.0;
+    private String borrowMode = "TAKE_HOME";
+    private Double depositAmount = 0.0;
+    private String borrowerCitizenId;
+    private Boolean temporaryRecord = false;
+    private String incidentType;
+    private String damageSeverity;
+    private Double compensationAmount = 0.0;
+    private String incidentNote;
+    private Integer renewalCount = 0;
 
     @Enumerated(EnumType.STRING)
     private BookStatus status = BookStatus.BORROWING;

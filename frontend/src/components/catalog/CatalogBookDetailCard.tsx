@@ -1,12 +1,12 @@
 import { Button, Card, CardContent, Typography } from '@mui/material';
 import type { CatalogBookDetailResponse, CatalogBookItem } from '../../types/modules/catalog';
 
-type Props = {
+type Props = Readonly<{
     selectedBook: CatalogBookItem | null;
     detail: CatalogBookDetailResponse | null;
     onReserve: () => Promise<void>;
     onJoinWaitlist: (bookId: number) => Promise<void>;
-};
+}>;
 
 export default function CatalogBookDetailCard({ selectedBook, detail, onReserve, onJoinWaitlist }: Props) {
     return (
@@ -42,7 +42,7 @@ export default function CatalogBookDetailCard({ selectedBook, detail, onReserve,
                         sx={{ ml: 1 }}
                         onClick={() => void onJoinWaitlist(selectedBook.id)}
                     >
-                        Tham gia hàng chờ
+                        Đặt trước
                     </Button>
                 )}
             </CardContent>

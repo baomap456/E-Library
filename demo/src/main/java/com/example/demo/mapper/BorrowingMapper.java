@@ -20,7 +20,12 @@ public class BorrowingMapper {
         return new CartItemResponse(bookId, book == null ? "N/A" : book.getTitle());
     }
 
-    public BorrowRecordResponse toBorrowRecordResponse(BorrowRecord record) {
+    public BorrowRecordResponse toBorrowRecordResponse(
+            BorrowRecord record,
+            int maxRenewals,
+            boolean canRenew,
+            String renewDisabledReason,
+            Long daysUntilDue) {
         return new BorrowRecordResponse(
                 record.getId(),
                 record.getBookItem().getBook().getTitle(),
@@ -29,7 +34,12 @@ public class BorrowingMapper {
                 record.getDueDate(),
                 record.getReturnDate(),
                 record.getStatus().name(),
-                Objects.requireNonNullElse(record.getFineAmount(), 0.0));
+                Objects.requireNonNullElse(record.getFineAmount(), 0.0),
+                Objects.requireNonNullElse(record.getRenewalCount(), 0),
+                maxRenewals,
+                canRenew,
+                renewDisabledReason,
+                daysUntilDue);
     }
 
     public PaidFineHistoryResponse toPaidFineHistoryResponse(FinePayment payment, String fallbackMethod) {

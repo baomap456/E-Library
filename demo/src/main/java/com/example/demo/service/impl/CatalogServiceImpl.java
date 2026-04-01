@@ -25,6 +25,7 @@ import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.service.CatalogService;
+import com.example.demo.service.DebtRestrictionService;
 import com.example.demo.service.ModuleStateService;
 import com.example.demo.service.UserContextService;
 
@@ -40,10 +41,11 @@ public class CatalogServiceImpl implements CatalogService {
     private final ModuleStateService moduleStateService;
     private final UserContextService userContextService;
         private final CatalogMapper catalogMapper;
+        private final DebtRestrictionService debtRestrictionService;
 
     @Override
     public CatalogHomeResponse home() {
-        List<Book> books = bookRepository.findAll();
+        List<Book> books = bookRepository.findByDiscardedFalse();
         List<CatalogSimpleBookResponse> newBooks = books.stream()
                 .sorted(Comparator.comparing(Book::getId).reversed())
                 .limit(6)
@@ -59,7 +61,7 @@ public class CatalogServiceImpl implements CatalogService {
     @Override
     public List<CatalogBookSearchResponse> search(String q, String author, String category, Integer publishYear, String status,
             Boolean digital) {
-        return bookRepository.findAll().stream()
+        return bookRepository.findByDiscardedFalse().stream()
                 .filter(book -> q == null || containsIgnoreCase(book.getTitle(), q) || containsIgnoreCase(book.getIsbn(), q))
                 .filter(book -> author == null || book.getAuthors().stream().anyMatch(a -> containsIgnoreCase(a.getName(), author)))
                 .filter(book -> category == null || (book.getCategory() != null
@@ -70,7 +72,7 @@ public class CatalogServiceImpl implements CatalogService {
                     long physicalAvailable = bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE);
                     long pendingRequests = borrowRequestRepository.countByStatusAndBookItemBookId(BorrowRequestStatus.PENDING, book.getId());
                     long availableItems = Math.max(0, physicalAvailable - pendingRequests);
-                    String inventoryStatus = availableItems > 0 ? "AVAILABLE" : "UNAVAILABLE";
+                    String inventoryStatus = availableItems > 0 ? "AVAILABLE" : "BORROWED";
                     return catalogMapper.toBookSearchResponse(
                             book,
                             physicalAvailable,
@@ -86,6 +88,9 @@ public class CatalogServiceImpl implements CatalogService {
     public CatalogBookDetailResponse detail(Long bookId) {
         Book book = bookRepository.findById(bookId)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sách"));
+        if (book.isDiscarded()) {
+            throw new IllegalArgumentException("Sách đã được thanh lý và không còn hiển thị");
+        }
         Optional<BookItem> firstItem = bookItemRepository.findByBookId(bookId).stream().findFirst();
 
         String location = firstItem
@@ -117,6 +122,7 @@ public class CatalogServiceImpl implements CatalogService {
     public CatalogReserveResponse reserve(Long bookId, CatalogReserveRequest request) {
         String username = request != null ? request.username() : null;
         User user = userContextService.resolveUser(username);
+                debtRestrictionService.assertBorrowingAllowed(user, "đặt mượn");
         moduleStateService.addToCart(user.getId(), bookId);
         return new CatalogReserveResponse("Đã thêm vào giỏ đặt mượn", bookId);
     }

@@ -1,7 +1,7 @@
 import { Box, Button, Card, CardContent, Grid, TextField, Typography } from '@mui/material';
 import type { CatalogBookItem } from '../../types/modules/catalog';
 
-type Props = {
+type Props = Readonly<{
     books: CatalogBookItem[];
     requestedPickupDate: string;
     onRequestedPickupDateChange: (date: string) => void;
@@ -12,7 +12,7 @@ type Props = {
     membershipLimitMessage: string;
     onCreateRequest: (bookId: number) => Promise<void>;
     onJoinWaitlist: (bookId: number) => Promise<void>;
-};
+}>;
 
 export default function BorrowingBookSelectionCard({
     books,
@@ -26,6 +26,8 @@ export default function BorrowingBookSelectionCard({
     onCreateRequest,
     onJoinWaitlist,
 }: Props) {
+    const minDate = new Date().toISOString().slice(0, 10);
+
     return (
         <Card>
             <CardContent>
@@ -35,8 +37,10 @@ export default function BorrowingBookSelectionCard({
                     type="date"
                     value={requestedPickupDate}
                     onChange={(e) => onRequestedPickupDateChange(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: new Date().toISOString().slice(0, 10) }}
+                    slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: { min: minDate },
+                    }}
                     sx={{ mb: 1.5, width: { xs: '100%', sm: 260 }, mr: { sm: 1.5 } }}
                 />
                 <TextField
@@ -44,8 +48,10 @@ export default function BorrowingBookSelectionCard({
                     type="date"
                     value={requestedReturnDate}
                     onChange={(e) => onRequestedReturnDateChange(e.target.value)}
-                    InputLabelProps={{ shrink: true }}
-                    inputProps={{ min: new Date().toISOString().slice(0, 10) }}
+                    slotProps={{
+                        inputLabel: { shrink: true },
+                        htmlInput: { min: minDate },
+                    }}
                     sx={{ mb: 1.5, width: { xs: '100%', sm: 260 } }}
                 />
                 {reachedMembershipLimit && (
@@ -80,7 +86,7 @@ export default function BorrowingBookSelectionCard({
                                         disabled={waitlistedBookIds.has(book.id)}
                                         onClick={() => void onJoinWaitlist(book.id)}
                                     >
-                                        {waitlistedBookIds.has(book.id) ? 'Đã trong hàng chờ' : 'Tham gia hàng chờ'}
+                                        {waitlistedBookIds.has(book.id) ? 'Đã đặt trước' : 'Đặt trước'}
                                     </Button>
                                 )}
                             </Box>

@@ -48,6 +48,8 @@ public class User implements UserDetails {
     private String studentId;
     private String phone;
     private boolean active = true;
+    private Double outstandingDebt = 0.0;
+    private boolean borrowingLocked = false;
 
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt = LocalDateTime.now();

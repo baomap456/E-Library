@@ -101,10 +101,10 @@ export function useCatalogDiscovery() {
 
     const handleJoinWaitlist = async (bookId: number) => {
         try {
-            await joinBorrowingWaitlist(bookId);
+            const response = await joinBorrowingWaitlist(bookId);
             await loadBooks();
             setError('');
-            alert('Đã tham gia hàng chờ thành công. Khi có sách, hệ thống sẽ thông báo cho bạn.');
+            alert(`Bạn đứng thứ ${response.position} trong danh sách chờ cho cuốn sách này.`);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const message = (err.response?.data as { message?: string } | undefined)?.message;

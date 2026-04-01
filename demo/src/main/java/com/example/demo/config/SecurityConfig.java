@@ -26,13 +26,15 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        try {
+            http
             .csrf(AbstractHttpConfigurer::disable) // Tắt CSRF vì chúng ta dùng JWT
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))    // Cấu hình CORS để React gọi API không bị chặn
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html", "/error").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/catalog/home", "/api/catalog/books", "/api/catalog/books/*", "/api/catalog/books/*/location-map", "/api/catalog/shelves").permitAll()
                 .requestMatchers(HttpMethod.GET, "/api/digital/documents", "/api/digital/documents/*/reader-config").permitAll()
                 .requestMatchers("/api/librarian/**").hasAnyRole("LIBRARIAN", "ADMIN")
@@ -43,8 +45,10 @@ public class SecurityConfig {
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS) // Không lưu session trên server
             )
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
-
-        return http.build();
+            return http.build();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Không thể khởi tạo SecurityFilterChain", ex);
+        }
     }
 
     // Công cụ băm mật khẩu (Không bao giờ lưu mật khẩu thô vào Database)
@@ -55,8 +59,12 @@ public class SecurityConfig {
 
     // Quản lý việc xác thực
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
-        return config.getAuthenticationManager();
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) {
+        try {
+            return config.getAuthenticationManager();
+        } catch (Exception ex) {
+            throw new IllegalStateException("Không thể khởi tạo AuthenticationManager", ex);
+        }
     }
 
     @Bean

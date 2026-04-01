@@ -16,14 +16,14 @@ import com.example.demo.model.BookItem;
 import com.example.demo.model.BorrowRecord;
 import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
-import com.example.demo.model.Notification;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BorrowRecordRepository;
 import com.example.demo.repository.BorrowRequestRepository;
-import com.example.demo.repository.NotificationRepository;
 import com.example.demo.service.BorrowRequestService;
+import com.example.demo.service.DebtRestrictionService;
+import com.example.demo.service.NotificationDispatchService;
 import com.example.demo.service.UserContextService;
 
 import lombok.RequiredArgsConstructor;
@@ -35,9 +35,10 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
     private final BorrowRequestRepository borrowRequestRepository;
     private final BorrowRecordRepository borrowRecordRepository;
     private final BookItemRepository bookItemRepository;
-    private final NotificationRepository notificationRepository;
+    private final NotificationDispatchService notificationDispatchService;
     private final UserContextService userContextService;
     private final BorrowingMapper borrowingMapper;
+    private final DebtRestrictionService debtRestrictionService;
 
     @Scheduled(cron = "0 15 1 * * *")
     @Transactional
@@ -52,13 +53,11 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             request.setApprovalNote("Quá hạn ngày lấy sách, hệ thống tự hủy phiếu");
             borrowRequestRepository.save(request);
 
-            Notification notification = new Notification();
-            notification.setUser(request.getUser());
-            notification.setMessage("Phiếu mượn #" + request.getId()
-                    + " đã bị hủy do quá hạn ngày lấy sách ("
-                    + request.getRequestedPickupDate() + ").");
-            notification.setRead(false);
-            notificationRepository.save(notification);
+                notificationDispatchService.createAndDispatch(
+                    request.getUser(),
+                    "Phiếu mượn #" + request.getId()
+                        + " đã bị hủy do quá hạn ngày lấy sách ("
+                        + request.getRequestedPickupDate() + ").");
         }
     }
 
@@ -66,6 +65,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
     @Transactional
     public BorrowRequestResponse createBorrowRequest(CreateBorrowRequestDto request) {
         User user = userContextService.resolveUser(request.username());
+        debtRestrictionService.assertBorrowingAllowed(user, "gửi yêu cầu mượn");
         
         // Check if user is a librarian
         if (isLibrarian(user)) {

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
@@ -17,21 +18,31 @@ import com.example.demo.dto.librarian.LibrarianAuthorRequest;
 import com.example.demo.dto.librarian.LibrarianAuthorResponse;
 import com.example.demo.dto.librarian.LibrarianBookRequest;
 import com.example.demo.dto.librarian.LibrarianBookResponse;
+import com.example.demo.dto.librarian.LibrarianBorrowerOptionResponse;
 import com.example.demo.dto.librarian.LibrarianCategoryRequest;
 import com.example.demo.dto.librarian.LibrarianCategoryResponse;
 import com.example.demo.dto.librarian.LibrarianCheckinRequest;
 import com.example.demo.dto.librarian.LibrarianCheckinResponse;
 import com.example.demo.dto.librarian.LibrarianCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianCheckoutResponse;
+import com.example.demo.dto.librarian.LibrarianCreateUserRequest;
+import com.example.demo.dto.librarian.LibrarianCreateUserResponse;
 import com.example.demo.dto.librarian.LibrarianDashboardResponse;
 import com.example.demo.dto.librarian.LibrarianDebtorResponse;
 import com.example.demo.dto.librarian.LibrarianDeleteBookResponse;
+import com.example.demo.dto.librarian.LibrarianDigitalDocumentRequest;
+import com.example.demo.dto.librarian.LibrarianDigitalDocumentResponse;
 import com.example.demo.dto.librarian.LibrarianIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentResponse;
+import com.example.demo.dto.librarian.LibrarianGuestCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianLocationRequest;
 import com.example.demo.dto.librarian.LibrarianLocationResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
+import com.example.demo.dto.librarian.LibrarianReportIncidentRequest;
+import com.example.demo.dto.librarian.LibrarianReportIncidentResponse;
 import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
+import com.example.demo.dto.librarian.LibrarianUpgradeAccountRequest;
+import com.example.demo.dto.librarian.LibrarianUpgradeAccountResponse;
 import com.example.demo.service.LibrarianService;
 
 import jakarta.validation.Valid;
@@ -54,6 +65,29 @@ public class LibrarianController {
         return ResponseEntity.ok(librarianService.listBooks());
     }
 
+    @GetMapping("/digital-documents")
+    public ResponseEntity<List<LibrarianDigitalDocumentResponse>> listDigitalDocuments() {
+        return ResponseEntity.ok(librarianService.listDigitalDocuments());
+    }
+
+    @PostMapping("/digital-documents")
+    public ResponseEntity<LibrarianDigitalDocumentResponse> createDigitalDocument(@Valid @RequestBody LibrarianDigitalDocumentRequest request) {
+        return ResponseEntity.ok(librarianService.createDigitalDocument(request));
+    }
+
+    @PutMapping("/digital-documents/{id}")
+    public ResponseEntity<LibrarianDigitalDocumentResponse> updateDigitalDocument(
+            @PathVariable Long id,
+            @Valid @RequestBody LibrarianDigitalDocumentRequest request) {
+        return ResponseEntity.ok(librarianService.updateDigitalDocument(id, request));
+    }
+
+    @DeleteMapping("/digital-documents/{id}")
+    public ResponseEntity<Void> deleteDigitalDocument(@PathVariable Long id) {
+        librarianService.deleteDigitalDocument(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/books")
     public ResponseEntity<LibrarianBookResponse> createBook(@Valid @RequestBody LibrarianBookRequest request) {
         return ResponseEntity.ok(librarianService.createBook(request));
@@ -72,6 +106,26 @@ public class LibrarianController {
     @PostMapping("/checkout")
     public ResponseEntity<LibrarianCheckoutResponse> checkout(@Valid @RequestBody LibrarianCheckoutRequest request) {
         return ResponseEntity.ok(librarianService.checkout(request));
+    }
+
+    @PostMapping("/checkout/guest")
+    public ResponseEntity<LibrarianCheckoutResponse> guestCheckout(@Valid @RequestBody LibrarianGuestCheckoutRequest request) {
+        return ResponseEntity.ok(librarianService.guestCheckout(request));
+    }
+
+    @GetMapping("/borrowers")
+    public ResponseEntity<List<LibrarianBorrowerOptionResponse>> borrowers(@RequestParam(required = false) String keyword) {
+        return ResponseEntity.ok(librarianService.borrowers(keyword));
+    }
+
+    @PostMapping("/users")
+    public ResponseEntity<LibrarianCreateUserResponse> createUser(@Valid @RequestBody LibrarianCreateUserRequest request) {
+        return ResponseEntity.ok(librarianService.createUser(request));
+    }
+
+    @PostMapping("/accounts/upgrade")
+    public ResponseEntity<LibrarianUpgradeAccountResponse> upgradeAccount(@Valid @RequestBody LibrarianUpgradeAccountRequest request) {
+        return ResponseEntity.ok(librarianService.upgradeAccount(request));
     }
 
     @PostMapping("/checkin")
@@ -170,5 +224,10 @@ public class LibrarianController {
     @PostMapping("/incidents")
     public ResponseEntity<LibrarianIncidentResponse> createIncident(@Valid @RequestBody LibrarianIncidentRequest request) {
         return ResponseEntity.ok(librarianService.createIncident(request));
+    }
+
+    @PostMapping("/records/incidents")
+    public ResponseEntity<LibrarianReportIncidentResponse> reportBorrowIncident(@Valid @RequestBody LibrarianReportIncidentRequest request) {
+        return ResponseEntity.ok(librarianService.reportBorrowIncident(request));
     }
 }

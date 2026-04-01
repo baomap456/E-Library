@@ -29,6 +29,7 @@ import com.example.demo.repository.MembershipTransactionRepository;
 import com.example.demo.repository.MembershipTypeRepository;
 import com.example.demo.repository.NotificationRepository;
 import com.example.demo.repository.UserRepository;
+import com.example.demo.service.AuditLogService;
 import com.example.demo.service.ProfileService;
 import com.example.demo.service.UserContextService;
 
@@ -48,6 +49,7 @@ public class ProfileServiceImpl implements ProfileService {
     private final MembershipTransactionRepository membershipTransactionRepository;
     private final NotificationRepository notificationRepository;
     private final ProfileMapper profileMapper;
+    private final AuditLogService auditLogService;
 
     @Scheduled(cron = "0 0 1 * * *")
     public void processMembershipLifecycleDaily() {
@@ -60,7 +62,7 @@ public class ProfileServiceImpl implements ProfileService {
         applyMembershipLifecycle(user);
 
         long borrowingCount = borrowRecordRepository.findByUserIdOrderByBorrowDateDesc(user.getId()).stream()
-                .filter(record -> record.getReturnDate() == null)
+                .filter(borrowRecord -> borrowRecord.getReturnDate() == null)
                 .count();
 
         return profileMapper.toProfileMeResponse(user, borrowingCount);
@@ -263,6 +265,12 @@ public class ProfileServiceImpl implements ProfileService {
         transaction.setAmount(amount);
         transaction.setNote(note);
         membershipTransactionRepository.save(transaction);
+        auditLogService.log(
+                actorUsername,
+                "MEMBERSHIP_" + action,
+                "USER",
+                String.valueOf(user.getId()),
+                fromPackage + " -> " + toPackage + ", amount=" + amount);
     }
 
     private void createNotification(User user, String message) {

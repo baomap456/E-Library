@@ -36,9 +36,11 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
 
     const [bookPage, setBookPage] = useState(() => readStoredNumber('librarian:bookPage', 0));
     const [bookRowsPerPage, setBookRowsPerPage] = useState(() => readStoredNumber('librarian:bookRowsPerPage', 8));
+    const [bookAvailableOnly, setBookAvailableOnly] = useState(() => readStoredString('librarian:bookAvailableOnly', 'true') === 'true');
 
     const [debtorPage, setDebtorPage] = useState(() => readStoredNumber('librarian:debtorPage', 0));
     const [debtorRowsPerPage, setDebtorRowsPerPage] = useState(() => readStoredNumber('librarian:debtorRowsPerPage', 5));
+    const [debtorOverdueOnly, setDebtorOverdueOnly] = useState(() => readStoredString('librarian:debtorOverdueOnly', 'false') === 'true');
 
     const [requestPage, setRequestPage] = useState(() => readStoredNumber('librarian:requestPage', 0));
     const [requestRowsPerPage, setRequestRowsPerPage] = useState(() => readStoredNumber('librarian:requestRowsPerPage', 5));
@@ -56,14 +58,28 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
     const [categorySearch, setCategorySearch] = useState(() => readStoredString('librarian:categorySearch', ''));
     const [locationSearch, setLocationSearch] = useState(() => readStoredString('librarian:locationSearch', ''));
 
+    const filteredBooks = useMemo(() => {
+        if (!bookAvailableOnly) {
+            return books;
+        }
+        return books.filter((book) => book.availableCopies > 0);
+    }, [books, bookAvailableOnly]);
+
     const pagedBooks = useMemo(
-        () => books.slice(bookPage * bookRowsPerPage, bookPage * bookRowsPerPage + bookRowsPerPage),
-        [books, bookPage, bookRowsPerPage],
+        () => filteredBooks.slice(bookPage * bookRowsPerPage, bookPage * bookRowsPerPage + bookRowsPerPage),
+        [filteredBooks, bookPage, bookRowsPerPage],
     );
 
+    const filteredDebtors = useMemo(() => {
+        if (!debtorOverdueOnly) {
+            return debtors;
+        }
+        return debtors.filter((debtor) => debtor.overdue);
+    }, [debtors, debtorOverdueOnly]);
+
     const pagedDebtors = useMemo(
-        () => debtors.slice(debtorPage * debtorRowsPerPage, debtorPage * debtorRowsPerPage + debtorRowsPerPage),
-        [debtors, debtorPage, debtorRowsPerPage],
+        () => filteredDebtors.slice(debtorPage * debtorRowsPerPage, debtorPage * debtorRowsPerPage + debtorRowsPerPage),
+        [filteredDebtors, debtorPage, debtorRowsPerPage],
     );
 
     const pagedRequests = useMemo(
@@ -133,12 +149,14 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
     useEffect(() => {
         sessionStorage.setItem('librarian:bookPage', String(bookPage));
         sessionStorage.setItem('librarian:bookRowsPerPage', String(bookRowsPerPage));
-    }, [bookPage, bookRowsPerPage]);
+        sessionStorage.setItem('librarian:bookAvailableOnly', String(bookAvailableOnly));
+    }, [bookPage, bookRowsPerPage, bookAvailableOnly]);
 
     useEffect(() => {
         sessionStorage.setItem('librarian:debtorPage', String(debtorPage));
         sessionStorage.setItem('librarian:debtorRowsPerPage', String(debtorRowsPerPage));
-    }, [debtorPage, debtorRowsPerPage]);
+        sessionStorage.setItem('librarian:debtorOverdueOnly', String(debtorOverdueOnly));
+    }, [debtorPage, debtorRowsPerPage, debtorOverdueOnly]);
 
     useEffect(() => {
         sessionStorage.setItem('librarian:requestPage', String(requestPage));
@@ -177,12 +195,18 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
         setBookPage,
         bookRowsPerPage,
         setBookRowsPerPage,
+        bookAvailableOnly,
+        setBookAvailableOnly,
+        filteredBooksCount: filteredBooks.length,
         pagedBooks,
 
         debtorPage,
         setDebtorPage,
         debtorRowsPerPage,
         setDebtorRowsPerPage,
+        debtorOverdueOnly,
+        setDebtorOverdueOnly,
+        filteredDebtorsCount: filteredDebtors.length,
         pagedDebtors,
 
         requestPage,

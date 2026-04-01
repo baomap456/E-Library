@@ -1,7 +1,7 @@
 import { Box, Button, Card, CardContent, Grid, Pagination, Stack, Typography } from '@mui/material';
 import type { CatalogBookItem } from '../../types/modules/catalog';
 
-type Props = {
+type Props = Readonly<{
     books: CatalogBookItem[];
     pagedBooks: CatalogBookItem[];
     booksPerPage: number;
@@ -12,7 +12,7 @@ type Props = {
     onSelectBook: (bookId: number) => void;
     onReserve: (bookId: number) => Promise<void>;
     onJoinWaitlist: (bookId: number) => Promise<void>;
-};
+}>;
 
 export default function CatalogBooksGridCard({
     books,
@@ -78,7 +78,7 @@ export default function CatalogBooksGridCard({
                                             void onJoinWaitlist(book.id);
                                         }}
                                     >
-                                        Hàng chờ
+                                        Đặt trước
                                     </Button>
                                 </Stack>
                             </Box>

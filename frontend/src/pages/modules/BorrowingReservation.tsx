@@ -28,12 +28,15 @@ export default function BorrowingReservation() {
         waitlist,
         myRequests,
         loading,
+        renewingRecordId,
         error,
+        hasOverdueRecords,
         reachedMembershipLimit,
         membershipLimitMessage,
         handleRenew,
         handleCreateBorrowRequest,
         handleJoinWaitlist,
+        handleCancelWaitlist,
         handleCancelRequest,
     } = useBorrowingReservation();
 
@@ -59,6 +62,12 @@ export default function BorrowingReservation() {
         <Box>
             <BorrowingPageHeader />
 
+            {hasOverdueRecords && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                    Bạn đang có sách quá hạn! Vui lòng hoàn trả để tránh phát sinh thêm phí.
+                </Alert>
+            )}
+
             {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
 
             <Grid container spacing={2.2}>
@@ -67,11 +76,11 @@ export default function BorrowingReservation() {
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 7 }}>
-                    <BorrowingRecordsCard records={records} onRenew={handleRenew} />
+                    <BorrowingRecordsCard records={records} renewingRecordId={renewingRecordId} onRenew={handleRenew} />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 5 }}>
-                    <BorrowingWaitlistCard waitlist={waitlist} />
+                    <BorrowingWaitlistCard waitlist={waitlist} onCancelReservation={handleCancelWaitlist} />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 7 }}>
