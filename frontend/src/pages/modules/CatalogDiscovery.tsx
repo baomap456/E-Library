@@ -5,6 +5,7 @@ import {
     CircularProgress,
     Grid,
 } from '@mui/material';
+import { getStoredUser, hasRole } from '../../api/session';
 import CatalogBookDetailCard from '../../components/catalog/CatalogBookDetailCard';
 import CatalogBooksGridCard from '../../components/catalog/CatalogBooksGridCard';
 import CatalogFiltersCard from '../../components/catalog/CatalogFiltersCard';
@@ -12,9 +13,15 @@ import CatalogPageHeader from '../../components/catalog/CatalogPageHeader';
 import CatalogQuickExploreCard from '../../components/catalog/CatalogQuickExploreCard';
 import { useCatalogDiscovery } from '../../hooks/modules/useCatalogDiscovery';
 
-export default function CatalogDiscovery() {
+type Props = {
+    showHeader?: boolean;
+};
+
+export default function CatalogDiscovery({ showHeader = true }: Props) {
     const [bookPage, setBookPage] = useState(1);
-    const booksPerPage = 6;
+    const booksPerPage = 10;
+    const currentUser = getStoredUser();
+    const isLibrarian = hasRole(currentUser, ['ROLE_LIBRARIAN']);
 
     const {
         books,
@@ -52,7 +59,7 @@ export default function CatalogDiscovery() {
 
     return (
         <Box>
-            <CatalogPageHeader />
+            {showHeader && <CatalogPageHeader />}
 
             {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -75,6 +82,10 @@ export default function CatalogDiscovery() {
                         detail={detail}
                         onReserve={handleReserve}
                         onJoinWaitlist={handleJoinWaitlist}
+                        canReserve={!isLibrarian}
+                        canJoinWaitlist={!isLibrarian}
+                        reserveDisabledMessage="Thủ thư không thể lập phiếu mượn cho chính mình"
+                        waitlistDisabledMessage="Thủ thư không được tham gia hàng chờ"
                     />
                 </Grid>
 
@@ -90,6 +101,8 @@ export default function CatalogDiscovery() {
                         onSelectBook={setSelectedBookId}
                         onReserve={handleReserve}
                         onJoinWaitlist={handleJoinWaitlist}
+                        canReserve={!isLibrarian}
+                        canJoinWaitlist={!isLibrarian}
                     />
                 </Grid>
             </Grid>

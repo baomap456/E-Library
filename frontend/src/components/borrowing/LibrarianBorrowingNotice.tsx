@@ -7,7 +7,8 @@ export default function LibrarianBorrowingNotice() {
                 Mượn trả của tôi
             </Typography>
             <Alert severity="info">
-                Thủ thư không thể mượn sách. Vui lòng sử dụng chức năng "Quản trị thư viện" để duyệt yêu cầu mượn từ độc giả.
+                Tài khoản thủ thư không được lập phiếu mượn cho chính mình. Bạn vẫn có thể tham gia hàng chờ,
+                còn việc tạo phiếu mượn cho độc giả phải thực hiện trong khu vực quản trị.
             </Alert>
         </Box>
     );

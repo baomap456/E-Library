@@ -21,6 +21,7 @@ export default function MembershipPackagesCard({ profile, packages, upgrading, o
                 <Grid container spacing={1.4}>
                     {packages.map((pkg) => {
                         const isCurrent = profile?.membership === pkg.name;
+                        const benefits = Array.isArray(pkg.benefits) ? pkg.benefits : [];
                         return (
                             <Grid key={pkg.id} size={{ xs: 12, md: 6 }}>
                                 <Paper
@@ -52,7 +53,7 @@ export default function MembershipPackagesCard({ profile, packages, upgrading, o
                                         {pkg.privilegeNote}
                                     </Typography>
                                     <List dense sx={{ pt: 0 }}>
-                                        {pkg.benefits.map((benefit) => (
+                                        {benefits.map((benefit) => (
                                             <ListItem key={benefit} sx={{ py: 0.2, px: 0 }}>
                                                 <ListItemText primary={`- ${benefit}`} />
                                             </ListItem>

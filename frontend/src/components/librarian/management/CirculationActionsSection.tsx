@@ -11,51 +11,11 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import type { LibrarianBook, LibrarianBorrowerOption } from '../../../types/modules/librarian';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-interface CirculationActionsSectionProps {
-    books: LibrarianBook[];
-    username: string;
-    borrowers: LibrarianBorrowerOption[];
-    guestBorrowMode: boolean;
-    guestName: string;
-    guestPhone: string;
-    guestLoanType: 'TAKE_HOME' | 'READ_ON_SITE';
-    guestDepositAmount: string;
-    guestCitizenId: string;
-    barcode: string;
-    onUsernameChange: (value: string) => void;
-    onGuestBorrowModeChange: (value: boolean) => void;
-    onGuestNameChange: (value: string) => void;
-    onGuestPhoneChange: (value: string) => void;
-    onGuestLoanTypeChange: (value: 'TAKE_HOME' | 'READ_ON_SITE') => void;
-    onGuestDepositAmountChange: (value: string) => void;
-    onGuestCitizenIdChange: (value: string) => void;
-    onBarcodeChange: (value: string) => void;
-    onCheckout: () => void;
-    onGuestCheckout: () => void;
-    onCheckin: () => void;
-    newUserUsername: string;
-    newUserPassword: string;
-    newUserEmail: string;
-    newUserFullName: string;
-    newUserStudentId: string;
-    onNewUserUsernameChange: (value: string) => void;
-    onNewUserPasswordChange: (value: string) => void;
-    onNewUserEmailChange: (value: string) => void;
-    onNewUserFullNameChange: (value: string) => void;
-    onNewUserStudentIdChange: (value: string) => void;
-    onCreateUserDirect: () => void;
-    upgradeUsername: string;
-    upgradeTargetPackage: string;
-    membershipPackageOptions: string[];
-    onUpgradeUsernameChange: (value: string) => void;
-    onUpgradeTargetPackageChange: (value: string) => void;
-    onUpgradeAccountDirect: () => void;
-}
-
-export default function CirculationActionsSection(props: Readonly<CirculationActionsSectionProps>) {
-    const availableBooks = props.books.filter((book) => {
+export default function CirculationActionsSection() {
+    const props = useLibrarianManagementContext();
+    const availableBooks = props.allBooks.filter((book) => {
         if (!(book.availableCopies > 0 && !!book.availableBarcode)) {
             return false;
         }

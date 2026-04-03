@@ -15,6 +15,9 @@ import { getStoredToken, getStoredUser, hasRole } from './api/session';
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
 const AuthenticationPersonal = lazy(() => import('./pages/modules/AuthenticationPersonal.tsx'));
+const HomePage = lazy(() => import('./pages/modules/HomePage.tsx'));
+const BookList = lazy(() => import('./pages/modules/BookList.tsx'));
+const BookDetail = lazy(() => import('./pages/modules/BookDetail.tsx'));
 const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx'));
 const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
 const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
@@ -53,12 +56,6 @@ function RequireLibrarian() {
   return allowed ? <Outlet /> : <Navigate to="/app/profile" replace />;
 }
 
-function LandingRedirect() {
-  const user = getStoredUser();
-  const isStaff = hasRole(user, ['ROLE_LIBRARIAN', 'ROLE_ADMIN']);
-  return <Navigate to={isStaff ? '/app/librarian' : '/app/profile'} replace />;
-}
-
 function NotFound() {
   return (
     <Box sx={{ textAlign: 'center', mt: 8 }}>
@@ -85,7 +82,7 @@ function App() {
         <CssBaseline />
         <Suspense fallback={<RouteFallback />}>
           <Routes>
-            <Route path="/" element={<LandingRedirect />} />
+            <Route path="/" element={<HomePage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
 
@@ -94,6 +91,8 @@ function App() {
                 <Route element={<UserLayout />}>
                   <Route path="/app/profile" element={<AuthenticationPersonal />} />
                   <Route path="/app/auth-personal" element={<Navigate to="/app/profile" replace />} />
+                  <Route path="/app/book-list" element={<BookList />} />
+                  <Route path="/app/book-detail/:bookId" element={<BookDetail />} />
                   <Route path="/app/catalog" element={<CatalogDiscovery />} />
                   <Route path="/app/borrowing" element={<BorrowingReservation />} />
                   <Route path="/app/digital" element={<DigitalLibrary />} />

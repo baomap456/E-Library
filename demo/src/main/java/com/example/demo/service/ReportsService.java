@@ -28,7 +28,7 @@ public interface ReportsService {
 
     List<ReportsDiscrepancyResponse> discrepancies();
 
-    List<ReportsTrendResponse> trends();
+    List<ReportsTrendResponse> trends(String period);
 
     ReportsFinancialResponse financial(String period);
 

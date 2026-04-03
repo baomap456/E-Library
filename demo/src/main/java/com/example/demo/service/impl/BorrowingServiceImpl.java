@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -29,11 +30,11 @@ import com.example.demo.dto.borrowing.WaitlistRequest;
 import com.example.demo.dto.borrowing.WaitlistResponse;
 import com.example.demo.mapper.BorrowingMapper;
 import com.example.demo.model.Book;
+import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
 import com.example.demo.model.BorrowRequestStatus;
 import com.example.demo.model.FinePayment;
-import com.example.demo.model.BookItem;
 import com.example.demo.model.Reservation;
 import com.example.demo.model.ReservationStatus;
 import com.example.demo.model.Role;
@@ -307,7 +308,11 @@ public class BorrowingServiceImpl implements BorrowingService {
             throw new IllegalArgumentException("Bản ghi này hiện không có công nợ để thanh toán");
         }
 
-        double amountToPay = request.amount() == null ? currentFine : request.amount();
+        Double requestedAmount = request.amount();
+        double amountToPay = currentFine;
+        if (requestedAmount != null) {
+            amountToPay = requestedAmount;
+        }
         if (amountToPay > currentFine) {
             throw new IllegalArgumentException("Số tiền thanh toán không được lớn hơn công nợ hiện tại");
         }
@@ -413,6 +418,10 @@ public class BorrowingServiceImpl implements BorrowingService {
 
             long overdueDays = Math.max(1,
                     ChronoUnit.DAYS.between(borrowRecord.getDueDate().toLocalDate(), now.toLocalDate()));
+                String overdueBookTitle = Optional.ofNullable(borrowRecord.getBookItem())
+                    .map(BookItem::getBook)
+                    .map(Book::getTitle)
+                    .orElse("Không rõ tên sách");
 
             User borrower = borrowRecord.getUser();
             if (overdueDays > overdueLockDaysThreshold || updatedFine >= overdueLockFineThreshold) {
@@ -425,7 +434,12 @@ public class BorrowingServiceImpl implements BorrowingService {
                     borrower,
                     "Bạn có sách quá hạn " + overdueDays + " ngày. Tổng phí phạt hiện tại: "
                             + Math.round(updatedFine)
-                            + " VND. Vui lòng trả sách và nộp phạt để tiếp tục sử dụng dịch vụ.");
+                        + " VND. Vui lòng trả sách và nộp phạt để tiếp tục sử dụng dịch vụ.",
+                    "mail/overdue-reminder",
+                    Map.of(
+                        "bookTitle", overdueBookTitle,
+                        "dueDate", borrowRecord.getDueDate(),
+                        "daysOverdue", overdueDays));
             auditLogService.log(
                     "SYSTEM",
                     "AUTO_OVERDUE_UPDATE",

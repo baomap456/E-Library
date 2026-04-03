@@ -86,5 +86,27 @@ export interface ReportsDiscardBooksResponse {
 }
 
 export interface ReportsExportResponse {
+    message: string;
+    format: string;
     downloadPath: string;
+}
+
+export interface ReportsInventorySession {
+    id: number;
+    name: string;
+    area: string;
+    createdAt: string;
+}
+
+export interface ReportsReconcileRequest {
+    sessionId: number;
+    barcode: string;
+    actualQuantity: number;
+}
+
+export interface ReportsReconcileResponse {
+    message: string;
+    sessionId: number;
+    barcode: string;
+    actualQuantity: number;
 }

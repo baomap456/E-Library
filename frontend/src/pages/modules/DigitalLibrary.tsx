@@ -13,6 +13,7 @@ import {
 } from '@mui/material';
 import { hasRole } from '../../api/session';
 import { useDigitalLibrary } from '../../hooks/modules/useDigitalLibrary';
+import HomeNavbar from '../../components/home/HomeNavbar';
 
 export default function DigitalLibrary() {
     const {
@@ -54,6 +55,7 @@ export default function DigitalLibrary() {
 
     return (
         <Box>
+            <HomeNavbar showSearch={false} />
             <Typography variant="h4" sx={{ mb: 1 }}>
                 Thư viện số
             </Typography>

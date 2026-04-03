@@ -14,10 +14,11 @@ import type { BorrowRequestResponse } from '../../types/borrowing';
 
 type Props = {
     myRequests: BorrowRequestResponse[];
-    onCancelRequest: (requestId: number) => Promise<void>;
+    onCancelRequest?: (requestId: number) => Promise<void>;
 };
 
 export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: Props) {
+    const showActions = Boolean(onCancelRequest);
     return (
         <Card>
             <CardContent>
@@ -31,7 +32,7 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                             <TableCell>Ngày lấy sách</TableCell>
                             <TableCell>Ngày trả dự kiến</TableCell>
                             <TableCell>Trạng thái</TableCell>
-                            <TableCell align="right">Hành động</TableCell>
+                            {showActions && <TableCell align="right">Hành động</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -57,17 +58,19 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                                         }
                                     />
                                 </TableCell>
-                                <TableCell align="right">
-                                    {request.status === 'PENDING' ? (
-                                        <Button
-                                            size="small"
-                                            color="error"
-                                            onClick={() => void onCancelRequest(request.id)}
-                                        >
-                                            Hủy phiếu
-                                        </Button>
-                                    ) : '-'}
-                                </TableCell>
+                                {showActions && (
+                                    <TableCell align="right">
+                                        {request.status === 'PENDING' ? (
+                                            <Button
+                                                size="small"
+                                                color="error"
+                                                onClick={() => void onCancelRequest?.(request.id)}
+                                            >
+                                                Hủy phiếu
+                                            </Button>
+                                        ) : '-'}
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                     </TableBody>

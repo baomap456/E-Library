@@ -59,8 +59,8 @@ public class ReportsController {
     }
 
     @GetMapping("/trends")
-    public ResponseEntity<List<ReportsTrendResponse>> trends() {
-        return ResponseEntity.ok(reportsService.trends());
+    public ResponseEntity<List<ReportsTrendResponse>> trends(@RequestParam(defaultValue = "month") String period) {
+        return ResponseEntity.ok(reportsService.trends(period));
     }
 
     @GetMapping("/financial")

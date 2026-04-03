@@ -1,4 +1,4 @@
-import { Button, Card, CardContent, Typography } from '@mui/material';
+import { Button, Card, CardContent, Chip, Stack, Typography } from '@mui/material';
 import type { CatalogBookDetailResponse, CatalogBookItem } from '../../types/modules/catalog';
 
 type Props = Readonly<{
@@ -6,9 +6,15 @@ type Props = Readonly<{
     detail: CatalogBookDetailResponse | null;
     onReserve: () => Promise<void>;
     onJoinWaitlist: (bookId: number) => Promise<void>;
+    canReserve: boolean;
+    reserveDisabledMessage?: string;
+    canJoinWaitlist: boolean;
+    waitlistDisabledMessage?: string;
 }>;
 
-export default function CatalogBookDetailCard({ selectedBook, detail, onReserve, onJoinWaitlist }: Props) {
+export default function CatalogBookDetailCard({ selectedBook, detail, onReserve, onJoinWaitlist, canReserve, reserveDisabledMessage, canJoinWaitlist, waitlistDisabledMessage }: Props) {
+    const remainingCopies = selectedBook?.availableItems ?? 0;
+
     return (
         <Card>
             <CardContent>
@@ -23,26 +29,35 @@ export default function CatalogBookDetailCard({ selectedBook, detail, onReserve,
                     Vị trí: {detail?.location || 'N/A'}
                 </Typography>
                 {selectedBook && (
+                    <Stack direction="row" spacing={0.75} useFlexGap sx={{ flexWrap: 'wrap', mb: 1 }}>
+                        <Chip label={`Còn lại: ${remainingCopies} cuốn`} color={remainingCopies > 0 ? 'success' : 'default'} />
+                        <Chip label={`Đang chờ: ${selectedBook.pendingRequests} yêu cầu`} variant="outlined" />
+                    </Stack>
+                )}
+                {selectedBook && (
                     <Typography variant="body2" sx={{ mb: 1, color: 'text.secondary' }}>
-                        Còn khả dụng: {selectedBook.availableItems} | Đang chờ duyệt: {selectedBook.pendingRequests}
+                        Số lượng còn lại hiển thị rõ theo từng cuốn để bạn biết ngay có thể lập phiếu mượn hay phải chờ.
                     </Typography>
                 )}
                 <Button
+                    fullWidth
                     variant="contained"
                     color="secondary"
                     onClick={() => void onReserve()}
-                    disabled={!selectedBook || selectedBook.availableItems <= 0}
+                    disabled={!selectedBook || remainingCopies <= 0 || !canReserve}
+                    sx={{ mb: 1 }}
                 >
-                    Lập phiếu mượn sách
+                    {canReserve ? 'Lập phiếu mượn sách' : reserveDisabledMessage || 'Thủ thư không thể mượn cho chính mình'}
                 </Button>
                 {selectedBook && selectedBook.availableItems <= 0 && (
                     <Button
+                        fullWidth
                         variant="outlined"
                         color="secondary"
-                        sx={{ ml: 1 }}
                         onClick={() => void onJoinWaitlist(selectedBook.id)}
+                        disabled={!canJoinWaitlist}
                     >
-                        Đặt trước
+                        {canJoinWaitlist ? 'Đặt trước' : waitlistDisabledMessage || 'Thủ thư không vào hàng đợi'}
                     </Button>
                 )}
             </CardContent>

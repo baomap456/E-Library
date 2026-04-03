@@ -12,7 +12,7 @@ import {
     submitBorrowRequest,
 } from '../../api/modules/borrowingApi';
 import { fetchCatalogBooks } from '../../api/modules/catalogApi';
-import { getStoredUser } from '../../api/session';
+import { getStoredUser, hasRole } from '../../api/session';
 import type {
     BorrowingCartItem,
     BorrowingFinesResponse,
@@ -24,6 +24,9 @@ import type { ProfileResponse } from '../../types/modules/authPersonal';
 import type { BorrowRequestResponse } from '../../types/borrowing';
 
 export function useBorrowingReservation() {
+    const currentUser = getStoredUser();
+    const isLibrarian = hasRole(currentUser, ['ROLE_LIBRARIAN']);
+
     const [cart, setCart] = useState<BorrowingCartItem[]>([]);
     const [records, setRecords] = useState<BorrowingRecord[]>([]);
     const [fines, setFines] = useState<BorrowingFinesResponse | null>(null);
@@ -114,6 +117,10 @@ export function useBorrowingReservation() {
     };
 
     const handleCreateBorrowRequest = async (bookId: number) => {
+        if (isLibrarian) {
+            setError('Tài khoản thủ thư không được lập phiếu mượn cho chính mình.');
+            return;
+        }
         if (reachedMembershipLimit) {
             setError(membershipLimitMessage);
             return;
@@ -134,6 +141,10 @@ export function useBorrowingReservation() {
     };
 
     const handleJoinWaitlist = async (bookId: number) => {
+        if (isLibrarian) {
+            setError('Tài khoản thủ thư không được tham gia hàng chờ.');
+            return;
+        }
         try {
             const response = await joinBorrowingWaitlist(bookId);
             setError('');

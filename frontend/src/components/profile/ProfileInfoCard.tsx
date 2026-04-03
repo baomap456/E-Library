@@ -1,15 +1,13 @@
-import { Box, Button, Card, CardContent, Grid, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
+import { Box, Card, CardContent, Grid, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
 import type { CardResponse, ProfileResponse } from '../../types/modules/authPersonal';
 
 type Props = {
     profile: ProfileResponse | null;
     card: CardResponse | null;
     qrData: string;
-    renewing: boolean;
-    onRenew: () => Promise<void>;
 };
 
-export default function ProfileInfoCard({ profile, card, qrData, renewing, onRenew }: Props) {
+export default function ProfileInfoCard({ profile, card, qrData }: Props) {
     return (
         <Card sx={{ height: '100%' }}>
             <CardContent>
@@ -21,18 +19,6 @@ export default function ProfileInfoCard({ profile, card, qrData, renewing, onRen
                         <List dense>
                             <ListItem>
                                 <ListItemText primary="Họ tên" secondary={profile?.fullName || 'N/A'} />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText primary="Username" secondary={profile?.username || 'N/A'} />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText primary="Hạng hội viên" secondary={profile?.membership || 'Member'} />
-                            </ListItem>
-                            <ListItem>
-                                <ListItemText
-                                    primary="Loại gói"
-                                    secondary={profile?.membershipPaid ? 'Trả phí (Paid)' : 'Miễn phí (Free)'}
-                                />
                             </ListItem>
                             <ListItem>
                                 <ListItemText
@@ -48,18 +34,6 @@ export default function ProfileInfoCard({ profile, card, qrData, renewing, onRen
                                         : 'Không áp dụng cho gói Free'}
                                 />
                             </ListItem>
-                            {profile?.membershipPaid && (
-                                <ListItem>
-                                    <Button
-                                        variant="contained"
-                                        color="primary"
-                                        disabled={renewing}
-                                        onClick={() => void onRenew()}
-                                    >
-                                        {renewing ? 'Đang gia hạn...' : 'Gia hạn thêm 1 năm'}
-                                    </Button>
-                                </ListItem>
-                            )}
                             <ListItem>
                                 <ListItemText primary="Số sách đang mượn" secondary={profile?.borrowingCount ?? 0} />
                             </ListItem>

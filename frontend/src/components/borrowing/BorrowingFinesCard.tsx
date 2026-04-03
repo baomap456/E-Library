@@ -14,9 +14,10 @@ import type { BorrowingFinesResponse } from '../../types/modules/borrowing';
 
 type Props = {
     fines: BorrowingFinesResponse | null;
+    showPayButton?: boolean;
 };
 
-export default function BorrowingFinesCard({ fines }: Props) {
+export default function BorrowingFinesCard({ fines, showPayButton = true }: Props) {
     return (
         <Card>
             <CardContent>
@@ -43,7 +44,9 @@ export default function BorrowingFinesCard({ fines }: Props) {
                 <Typography sx={{ fontWeight: 800, mb: 1 }}>
                     Tổng nợ: {(fines?.totalDebt || 0).toLocaleString('vi-VN')} VND
                 </Typography>
-                <Button variant="contained" disabled={(fines?.unpaidCount || 0) === 0}>Thanh toán online</Button>
+                {showPayButton && (
+                    <Button variant="contained" disabled={(fines?.unpaidCount || 0) === 0}>Thanh toán online</Button>
+                )}
             </CardContent>
         </Card>
     );

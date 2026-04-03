@@ -5,7 +5,7 @@ import {
     checkoutBook,
     createDigitalDocument,
     createLibrarianUser,
-        deleteDigitalDocument,
+    deleteDigitalDocument,
     createAuthor,
     createCategory,
     createIncident,
@@ -16,12 +16,16 @@ import {
     fetchLibrarianData,
     payFinePartial,
     reportBorrowIncident,
-        updateDigitalDocument,
+    updateDigitalDocument,
     upgradeAccountDirect,
     updateAuthor,
     updateCategory,
     updateLocation,
 } from '../../api/modules/librarianApi';
+import { useLibrarianAccountState } from './librarian/useLibrarianAccountState';
+import { useLibrarianCatalogFormsState } from './librarian/useLibrarianCatalogFormsState';
+import { useLibrarianCirculationState } from './librarian/useLibrarianCirculationState';
+import { useLibrarianIncidentState } from './librarian/useLibrarianIncidentState';
 import type {
     LibrarianAuthor,
     LibrarianBook,
@@ -44,39 +48,88 @@ export function useLibrarianPanel() {
     const [locations, setLocations] = useState<LibrarianLocation[]>([]);
     const [borrowers, setBorrowers] = useState<LibrarianBorrowerOption[]>([]);
     const [membershipPackages, setMembershipPackages] = useState<LibrarianMembershipPackageOption[]>([]);
-    const [barcode, setBarcode] = useState('');
-    const [username, setUsername] = useState('reader01');
-    const [guestBorrowMode, setGuestBorrowMode] = useState(false);
-    const [guestName, setGuestName] = useState('');
-    const [guestPhone, setGuestPhone] = useState('');
-    const [guestLoanType, setGuestLoanType] = useState<'TAKE_HOME' | 'READ_ON_SITE'>('TAKE_HOME');
-    const [guestDepositAmount, setGuestDepositAmount] = useState('');
-    const [guestCitizenId, setGuestCitizenId] = useState('');
-    const [newUserUsername, setNewUserUsername] = useState('');
-    const [newUserPassword, setNewUserPassword] = useState('');
-    const [newUserEmail, setNewUserEmail] = useState('');
-    const [newUserFullName, setNewUserFullName] = useState('');
-    const [newUserStudentId, setNewUserStudentId] = useState('');
-    const [upgradeUsername, setUpgradeUsername] = useState('reader01');
-    const [upgradeTargetPackage, setUpgradeTargetPackage] = useState('Premium');
-    const [incident, setIncident] = useState('');
-    const [incidentRecordId, setIncidentRecordId] = useState('');
-    const [incidentType, setIncidentType] = useState<'LOST' | 'DAMAGED'>('LOST');
-    const [damageSeverity, setDamageSeverity] = useState<'LIGHT' | 'HEAVY'>('LIGHT');
-    const [repairCost, setRepairCost] = useState('');
-    const [lostCompensationRate, setLostCompensationRate] = useState<'100' | '150'>('100');
-    const [newAuthor, setNewAuthor] = useState('');
-    const [digitalTitle, setDigitalTitle] = useState('');
-    const [digitalDescription, setDigitalDescription] = useState('');
-    const [digitalPublisher, setDigitalPublisher] = useState('');
-    const [digitalPublishYear, setDigitalPublishYear] = useState('2026');
-    const [digitalFileUrl, setDigitalFileUrl] = useState('');
-    const [digitalIsbn, setDigitalIsbn] = useState('');
-    const [debtPaymentRecordId, setDebtPaymentRecordId] = useState('');
-    const [debtPaymentAmount, setDebtPaymentAmount] = useState('');
-    const [newCategory, setNewCategory] = useState('');
-    const [newRoom, setNewRoom] = useState('');
-    const [newShelf, setNewShelf] = useState('');
+    const circulationState = useLibrarianCirculationState();
+    const accountState = useLibrarianAccountState();
+    const incidentState = useLibrarianIncidentState();
+    const catalogFormsState = useLibrarianCatalogFormsState();
+
+    const {
+        barcode,
+        setBarcode,
+        username,
+        setUsername,
+        guestBorrowMode,
+        setGuestBorrowMode,
+        guestName,
+        setGuestName,
+        guestPhone,
+        setGuestPhone,
+        guestLoanType,
+        setGuestLoanType,
+        guestDepositAmount,
+        setGuestDepositAmount,
+        guestCitizenId,
+        setGuestCitizenId,
+        debtPaymentRecordId,
+        setDebtPaymentRecordId,
+        debtPaymentAmount,
+        setDebtPaymentAmount,
+    } = circulationState;
+
+    const {
+        newUserUsername,
+        setNewUserUsername,
+        newUserPassword,
+        setNewUserPassword,
+        newUserEmail,
+        setNewUserEmail,
+        newUserFullName,
+        setNewUserFullName,
+        newUserStudentId,
+        setNewUserStudentId,
+        upgradeUsername,
+        setUpgradeUsername,
+        upgradeTargetPackage,
+        setUpgradeTargetPackage,
+    } = accountState;
+
+    const {
+        incident,
+        setIncident,
+        incidentRecordId,
+        setIncidentRecordId,
+        incidentType,
+        setIncidentType,
+        damageSeverity,
+        setDamageSeverity,
+        repairCost,
+        setRepairCost,
+        lostCompensationRate,
+        setLostCompensationRate,
+    } = incidentState;
+
+    const {
+        newAuthor,
+        setNewAuthor,
+        digitalTitle,
+        setDigitalTitle,
+        digitalDescription,
+        setDigitalDescription,
+        digitalPublisher,
+        setDigitalPublisher,
+        digitalPublishYear,
+        setDigitalPublishYear,
+        digitalFileUrl,
+        setDigitalFileUrl,
+        digitalIsbn,
+        setDigitalIsbn,
+        newCategory,
+        setNewCategory,
+        newRoom,
+        setNewRoom,
+        newShelf,
+        setNewShelf,
+    } = catalogFormsState;
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 

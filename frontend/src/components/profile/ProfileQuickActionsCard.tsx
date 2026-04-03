@@ -9,46 +9,46 @@ export default function ProfileQuickActionsCard({ onNavigate }: Props) {
         <Card>
             <CardContent>
                 <Typography variant="h6" sx={{ mb: 1.2 }}>
-                    Hôm nay bạn cần làm gì?
+                    Đi tới khu vực phù hợp
                 </Typography>
                 <Typography color="text.secondary" sx={{ mb: 1.8 }}>
-                    Chọn nhanh tác vụ phù hợp: tra cứu sách, tạo phiếu mượn, tham gia hàng chờ hoặc đọc tài liệu số.
+                    Hồ sơ chỉ hiển thị thông tin cá nhân. Mọi thao tác tra cứu và đọc danh sách sách nằm ở các trang riêng.
                 </Typography>
                 <Grid container spacing={1.4}>
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Tra cứu sách</Typography>
+                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Trang chủ chung</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>
-                                Tìm sách theo tên, tác giả, thể loại và xem tồn kho thực tế.
+                                Xem danh sách nổi bật, bộ lọc và các nút mượn/đợi sách ngay trên trang chủ.
                             </Typography>
-                            <Button variant="contained" onClick={() => onNavigate('/app/catalog')}>Đi tới Catalog</Button>
+                            <Button variant="contained" onClick={() => onNavigate('/')}>Vào trang chủ</Button>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Lập phiếu mượn</Typography>
+                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>BookList</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>
-                                Chọn sách để gửi yêu cầu mượn và theo dõi trạng thái duyệt.
+                                Trang riêng để duyệt toàn bộ danh sách sách theo kiểu BookList.
                             </Typography>
-                            <Button variant="contained" color="secondary" onClick={() => onNavigate('/app/borrowing')}>Mượn trả của tôi</Button>
+                            <Button variant="contained" color="secondary" onClick={() => onNavigate('/app/book-list')}>Mở BookList</Button>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Hàng chờ sách</Typography>
+                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Trang cá nhân</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>
-                                Khi sách hết bản khả dụng, vào hàng chờ trực tiếp trên từng sách.
+                                Xem thông tin tài khoản, thẻ thư viện và thông báo.
                             </Typography>
-                            <Button variant="outlined" onClick={() => onNavigate('/app/catalog')}>Vào hàng chờ</Button>
+                            <Button variant="outlined" onClick={() => onNavigate('/app/profile')}>Xem hồ sơ</Button>
                         </Paper>
                     </Grid>
                     <Grid size={{ xs: 12, md: 3 }}>
                         <Paper variant="outlined" sx={{ p: 2, height: '100%' }}>
-                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Thư viện số</Typography>
+                            <Typography sx={{ fontWeight: 700, mb: 0.6 }}>Đăng xuất</Typography>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.2 }}>
-                                Đọc tài liệu số, truy cập nhanh các tài liệu học thuật.
+                                Kết thúc phiên làm việc khi không dùng nữa.
                             </Typography>
-                            <Button variant="outlined" onClick={() => onNavigate('/app/digital')}>Mở thư viện số</Button>
+                            <Button variant="outlined" onClick={() => onNavigate('/login')}>Đăng xuất / đăng nhập lại</Button>
                         </Paper>
                     </Grid>
                 </Grid>

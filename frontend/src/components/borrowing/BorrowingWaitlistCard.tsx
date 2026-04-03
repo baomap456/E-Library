@@ -13,10 +13,11 @@ import type { BorrowingWaitlistItem } from '../../types/modules/borrowing';
 
 type Props = Readonly<{
     waitlist: BorrowingWaitlistItem[];
-    onCancelReservation: (reservationId: number) => Promise<void>;
+    onCancelReservation?: (reservationId: number) => Promise<void>;
 }>;
 
 export default function BorrowingWaitlistCard({ waitlist, onCancelReservation }: Props) {
+    const showActions = Boolean(onCancelReservation);
     return (
         <Card>
             <CardContent>
@@ -28,13 +29,13 @@ export default function BorrowingWaitlistCard({ waitlist, onCancelReservation }:
                             <TableCell>Trạng thái</TableCell>
                             <TableCell align="right">Vị trí chờ</TableCell>
                             <TableCell align="right">Hạn nhận</TableCell>
-                            <TableCell align="right">Thao tác</TableCell>
+                            {showActions && <TableCell align="right">Thao tác</TableCell>}
                         </TableRow>
                     </TableHead>
                     <TableBody>
                         {waitlist.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={5}>Bạn chưa tham gia hàng chờ nào.</TableCell>
+                                <TableCell colSpan={showActions ? 5 : 4}>Bạn chưa tham gia hàng chờ nào.</TableCell>
                             </TableRow>
                         )}
                         {waitlist.map((item) => (
@@ -45,15 +46,17 @@ export default function BorrowingWaitlistCard({ waitlist, onCancelReservation }:
                                 <TableCell align="right">
                                     {item.expiryDate ? new Date(item.expiryDate).toLocaleString() : '-'}
                                 </TableCell>
-                                <TableCell align="right">
-                                    <Button
-                                        size="small"
-                                        color="error"
-                                        onClick={() => void onCancelReservation(item.reservationId)}
-                                    >
-                                        Hủy đặt
-                                    </Button>
-                                </TableCell>
+                                {showActions && (
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            color="error"
+                                            onClick={() => void onCancelReservation?.(item.reservationId)}
+                                        >
+                                            Hủy đặt
+                                        </Button>
+                                    </TableCell>
+                                )}
                             </TableRow>
                         ))}
                     </TableBody>

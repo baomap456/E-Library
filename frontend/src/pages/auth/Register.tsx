@@ -14,6 +14,11 @@ import axiosClient from '../../api/axiosClient';
 import type RegisterRequest from '../../types/RegisterRequest';
 import type AuthResponse from '../../types/AuthResponse';
 
+type ApiErrorBody = {
+    message?: string;
+    fieldErrors?: Record<string, string>;
+};
+
 export default function Register() {
     const navigate = useNavigate();
     const [form, setForm] = useState({
@@ -41,6 +46,14 @@ export default function Register() {
             setError('Mật khẩu xác nhận không khớp.');
             return;
         }
+        if (form.username.trim().length < 4) {
+            setError('Username phải có ít nhất 4 ký tự.');
+            return;
+        }
+        if (form.password.length < 6) {
+            setError('Mật khẩu phải có ít nhất 6 ký tự.');
+            return;
+        }
 
         setSubmitting(true);
         const payload: RegisterRequest = {
@@ -66,7 +79,11 @@ export default function Register() {
             setTimeout(() => navigate('/app/auth-personal'), 700);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
-                setError(err.response?.data?.message || 'Không thể đăng ký. Vui lòng thử lại.');
+                const apiError = err.response?.data as ApiErrorBody | undefined;
+                const firstFieldError = apiError?.fieldErrors
+                    ? Object.values(apiError.fieldErrors)[0]
+                    : undefined;
+                setError(firstFieldError || apiError?.message || 'Không thể đăng ký. Vui lòng thử lại.');
             } else {
                 setError('Đã xảy ra lỗi không xác định.');
             }

@@ -10,6 +10,10 @@ type Props = Readonly<{
     waitlistedBookIds: Set<number>;
     reachedMembershipLimit: boolean;
     membershipLimitMessage: string;
+    canCreateBorrowRequest: boolean;
+    borrowRequestDisabledMessage?: string;
+    canJoinWaitlist: boolean;
+    waitlistDisabledMessage?: string;
     onCreateRequest: (bookId: number) => Promise<void>;
     onJoinWaitlist: (bookId: number) => Promise<void>;
 }>;
@@ -23,6 +27,10 @@ export default function BorrowingBookSelectionCard({
     waitlistedBookIds,
     reachedMembershipLimit,
     membershipLimitMessage,
+    canCreateBorrowRequest,
+    borrowRequestDisabledMessage,
+    canJoinWaitlist,
+    waitlistDisabledMessage,
     onCreateRequest,
     onJoinWaitlist,
 }: Props) {
@@ -70,23 +78,37 @@ export default function BorrowingBookSelectionCard({
                                     Đang chờ duyệt: {book.pendingRequests}
                                 </Typography>
                                 {book.availableItems > 0 ? (
-                                    <Button
-                                        variant="contained"
-                                        size="small"
-                                        disabled={reachedMembershipLimit}
-                                        onClick={() => void onCreateRequest(book.id)}
-                                    >
-                                        Lập phiếu mượn
-                                    </Button>
+                                    canCreateBorrowRequest ? (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            disabled={reachedMembershipLimit}
+                                            onClick={() => void onCreateRequest(book.id)}
+                                        >
+                                            Lập phiếu mượn
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            variant="contained"
+                                            size="small"
+                                            disabled
+                                        >
+                                            {borrowRequestDisabledMessage || 'Thủ thư không thể mượn cho chính mình'}
+                                        </Button>
+                                    )
                                 ) : (
                                     <Button
                                         variant="outlined"
                                         size="small"
                                         color="secondary"
-                                        disabled={waitlistedBookIds.has(book.id)}
+                                        disabled={waitlistedBookIds.has(book.id) || !canJoinWaitlist}
                                         onClick={() => void onJoinWaitlist(book.id)}
                                     >
-                                        {waitlistedBookIds.has(book.id) ? 'Đã đặt trước' : 'Đặt trước'}
+                                        {waitlistedBookIds.has(book.id)
+                                            ? 'Đã đặt trước'
+                                            : canJoinWaitlist
+                                                ? 'Đặt trước'
+                                                : waitlistDisabledMessage || 'Thủ thư không vào hàng đợi'}
                                     </Button>
                                 )}
                             </Box>

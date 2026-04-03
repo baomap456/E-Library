@@ -1,27 +1,9 @@
 import { Button, Stack, TextField, Typography } from '@mui/material';
-import type { LibrarianAuthor } from '../../../types/modules/librarian';
 import LibrarianTablePagination from '../LibrarianTablePagination';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-type OnPageChange = (_: unknown, page: number) => void;
-type RowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-
-interface AuthorCrudSectionProps {
-    authorSearch: string;
-    onAuthorSearchChange: (value: string) => void;
-    newAuthor: string;
-    onNewAuthorChange: (value: string) => void;
-    onCreateAuthor: () => void;
-    pagedAuthors: LibrarianAuthor[];
-    filteredAuthorsCount: number;
-    authorPage: number;
-    authorRowsPerPage: number;
-    onAuthorPageChange: OnPageChange;
-    onAuthorRowsPerPageChange: RowsPerPageChange;
-    onUpdateAuthor: (id: number, name: string) => void;
-    onDeleteAuthor: (id: number) => void;
-}
-
-export default function AuthorCrudSection(props: AuthorCrudSectionProps) {
+export default function AuthorCrudSection() {
+    const props = useLibrarianManagementContext();
     return (
         <>
             <Typography sx={{ fontWeight: 700, mb: 1 }}>Tac gia</Typography>

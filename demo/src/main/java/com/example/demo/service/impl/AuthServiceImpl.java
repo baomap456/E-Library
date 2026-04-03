@@ -2,6 +2,7 @@ package com.example.demo.service.impl;
 
 import java.util.Set;
 
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -34,10 +35,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByUsername(request.getUsername())
-                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
+                .orElseThrow(() -> new BadCredentialsException("Sai tài khoản hoặc mật khẩu"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new IllegalArgumentException("Sai tài khoản hoặc mật khẩu");
+            throw new BadCredentialsException("Sai tài khoản hoặc mật khẩu");
         }
 
         String jwtToken = jwtService.generateToken(user);

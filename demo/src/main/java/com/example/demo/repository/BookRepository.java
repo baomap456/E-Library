@@ -1,6 +1,7 @@
 package com.example.demo.repository;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -10,4 +11,6 @@ public interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByIsDigitalTrue();
 
     List<Book> findByDiscardedFalse();
+
+    Optional<Book> findByIsbn(String isbn);
 }

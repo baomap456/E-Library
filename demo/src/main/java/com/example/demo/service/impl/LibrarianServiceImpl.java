@@ -7,12 +7,12 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Service;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.example.demo.dto.librarian.LibrarianApproveRenewResponse;
@@ -40,9 +40,9 @@ import com.example.demo.dto.librarian.LibrarianIncidentResponse;
 import com.example.demo.dto.librarian.LibrarianLocationRequest;
 import com.example.demo.dto.librarian.LibrarianLocationResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
+import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianReportIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianReportIncidentResponse;
-import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountRequest;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountResponse;
 import com.example.demo.dto.profile.UpgradeMembershipRequest;
@@ -195,6 +195,9 @@ public class LibrarianServiceImpl implements LibrarianService {
     public LibrarianCheckoutResponse checkout(LibrarianCheckoutRequest request) {
         User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
+        if (hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN")) {
+            throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
+        }
         debtRestrictionService.assertBorrowingAllowed(user, "mượn sách");
         LibrarianCheckoutResponse response = createCheckoutForBorrower(
             user,
@@ -605,6 +608,9 @@ public class LibrarianServiceImpl implements LibrarianService {
             Double depositAmount,
             String citizenId,
             boolean temporaryRecord) {
+        if (hasRole(borrower, "ROLE_LIBRARIAN") || hasRole(borrower, "ROLE_ADMIN")) {
+            throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
+        }
         BookItem item = bookItemRepository.findByBarcode(barcode)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cuốn sách theo barcode"));
         if (item.getStatus() == BookStatus.RESERVED) {
@@ -863,7 +869,11 @@ public class LibrarianServiceImpl implements LibrarianService {
         notificationDispatchService.createAndDispatch(
             reservation.getUser(),
             "Sách '" + reservation.getBook().getTitle()
-                + "' đã về! Bạn có 24h (đến " + reservation.getExpiryDate() + ") để đến nhận.");
+                + "' đã về! Bạn có 24h (đến " + reservation.getExpiryDate() + ") để đến nhận.",
+            "mail/reservation-ready",
+            Map.of(
+                "bookTitle", reservation.getBook().getTitle(),
+                "expiryDate", reservation.getExpiryDate()));
     }
 
     private void notifyReservationExpired(Reservation reservation) {

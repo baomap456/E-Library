@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { fetchAuthPersonalData, renewMembership, upgradeMembership } from '../../api/modules/authPersonalApi';
+import { fetchBorrowingData, fetchMyWaitlist, getMyBorrowRequests } from '../../api/modules/borrowingApi';
+import { getStoredUser } from '../../api/session';
 import type {
     CardResponse,
     MembershipPackageResponse,
@@ -9,11 +11,16 @@ import type {
     NotificationResponse,
     ProfileResponse,
 } from '../../types/modules/authPersonal';
+import type { BorrowRequestResponse } from '../../types/borrowing';
+import type { BorrowingFinesResponse, BorrowingWaitlistItem } from '../../types/modules/borrowing';
 
 export function useAuthPersonal() {
     const [profile, setProfile] = useState<ProfileResponse | null>(null);
     const [card, setCard] = useState<CardResponse | null>(null);
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
+    const [myRequests, setMyRequests] = useState<BorrowRequestResponse[]>([]);
+    const [waitlist, setWaitlist] = useState<BorrowingWaitlistItem[]>([]);
+    const [fines, setFines] = useState<BorrowingFinesResponse | null>(null);
     const [packages, setPackages] = useState<MembershipPackageResponse[]>([]);
     const [transactions, setTransactions] = useState<MembershipTransactionResponse[]>([]);
     const [loading, setLoading] = useState(true);
@@ -40,12 +47,21 @@ export function useAuthPersonal() {
     };
 
     const loadData = async () => {
-        const data = await fetchAuthPersonalData();
+        const currentUser = getStoredUser();
+        const [data, borrowingData, userRequests, userWaitlist] = await Promise.all([
+            fetchAuthPersonalData(),
+            fetchBorrowingData(),
+            getMyBorrowRequests(currentUser?.username || ''),
+            fetchMyWaitlist(),
+        ]);
         setProfile(data.profile);
         setCard(data.card);
         setNotifications(data.notifications);
         setPackages(data.packages);
         setTransactions(data.transactions);
+        setMyRequests(userRequests);
+        setWaitlist(userWaitlist);
+        setFines(borrowingData.fines);
     };
 
     useEffect(() => {
@@ -120,6 +136,9 @@ export function useAuthPersonal() {
         profile,
         card,
         notifications,
+        myRequests,
+        waitlist,
+        fines,
         packages,
         transactions,
         loading,

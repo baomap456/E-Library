@@ -20,7 +20,7 @@ export async function fetchReportsData(period: string): Promise<{
 }> {
     const [discrepancies, trends, financial, kpis, auditLogs] = await Promise.all([
         axiosClient.get<unknown, ReportsDiscrepancy[]>('/reports/inventory/discrepancies'),
-        axiosClient.get<unknown, ReportsTrend[]>('/reports/trends'),
+        axiosClient.get<unknown, ReportsTrend[]>('/reports/trends', { params: { period } }),
         axiosClient.get<unknown, ReportsFinancial>('/reports/financial', { params: { period } }),
         axiosClient.get<unknown, ReportsKpi>('/reports/kpis', { params: { period } }),
         axiosClient.get<unknown, ReportsAuditLog[]>('/reports/audit-logs'),

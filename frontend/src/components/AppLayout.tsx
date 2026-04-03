@@ -11,7 +11,7 @@ import {
     Toolbar,
     Typography,
 } from '@mui/material';
-import { hasRole } from '../api/session';
+import { getStoredUser, hasRole } from '../api/session';
 
 const drawerWidth = 280;
 
@@ -27,8 +27,7 @@ const navItems = [
 export default function AppLayout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const userRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
-    const user = userRaw ? JSON.parse(userRaw) : null;
+    const user = getStoredUser();
     const isLibrarian = hasRole(user, ['ROLE_LIBRARIAN', 'ROLE_ADMIN']);
 
     const handleLogout = () => {

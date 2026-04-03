@@ -4,7 +4,7 @@ import {
     CircularProgress,
     Grid,
 } from '@mui/material';
-import { hasRole } from '../../api/session';
+import { getStoredUser, hasRole } from '../../api/session';
 import BorrowingBookSelectionCard from '../../components/borrowing/BorrowingBookSelectionCard';
 import BorrowingCartCard from '../../components/borrowing/BorrowingCartCard';
 import BorrowingFinesCard from '../../components/borrowing/BorrowingFinesCard';
@@ -42,13 +42,8 @@ export default function BorrowingReservation() {
 
     const waitlistedBookIds = new Set(waitlist.map((item) => item.bookId));
 
-    const userRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
-    const user = userRaw ? JSON.parse(userRaw) : null;
+    const user = getStoredUser();
     const isLibrarian = hasRole(user, ['ROLE_LIBRARIAN']);
-
-    if (isLibrarian) {
-        return <LibrarianBorrowingNotice />;
-    }
 
     if (loading) {
         return (
@@ -61,6 +56,8 @@ export default function BorrowingReservation() {
     return (
         <Box>
             <BorrowingPageHeader />
+
+            {isLibrarian && <LibrarianBorrowingNotice />}
 
             {hasOverdueRecords && (
                 <Alert severity="error" sx={{ mb: 2 }}>
@@ -97,6 +94,10 @@ export default function BorrowingReservation() {
                         waitlistedBookIds={waitlistedBookIds}
                         reachedMembershipLimit={reachedMembershipLimit}
                         membershipLimitMessage={membershipLimitMessage}
+                        canCreateBorrowRequest={!isLibrarian}
+                        borrowRequestDisabledMessage="Thủ thư không thể lập phiếu mượn cho chính mình"
+                        canJoinWaitlist={!isLibrarian}
+                        waitlistDisabledMessage="Thủ thư không được tham gia hàng chờ"
                         onCreateRequest={handleCreateBorrowRequest}
                         onJoinWaitlist={handleJoinWaitlist}
                     />

@@ -12,34 +12,10 @@ import {
     Typography,
 } from '@mui/material';
 import type { LibrarianDigitalDocument } from '../../../types/modules/librarian';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-interface DigitalCrudSectionProps {
-    documents: LibrarianDigitalDocument[];
-    title: string;
-    description: string;
-    publisher: string;
-    publishYear: string;
-    fileUrl: string;
-    isbn: string;
-    onTitleChange: (value: string) => void;
-    onDescriptionChange: (value: string) => void;
-    onPublisherChange: (value: string) => void;
-    onPublishYearChange: (value: string) => void;
-    onFileUrlChange: (value: string) => void;
-    onIsbnChange: (value: string) => void;
-    onCreate: () => void;
-    onUpdate: (id: number, payload: {
-        title: string;
-        description: string;
-        publishYear: number;
-        publisher: string;
-        fileUrl: string;
-        isbn: string;
-    }) => void;
-    onDelete: (id: number) => void;
-}
-
-export default function DigitalCrudSection(props: Readonly<DigitalCrudSectionProps>) {
+export default function DigitalCrudSection() {
+    const props = useLibrarianManagementContext();
     const handleEditDocument = (doc: LibrarianDigitalDocument) => {
         const title = globalThis.prompt('Tên tài liệu', doc.title);
         if (title === null) {
@@ -70,7 +46,7 @@ export default function DigitalCrudSection(props: Readonly<DigitalCrudSectionPro
             return;
         }
 
-        props.onUpdate(doc.id, {
+        props.onUpdateDigitalDocument(doc.id, {
             title: title.trim(),
             description: description.trim(),
             publishYear,
@@ -85,13 +61,13 @@ export default function DigitalCrudSection(props: Readonly<DigitalCrudSectionPro
             <CardContent>
                 <Typography variant="h6" sx={{ mb: 1.2 }}>CRUD tài liệu số</Typography>
                 <Stack spacing={1} sx={{ mb: 2 }}>
-                    <TextField label="Tên tài liệu" value={props.title} onChange={(e) => props.onTitleChange(e.target.value)} />
-                    <TextField label="Mô tả" value={props.description} onChange={(e) => props.onDescriptionChange(e.target.value)} />
-                    <TextField label="NXB" value={props.publisher} onChange={(e) => props.onPublisherChange(e.target.value)} />
-                    <TextField label="Năm" value={props.publishYear} onChange={(e) => props.onPublishYearChange(e.target.value)} />
-                    <TextField label="ISBN" value={props.isbn} onChange={(e) => props.onIsbnChange(e.target.value)} />
-                    <TextField label="File URL" value={props.fileUrl} onChange={(e) => props.onFileUrlChange(e.target.value)} />
-                    <Button variant="contained" onClick={props.onCreate}>Thêm tài liệu số</Button>
+                    <TextField label="Tên tài liệu" value={props.digitalTitle} onChange={(e) => props.onDigitalTitleChange(e.target.value)} />
+                    <TextField label="Mô tả" value={props.digitalDescription} onChange={(e) => props.onDigitalDescriptionChange(e.target.value)} />
+                    <TextField label="NXB" value={props.digitalPublisher} onChange={(e) => props.onDigitalPublisherChange(e.target.value)} />
+                    <TextField label="Năm" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
+                    <TextField label="ISBN" value={props.digitalIsbn} onChange={(e) => props.onDigitalIsbnChange(e.target.value)} />
+                    <TextField label="File URL" value={props.digitalFileUrl} onChange={(e) => props.onDigitalFileUrlChange(e.target.value)} />
+                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Thêm tài liệu số</Button>
                 </Stack>
 
                 <Table size="small">
@@ -104,7 +80,7 @@ export default function DigitalCrudSection(props: Readonly<DigitalCrudSectionPro
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {props.documents.map((doc) => (
+                        {props.digitalDocuments.map((doc) => (
                             <TableRow key={doc.id}>
                                 <TableCell>{doc.title}</TableCell>
                                 <TableCell>{doc.publishYear}</TableCell>
@@ -116,7 +92,7 @@ export default function DigitalCrudSection(props: Readonly<DigitalCrudSectionPro
                                     >
                                         Sửa
                                     </Button>
-                                    <Button size="small" color="error" onClick={() => props.onDelete(doc.id)}>Xóa</Button>
+                                    <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Xóa</Button>
                                 </TableCell>
                             </TableRow>
                         ))}

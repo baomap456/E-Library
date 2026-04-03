@@ -7,25 +7,10 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-interface IncidentReportSectionProps {
-    incident: string;
-    incidentRecordId: string;
-    incidentType: 'LOST' | 'DAMAGED';
-    damageSeverity: 'LIGHT' | 'HEAVY';
-    repairCost: string;
-    lostCompensationRate: '100' | '150';
-    onIncidentChange: (value: string) => void;
-    onIncidentRecordIdChange: (value: string) => void;
-    onIncidentTypeChange: (value: 'LOST' | 'DAMAGED') => void;
-    onDamageSeverityChange: (value: 'LIGHT' | 'HEAVY') => void;
-    onRepairCostChange: (value: string) => void;
-    onLostCompensationRateChange: (value: '100' | '150') => void;
-    onCreateIncident: () => void;
-    onReportBorrowIncident: () => void;
-}
-
-export default function IncidentReportSection(props: Readonly<IncidentReportSectionProps>) {
+export default function IncidentReportSection() {
+    const props = useLibrarianManagementContext();
     return (
         <Card>
             <CardContent>

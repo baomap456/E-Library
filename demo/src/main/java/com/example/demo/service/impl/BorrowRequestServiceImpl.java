@@ -2,7 +2,9 @@ package com.example.demo.service.impl;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -16,11 +18,13 @@ import com.example.demo.model.BookItem;
 import com.example.demo.model.BorrowRecord;
 import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.ReservationStatus;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BorrowRecordRepository;
 import com.example.demo.repository.BorrowRequestRepository;
+import com.example.demo.repository.ReservationRepository;
 import com.example.demo.service.BorrowRequestService;
 import com.example.demo.service.DebtRestrictionService;
 import com.example.demo.service.NotificationDispatchService;
@@ -35,6 +39,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
     private final BorrowRequestRepository borrowRequestRepository;
     private final BorrowRecordRepository borrowRecordRepository;
     private final BookItemRepository bookItemRepository;
+    private final ReservationRepository reservationRepository;
     private final NotificationDispatchService notificationDispatchService;
     private final UserContextService userContextService;
     private final BorrowingMapper borrowingMapper;
@@ -57,7 +62,12 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
                     request.getUser(),
                     "Phiếu mượn #" + request.getId()
                         + " đã bị hủy do quá hạn ngày lấy sách ("
-                        + request.getRequestedPickupDate() + ").");
+                        + request.getRequestedPickupDate() + ").",
+                    "mail/pickup-request-expired",
+                    Map.of(
+                        "requestId", request.getId(),
+                        "pickupDate", request.getRequestedPickupDate(),
+                        "approvalDate", request.getApprovalDate()));
         }
     }
 
@@ -121,6 +131,12 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
 
         long physicalAvailable = bookItemRepository.countByBookIdAndStatus(request.bookId(), com.example.demo.model.BookStatus.AVAILABLE);
         long pendingRequests = borrowRequestRepository.countByStatusAndBookItemBookId(BorrowRequestStatus.PENDING, request.bookId());
+        long waitingUsers = reservationRepository.countByBookIdAndStatusIn(
+                request.bookId(),
+                EnumSet.of(ReservationStatus.PENDING, ReservationStatus.NOTIFIED));
+        if (waitingUsers > 0) {
+            throw new IllegalArgumentException("Sách này đang có người chờ. Bạn cần tham gia hàng chờ thay vì lập phiếu mượn trực tiếp");
+        }
         if (physicalAvailable <= pendingRequests) {
             throw new IllegalArgumentException("Sách đã hết số lượng khả dụng. Vui lòng tham gia hàng chờ");
         }
@@ -261,4 +277,5 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
                 .map(Role::getName)
                 .anyMatch(name -> name.equals("ROLE_LIBRARIAN") || name.equals("ROLE_ADMIN"));
     }
+
 }

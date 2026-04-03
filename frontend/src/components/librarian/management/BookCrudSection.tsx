@@ -1,28 +1,15 @@
 import { Card, CardContent, FormControlLabel, Switch, Table, TableBody, TableCell, TableHead, TableRow, Typography } from '@mui/material';
-import type { LibrarianBook } from '../../../types/modules/librarian';
 import LibrarianTablePagination from '../LibrarianTablePagination';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-type OnPageChange = (_: unknown, page: number) => void;
-type RowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-
-interface BookCrudSectionProps {
-    books: LibrarianBook[];
-    totalCount: number;
-    availableOnly: boolean;
-    onAvailableOnlyChange: (checked: boolean) => void;
-    page: number;
-    rowsPerPage: number;
-    onPageChange: OnPageChange;
-    onRowsPerPageChange: RowsPerPageChange;
-}
-
-export default function BookCrudSection(props: Readonly<BookCrudSectionProps>) {
+export default function BookCrudSection() {
+    const props = useLibrarianManagementContext();
     return (
         <Card>
             <CardContent>
                 <Typography variant="h6" sx={{ mb: 1.2 }}>Quan ly dau sach (CRUD)</Typography>
                 <FormControlLabel
-                    control={<Switch checked={props.availableOnly} onChange={(event) => props.onAvailableOnlyChange(event.target.checked)} />}
+                    control={<Switch checked={props.bookAvailableOnly} onChange={(event) => props.onBookAvailableOnlyChange(event.target.checked)} />}
                     label="Chỉ hiện sách còn bản khả dụng"
                     sx={{ mb: 1 }}
                 />
@@ -37,7 +24,7 @@ export default function BookCrudSection(props: Readonly<BookCrudSectionProps>) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {props.books.map((book) => (
+                        {props.pagedBooks.map((book) => (
                             <TableRow key={book.id}>
                                 <TableCell>{book.id}</TableCell>
                                 <TableCell>{book.title}</TableCell>
@@ -49,11 +36,11 @@ export default function BookCrudSection(props: Readonly<BookCrudSectionProps>) {
                     </TableBody>
                 </Table>
                 <LibrarianTablePagination
-                    count={props.totalCount}
-                    page={props.page}
-                    rowsPerPage={props.rowsPerPage}
-                    onPageChange={props.onPageChange}
-                    onRowsPerPageChange={props.onRowsPerPageChange}
+                    count={props.booksCount}
+                    page={props.bookPage}
+                    rowsPerPage={props.bookRowsPerPage}
+                    onPageChange={props.onBookPageChange}
+                    onRowsPerPageChange={props.onBookRowsPerPageChange}
                     rowsPerPageOptions={[5, 8, 10]}
                 />
             </CardContent>

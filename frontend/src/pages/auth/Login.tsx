@@ -58,7 +58,7 @@ const Login: React.FC = () => {
                 localStorage.removeItem('user');
             }
 
-            navigate('/app/auth-personal');
+            navigate('/', { replace: true });
 
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {

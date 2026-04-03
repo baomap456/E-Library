@@ -6,6 +6,7 @@ import {
     fetchCatalogHome,
 } from '../../api/modules/catalogApi';
 import { joinBorrowingWaitlist, submitBorrowRequest } from '../../api/modules/borrowingApi';
+import { getStoredUser, hasRole } from '../../api/session';
 import type {
     CatalogBookDetailResponse,
     CatalogBookItem,
@@ -14,6 +15,9 @@ import type {
 } from '../../types/modules/catalog';
 
 export function useCatalogDiscovery() {
+    const currentUser = getStoredUser();
+    const isLibrarian = hasRole(currentUser, ['ROLE_LIBRARIAN']);
+
     const [books, setBooks] = useState<CatalogBookItem[]>([]);
     const [home, setHome] = useState<CatalogHomeResponse | null>(null);
     const [detail, setDetail] = useState<CatalogBookDetailResponse | null>(null);
@@ -89,6 +93,10 @@ export function useCatalogDiscovery() {
         if (!targetBookId) {
             return;
         }
+        if (isLibrarian) {
+            setError('Tài khoản thủ thư không được lập phiếu mượn cho chính mình.');
+            return;
+        }
         try {
             await submitBorrowRequest(targetBookId);
             await loadBooks();
@@ -100,6 +108,10 @@ export function useCatalogDiscovery() {
     };
 
     const handleJoinWaitlist = async (bookId: number) => {
+        if (isLibrarian) {
+            setError('Tài khoản thủ thư không được tham gia hàng chờ.');
+            return;
+        }
         try {
             const response = await joinBorrowingWaitlist(bookId);
             await loadBooks();

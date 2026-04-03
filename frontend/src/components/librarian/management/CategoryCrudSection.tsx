@@ -1,27 +1,9 @@
 import { Button, Stack, TextField, Typography } from '@mui/material';
-import type { LibrarianCategory } from '../../../types/modules/librarian';
 import LibrarianTablePagination from '../LibrarianTablePagination';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-type OnPageChange = (_: unknown, page: number) => void;
-type RowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-
-interface CategoryCrudSectionProps {
-    categorySearch: string;
-    onCategorySearchChange: (value: string) => void;
-    newCategory: string;
-    onNewCategoryChange: (value: string) => void;
-    onCreateCategory: () => void;
-    pagedCategories: LibrarianCategory[];
-    filteredCategoriesCount: number;
-    categoryPage: number;
-    categoryRowsPerPage: number;
-    onCategoryPageChange: OnPageChange;
-    onCategoryRowsPerPageChange: RowsPerPageChange;
-    onUpdateCategory: (id: number, name: string) => void;
-    onDeleteCategory: (id: number) => void;
-}
-
-export default function CategoryCrudSection(props: CategoryCrudSectionProps) {
+export default function CategoryCrudSection() {
+    const props = useLibrarianManagementContext();
     return (
         <>
             <Typography sx={{ fontWeight: 700, mb: 1 }}>The loai</Typography>

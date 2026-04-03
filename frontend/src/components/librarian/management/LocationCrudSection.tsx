@@ -1,29 +1,9 @@
 import { Button, Stack, TextField, Typography } from '@mui/material';
-import type { LibrarianLocation } from '../../../types/modules/librarian';
 import LibrarianTablePagination from '../LibrarianTablePagination';
+import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-type OnPageChange = (_: unknown, page: number) => void;
-type RowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
-
-interface LocationCrudSectionProps {
-    locationSearch: string;
-    onLocationSearchChange: (value: string) => void;
-    newRoom: string;
-    onNewRoomChange: (value: string) => void;
-    newShelf: string;
-    onNewShelfChange: (value: string) => void;
-    onCreateLocation: () => void;
-    pagedLocations: LibrarianLocation[];
-    filteredLocationsCount: number;
-    locationPage: number;
-    locationRowsPerPage: number;
-    onLocationPageChange: OnPageChange;
-    onLocationRowsPerPageChange: RowsPerPageChange;
-    onUpdateLocation: (id: number, roomName: string, shelfNumber: string) => void;
-    onDeleteLocation: (id: number) => void;
-}
-
-export default function LocationCrudSection(props: LocationCrudSectionProps) {
+export default function LocationCrudSection() {
+    const props = useLibrarianManagementContext();
     return (
         <>
             <Typography sx={{ fontWeight: 700, mb: 1 }}>Vi tri ke</Typography>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>E-Library Pickup Request Expired</title>
+</head>
+
+<body style="margin:0;padding:0;background:#fef2f2;font-family:Arial,Helvetica,sans-serif;color:#1f2937;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fef2f2;padding:32px 0;">
+        <tr>
+            <td align="center">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                    style="max-width:680px;background:#ffffff;border-radius:20px;overflow:hidden;box-shadow:0 18px 40px rgba(153,27,27,0.14);border:1px solid #fecaca;">
+                    <tr>
+                        <td
+                            style="background:linear-gradient(135deg,#991b1b 0%,#dc2626 60%,#f87171 100%);padding:32px 36px;color:#ffffff;">
+                            <div style="font-size:13px;letter-spacing:0.12em;text-transform:uppercase;opacity:0.85;">
+                                E-Library</div>
+                            <div style="font-size:30px;line-height:1.2;font-weight:700;margin-top:10px;">Phiếu lấy sách
+                                đã bị hủy</div>
+                            <div style="font-size:15px;line-height:1.6;margin-top:10px;opacity:0.92;">Phiếu của bạn đã
+                                quá hạn lấy sách và hệ thống tự động đóng lại</div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:36px;">
+                            <p style="font-size:16px;line-height:1.7;margin:0 0 16px 0;">
+                                Xin chào <strong th:text="${recipientName}">bạn</strong>,
+                            </p>
+
+                            <div
+                                style="background:#fff1f2;border:1px solid #fda4af;border-radius:16px;padding:20px 22px;margin:0 0 24px 0;">
+                                <div
+                                    style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#be123c;margin-bottom:10px;">
+                                    Thông tin phiếu mượn</div>
+                                <div style="font-size:16px;line-height:1.8;color:#111827;">
+                                    <div style="margin-bottom:8px;">
+                                        <span style="color:#6b7280;">Mã phiếu:</span>
+                                        <strong th:text="${requestId}">#123</strong>
+                                    </div>
+                                    <div style="margin-bottom:8px;">
+                                        <span style="color:#6b7280;">Ngày lấy dự kiến:</span>
+                                        <strong th:text="${pickupDate}">2026-04-02</strong>
+                                    </div>
+                                    <div>
+                                        <span style="color:#6b7280;">Ngày hệ thống đóng phiếu:</span>
+                                        <strong th:text="${approvalDate}">2026-04-02 01:15</strong>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div
+                                style="background:#f8fafc;border:1px solid #e2e8f0;border-radius:16px;padding:20px 22px;margin:0 0 24px 0;">
+                                <div
+                                    style="font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#2563eb;margin-bottom:10px;">
+                                    Nội dung thông báo</div>
+                                <div th:text="${message}"
+                                    style="font-size:16px;line-height:1.8;white-space:pre-line;color:#111827;">
+                                    Phiếu mượn đã bị hủy do quá hạn ngày lấy sách.
+                                </div>
+                            </div>
+
+                            <table role="presentation" cellspacing="0" cellpadding="0" style="margin:0 0 24px 0;">
+                                <tr>
+                                    <td style="background:#dc2626;border-radius:12px;">
+                                        <a th:href="@{${frontendBaseUrl}/app/borrowing}"
+                                            style="display:inline-block;padding:13px 22px;color:#ffffff;text-decoration:none;font-weight:700;">
+                                            Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="font-size:13px;line-height:1.7;color:#64748b;margin:0;">
+                                Email này được gửi tự động bởi hệ thống E-Library trong năm <span
+                                    th:text="${currentYear}">2026</span>.
+                                Nếu bạn muốn gửi yêu cầu mới, vui lòng tạo phiếu lại trong hệ thống.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

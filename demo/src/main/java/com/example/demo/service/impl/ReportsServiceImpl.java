@@ -35,9 +35,9 @@ import com.example.demo.dto.reports.ReportsKpiResponse;
 import com.example.demo.dto.reports.ReportsMonthlyUserGrowthResponse;
 import com.example.demo.dto.reports.ReportsPhysicalAuditRequest;
 import com.example.demo.dto.reports.ReportsPhysicalAuditResponse;
-import com.example.demo.dto.reports.ReportsTopBookItemResponse;
 import com.example.demo.dto.reports.ReportsReconcileRequest;
 import com.example.demo.dto.reports.ReportsReconcileResponse;
+import com.example.demo.dto.reports.ReportsTopBookItemResponse;
 import com.example.demo.dto.reports.ReportsTrendResponse;
 import com.example.demo.mapper.ReportsMapper;
 import com.example.demo.model.Book;
@@ -131,8 +131,18 @@ public class ReportsServiceImpl implements ReportsService {
     }
 
     @Override
-    public List<ReportsTrendResponse> trends() {
+    public List<ReportsTrendResponse> trends(String period) {
+        String safePeriod = normalizePeriod(period);
         LocalDateTime now = LocalDateTime.now().truncatedTo(ChronoUnit.DAYS);
+        
+        return switch (safePeriod) {
+            case PERIOD_YEAR -> generateYearlyTrends(now);
+            case PERIOD_QUARTER -> generateQuarterlyTrends(now);
+            default -> generateDailyTrends(now);
+        };
+    }
+
+    private List<ReportsTrendResponse> generateDailyTrends(LocalDateTime now) {
         return List.of(
                 new ReportsTrendResponse(now.minusDays(6),
                         borrowRecordRepository.countByBorrowDateBetween(now.minusDays(6), now.minusDays(5))),
@@ -146,6 +156,30 @@ public class ReportsServiceImpl implements ReportsService {
                         borrowRecordRepository.countByBorrowDateBetween(now.minusDays(2), now.minusDays(1))),
                 new ReportsTrendResponse(now.minusDays(1),
                         borrowRecordRepository.countByBorrowDateBetween(now.minusDays(1), now)));
+    }
+
+    private List<ReportsTrendResponse> generateQuarterlyTrends(LocalDateTime now) {
+        LocalDateTime quarterStart = now.minusMonths(3).withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS);
+        return java.util.stream.Stream.iterate(quarterStart, date -> date.plusMonths(1))
+                .limit(3)
+                .map(monthStart -> {
+                    LocalDateTime monthEnd = monthStart.plusMonths(1);
+                    long count = borrowRecordRepository.countByBorrowDateBetween(monthStart, monthEnd);
+                    return new ReportsTrendResponse(monthStart, count);
+                })
+                .toList();
+    }
+
+    private List<ReportsTrendResponse> generateYearlyTrends(LocalDateTime now) {
+        LocalDateTime yearStart = now.minusYears(1).withDayOfYear(1).truncatedTo(ChronoUnit.DAYS);
+        return java.util.stream.Stream.iterate(yearStart, date -> date.plusMonths(1))
+                .limit(12)
+                .map(monthStart -> {
+                    LocalDateTime monthEnd = monthStart.plusMonths(1);
+                    long count = borrowRecordRepository.countByBorrowDateBetween(monthStart, monthEnd);
+                    return new ReportsTrendResponse(monthStart, count);
+                })
+                .toList();
     }
 
     @Override

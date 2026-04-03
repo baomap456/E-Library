@@ -11,6 +11,7 @@ import {
     Toolbar,
     Typography,
 } from '@mui/material';
+import { getStoredUser } from '../api/session';
 
 const drawerWidth = 280;
 
@@ -22,8 +23,7 @@ const navItems = [
 export default function StaffLayout() {
     const location = useLocation();
     const navigate = useNavigate();
-    const userRaw = localStorage.getItem('user') || sessionStorage.getItem('user');
-    const user = userRaw ? JSON.parse(userRaw) : null;
+    const user = getStoredUser();
 
     const handleLogout = () => {
         localStorage.removeItem('token');
