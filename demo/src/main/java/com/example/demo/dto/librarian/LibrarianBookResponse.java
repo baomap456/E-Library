@@ -6,6 +6,7 @@ public record LibrarianBookResponse(
         String description,
         Integer publishYear,
         String publisher,
+        Double price,
         String coverImageUrl,
         Boolean digital,
         Boolean canTakeHome,

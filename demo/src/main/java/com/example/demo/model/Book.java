@@ -34,6 +34,7 @@ public class Book {
 
     private String publisher;
     private int publishYear;
+    private Double price;
     private String coverImageUrl;
     private boolean isDigital = false;
     private Boolean canTakeHome = true;
