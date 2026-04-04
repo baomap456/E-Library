@@ -205,11 +205,66 @@ INSERT IGNORE INTO book_items (id, barcode, status, book_id, location_id) VALUES
 -- Book 30 - 5 items
 (146, 'BK030-001', 'AVAILABLE', 30, 26), (147, 'BK030-002', 'AVAILABLE', 30, 27), (148, 'BK030-003', 'DAMAGED', 30, 28), (149, 'BK030-004', 'BORROWING', 30, 29), (150, 'BK030-005', 'AVAILABLE', 30, 30);
 
+-- Insert Roles for authentication/authorization
+INSERT IGNORE INTO roles (name) VALUES
+('ROLE_ADMIN'),
+('ROLE_LIBRARIAN'),
+('ROLE_MEMBER'),
+('ROLE_GUEST');
+
+-- Insert 4 user accounts (one account per role)
+-- Passwords:
+-- admin01 / Admin@123
+-- librarian02 / Librarian@123
+-- member02 / Member@123
+-- guest01 / Guest@123
+INSERT IGNORE INTO users (
+	username,
+	password,
+	email,
+	full_name,
+	student_id,
+	active,
+	outstanding_debt,
+	borrowing_locked,
+	created_at
+) VALUES
+('admin01', '$2y$10$n9gcb3vHf/IqGe5.2oOW5O75TumOuYRcgW0rsw8RRwrCXbsuilV76', 'admin01@elib.local', 'System Admin', NULL, TRUE, 0, FALSE, NOW()),
+('librarian02', '$2y$10$v83I3Qxfl8ev4p54aoOq9Ofu36ccI4Jn15V4xnUvh7FKuEoBQY11O', 'librarian02@elib.local', 'Librarian Two', NULL, TRUE, 0, FALSE, NOW()),
+('member02', '$2y$10$SyZMDSHNiMN5jOBM2xyTqeZ6gzBPUGKuzB.0VmV97XKhfcpKbBJpa', 'member02@elib.local', 'Member Two', 'SV30002', TRUE, 0, FALSE, NOW()),
+('guest01', '$2y$10$bdZdkx7/s6VjMLWuhXCgJ.enLnUCfuaZYelPxO/35mUaaSIhnAs9C', 'guest01@elib.local', 'Guest One', NULL, TRUE, 0, FALSE, NOW());
+
+-- Map each account to a different role
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name = 'ROLE_ADMIN'
+WHERE u.username = 'admin01';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name = 'ROLE_LIBRARIAN'
+WHERE u.username = 'librarian02';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name = 'ROLE_MEMBER'
+WHERE u.username = 'member02';
+
+INSERT IGNORE INTO user_roles (user_id, role_id)
+SELECT u.id, r.id
+FROM users u
+JOIN roles r ON r.name = 'ROLE_GUEST'
+WHERE u.username = 'guest01';
+
 -- =====================================================
 -- Data Load Summary:
 -- 30 Categories, 30 Authors, 30 Locations
 -- 30 Books with ISBN and descriptions
 -- 30 Book-Author relationships
 -- 150 Book Items (5 items per book) with various statuses
+-- 4 User Accounts with 4 different roles
 -- This script is safe to run multiple times (INSERT IGNORE with explicit IDs)
 -- =====================================================
