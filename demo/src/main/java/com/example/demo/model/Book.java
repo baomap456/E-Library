@@ -12,10 +12,12 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 
 @Entity
 @Data
+@Table(name = "books")
 public class Book {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,6 +36,8 @@ public class Book {
     private int publishYear;
     private String coverImageUrl;
     private boolean isDigital = false;
+    private Boolean canTakeHome = true;
+    private boolean discarded = false;
 
     @ManyToOne
     @JoinColumn(name = "category_id")

@@ -1,121 +1,118 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
-import './App.css'
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Navigate, Outlet, Route, Routes } from 'react-router-dom';
+import {
+  CssBaseline,
+  ThemeProvider,
+  createTheme,
+  Box,
+  Typography,
+  CircularProgress,
+} from '@mui/material';
+import UserLayout from './components/UserLayout';
+import StaffLayout from './components/StaffLayout';
+import { getStoredToken, getStoredUser, hasRole } from './api/session';
 
-function App() {
-  const [count, setCount] = useState(0)
+const Login = lazy(() => import('./pages/auth/Login'));
+const Register = lazy(() => import('./pages/auth/Register'));
+const AuthenticationPersonal = lazy(() => import('./pages/modules/AuthenticationPersonal.tsx'));
+const HomePage = lazy(() => import('./pages/modules/HomePage.tsx'));
+const BookList = lazy(() => import('./pages/modules/BookList.tsx'));
+const BookDetail = lazy(() => import('./pages/modules/BookDetail.tsx'));
+const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx'));
+const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
+const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
+const LibrarianPanel = lazy(() => import('./pages/modules/LibrarianPanel.tsx'));
+const InventoryReports = lazy(() => import('./pages/modules/InventoryReports.tsx'));
 
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+const theme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: { main: '#10439f' },
+    secondary: { main: '#f27b22' },
+    background: { default: '#f5f7fb' },
+  },
+  shape: { borderRadius: 14 },
+  typography: {
+    fontFamily: '"Segoe UI", "Helvetica Neue", Helvetica, Arial, sans-serif',
+    h4: { fontWeight: 800 },
+    h5: { fontWeight: 700 },
+  },
+});
 
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+function RequireAuth() {
+  const token = getStoredToken();
+  return token ? <Outlet /> : <Navigate to="/login" replace />;
 }
 
-export default App
+function RequireMember() {
+  const user = getStoredUser();
+  const isStaff = hasRole(user, ['ROLE_LIBRARIAN', 'ROLE_ADMIN']);
+  return isStaff ? <Navigate to="/app/librarian" replace /> : <Outlet />;
+}
+
+function RequireLibrarian() {
+  const user = getStoredUser();
+  const allowed = hasRole(user, ['ROLE_LIBRARIAN', 'ROLE_ADMIN']);
+  return allowed ? <Outlet /> : <Navigate to="/app/profile" replace />;
+}
+
+function NotFound() {
+  return (
+    <Box sx={{ textAlign: 'center', mt: 8 }}>
+      <Typography variant="h4" gutterBottom>
+        404
+      </Typography>
+      <Typography>Trang bạn tìm kiếm không tồn tại.</Typography>
+    </Box>
+  );
+}
+
+function RouteFallback() {
+  return (
+    <Box sx={{ display: 'grid', placeItems: 'center', minHeight: '50vh' }}>
+      <CircularProgress />
+    </Box>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider theme={theme}>
+      <BrowserRouter>
+        <CssBaseline />
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            <Route element={<RequireAuth />}>
+              <Route element={<RequireMember />}>
+                <Route element={<UserLayout />}>
+                  <Route path="/app/profile" element={<AuthenticationPersonal />} />
+                  <Route path="/app/auth-personal" element={<Navigate to="/app/profile" replace />} />
+                  <Route path="/app/book-list" element={<BookList />} />
+                  <Route path="/app/book-detail/:bookId" element={<BookDetail />} />
+                  <Route path="/app/catalog" element={<CatalogDiscovery />} />
+                  <Route path="/app/borrowing" element={<BorrowingReservation />} />
+                  <Route path="/app/digital" element={<DigitalLibrary />} />
+                </Route>
+              </Route>
+
+              <Route element={<RequireLibrarian />}>
+                <Route element={<StaffLayout />}>
+                  <Route path="/app/librarian" element={<LibrarianPanel />} />
+                  <Route path="/app/reports" element={<InventoryReports />} />
+                </Route>
+              </Route>
+            </Route>
+
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
+      </BrowserRouter>
+    </ThemeProvider>
+  );
+}
+
+export default App;

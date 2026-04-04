@@ -1,5 +1,5 @@
 package com.example.demo.model;
 
 public enum BookStatus {
-    AVAILABLE, BORROWING, LOST, DAMAGED
+    AVAILABLE, RESERVED, BORROWING, OVERDUE, LOST, DAMAGED, DISCARDED
 }
