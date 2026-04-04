@@ -207,10 +207,10 @@ INSERT IGNORE INTO book_items (id, barcode, status, book_id, location_id) VALUES
 
 -- Insert Roles for authentication/authorization
 INSERT IGNORE INTO roles (name) VALUES
-('ROLE_ADMIN'),
-('ROLE_LIBRARIAN'),
-('ROLE_MEMBER'),
-('ROLE_GUEST');
+('ADMIN'),
+('LIBRARIAN'),
+('MEMBER'),
+('GUEST');
 
 -- Insert 4 user accounts (one account per role)
 -- Passwords:
