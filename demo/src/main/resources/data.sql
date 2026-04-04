@@ -225,7 +225,7 @@ INSERT IGNORE INTO users (
 	full_name,
 	student_id,
 	active,
-	outstanding_debt,
+	outstanding_debt,	
 	borrowing_locked,
 	created_at
 ) VALUES
