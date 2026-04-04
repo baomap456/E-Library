@@ -19,35 +19,35 @@ services:
       retries: 10
       start_period: 30s
 
-  backend:
-    build:
-      context: ./demo
-      dockerfile: Dockerfile
-    container_name: elibrary-backend
-    restart: unless-stopped
-    depends_on:
-      db:
-        condition: service_healthy
-    environment:
-      SERVER_PORT: 8081
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/elibrary?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: root123
-      SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_FLYWAY_ENABLED: "false"
-      SPRING_MAIL_HOST: sandbox.smtp.mailtrap.io
-      SPRING_MAIL_PORT: 2525
-      SPRING_MAIL_USERNAME: 3e9bfd65a58c4e
-      SPRING_MAIL_PASSWORD: 9aece6b8862381
-      SPRING_MAIL_SMTP_AUTH: "true"
-      SPRING_MAIL_SMTP_STARTTLS_ENABLE: "true"
-      SPRING_MAIL_SMTP_STARTTLS_REQUIRED: "true"
-      APP_NOTIFICATION_EMAIL_ENABLED: "true"
-      APP_NOTIFICATION_FRONTEND_BASE_URL: http://localhost:5173
-      APP_JWT_SECRET_KEY: TXlTdXBlclNlY3JldEtleUZvckpXVFNpZ25pbmdGb3JFbGlicmFyeTIwMjY=
-      APP_JWT_EXPIRATION_MS: 86400000
-    ports:
-      - "8080:8080"
+  # backend:
+  #   build:
+  #     context: ./demo
+  #     dockerfile: Dockerfile
+  #   container_name: elibrary-backend
+  #   restart: unless-stopped
+  #   depends_on:
+  #     db:
+  #       condition: service_healthy
+  #   environment:
+  #     SERVER_PORT: 8081
+  #     SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/elibrary?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+  #     SPRING_DATASOURCE_USERNAME: root
+  #     SPRING_DATASOURCE_PASSWORD: root123
+  #     SPRING_JPA_HIBERNATE_DDL_AUTO: update
+  #     SPRING_FLYWAY_ENABLED: "false"
+  #     SPRING_MAIL_HOST: sandbox.smtp.mailtrap.io
+  #     SPRING_MAIL_PORT: 2525
+  #     SPRING_MAIL_USERNAME: 3e9bfd65a58c4e
+  #     SPRING_MAIL_PASSWORD: 9aece6b8862381
+  #     SPRING_MAIL_SMTP_AUTH: "true"
+  #     SPRING_MAIL_SMTP_STARTTLS_ENABLE: "true"
+  #     SPRING_MAIL_SMTP_STARTTLS_REQUIRED: "true"
+  #     APP_NOTIFICATION_EMAIL_ENABLED: "true"
+  #     APP_NOTIFICATION_FRONTEND_BASE_URL: http://localhost:5173
+  #     APP_JWT_SECRET_KEY: TXlTdXBlclNlY3JldEtleUZvckpXVFNpZ25pbmdGb3JFbGlicmFyeTIwMjY=
+  #     APP_JWT_EXPIRATION_MS: 86400000
+  #   ports:
+  #     - "8080:8080"
 
 volumes:
   mysql_data:

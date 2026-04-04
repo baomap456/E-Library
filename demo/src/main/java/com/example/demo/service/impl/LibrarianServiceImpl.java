@@ -563,6 +563,7 @@ public class LibrarianServiceImpl implements LibrarianService {
         book.setDescription(request.description());
         book.setPublishYear(request.publishYear());
         book.setPublisher(request.publisher());
+        book.setPrice(request.price());
         book.setCoverImageUrl(request.coverImageUrl());
         book.setDigital(Boolean.TRUE.equals(request.digital()));
         if (!Boolean.TRUE.equals(request.digital())) {

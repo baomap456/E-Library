@@ -23,6 +23,7 @@ public class LibrarianMapper {
                 book.getDescription(),
                 book.getPublishYear(),
                 book.getPublisher(),
+            book.getPrice(),
                 book.getCoverImageUrl(),
                 book.isDigital(),
                 book.getCanTakeHome(),

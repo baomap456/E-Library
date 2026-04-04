@@ -2,6 +2,7 @@ package com.example.demo.dto.librarian;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
 public record LibrarianBookRequest(
@@ -14,6 +15,8 @@ public record LibrarianBookRequest(
         Integer publishYear,
         @Size(max = 255, message = "publisher tối đa 255 ký tự")
         String publisher,
+        @PositiveOrZero(message = "price phải lớn hơn hoặc bằng 0")
+        Double price,
         @Size(max = 1000, message = "coverImageUrl tối đa 1000 ký tự")
         String coverImageUrl,
         Boolean digital) {

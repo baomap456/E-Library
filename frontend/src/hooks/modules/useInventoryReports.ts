@@ -41,12 +41,17 @@ export function useInventoryReports() {
     const [successMessage, setSuccessMessage] = useState('');
 
     const loadData = async (nextPeriod: string) => {
-        const data = await fetchReportsData(nextPeriod);
-        setDiscrepancies(data.discrepancies);
-        setTrends(data.trends);
-        setFinancial(data.financial);
-        setKpis(data.kpis);
-        setAuditLogs(data.auditLogs);
+        try {
+            const data = await fetchReportsData(nextPeriod);
+            setDiscrepancies(data.discrepancies || []);
+            setTrends(data.trends || []);
+            setFinancial(data.financial || null);
+            setKpis(data.kpis || null);
+            setAuditLogs(data.auditLogs || []);
+        } catch (err) {
+            console.error('Error in loadData:', err);
+            throw err;
+        }
     };
 
     useEffect(() => {
@@ -55,8 +60,10 @@ export function useInventoryReports() {
             setError('');
             try {
                 await loadData(period);
-            } catch {
+            } catch (err) {
+                console.error('Error loading reports data:', err);
                 setError('Không tải được dữ liệu báo cáo.');
+                setKpis(null);
             } finally {
                 setLoading(false);
             }

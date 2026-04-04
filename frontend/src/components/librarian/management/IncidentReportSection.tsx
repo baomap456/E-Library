@@ -1,4 +1,5 @@
 import {
+    Autocomplete,
     Button,
     Card,
     CardContent,
@@ -16,10 +17,19 @@ export default function IncidentReportSection() {
             <CardContent>
                 <Typography variant="h6" sx={{ mb: 1.2 }}>Lập biên bản sự cố</Typography>
                 <Stack spacing={1.2}>
-                    <TextField
-                        label="Mã phiếu mượn"
-                        value={props.incidentRecordId}
-                        onChange={(e) => props.onIncidentRecordIdChange(e.target.value)}
+                    <Autocomplete
+                        options={props.incidentRecordOptions}
+                        value={props.incidentRecordOptions.find((item) => String(item.recordId) === props.incidentRecordId) || null}
+                        onChange={(_, option) => props.onIncidentRecordIdChange(option ? String(option.recordId) : '')}
+                        getOptionLabel={(option) => option.label}
+                        noOptionsText="Chưa có dữ liệu"
+                        renderInput={(params) => (
+                            <TextField
+                                {...params}
+                                label="Tìm mã phiếu mượn"
+                                placeholder="Nhập mã phiếu hoặc tên người mượn"
+                            />
+                        )}
                     />
                     <TextField
                         select
@@ -31,15 +41,28 @@ export default function IncidentReportSection() {
                         <MenuItem value="DAMAGED">Hư hại sách</MenuItem>
                     </TextField>
                     {props.incidentType === 'LOST' && (
-                        <TextField
-                            select
-                            label="Tỷ lệ bồi thường"
-                            value={props.lostCompensationRate}
-                            onChange={(e) => props.onLostCompensationRateChange(e.target.value as '100' | '150')}
-                        >
-                            <MenuItem value="100">100%</MenuItem>
-                            <MenuItem value="150">150%</MenuItem>
-                        </TextField>
+                        <>
+                            <TextField
+                                select
+                                label="Tỷ lệ bồi thường"
+                                value={props.lostCompensationRate}
+                                onChange={(e) => props.onLostCompensationRateChange(e.target.value as '100' | '150')}
+                            >
+                                <MenuItem value="100">100%</MenuItem>
+                                <MenuItem value="150">150%</MenuItem>
+                            </TextField>
+                            {props.compensationAmount > 0 && (
+                                <TextField
+                                    label="Tiền bồi thường (VND)"
+                                    type="number"
+                                    value={props.compensationAmount.toFixed(0)}
+                                    InputProps={{
+                                        readOnly: true,
+                                    }}
+                                    disabled
+                                />
+                            )}
+                        </>
                     )}
                     {props.incidentType === 'DAMAGED' && (
                         <>

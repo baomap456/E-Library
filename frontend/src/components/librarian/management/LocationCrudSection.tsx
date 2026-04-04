@@ -28,27 +28,31 @@ export default function LocationCrudSection() {
                     value={props.newShelf}
                     onChange={(e) => props.onNewShelfChange(e.target.value)}
                 />
-                <Button variant="contained" onClick={props.onCreateLocation}>Them</Button>
+                <Button variant="contained" onClick={props.onCreateLocation}>Add</Button>
             </Stack>
-            {props.pagedLocations.map((location) => (
-                <Stack key={location.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
-                    <Typography sx={{ flex: 1 }}>{location.roomName} - {location.shelfNumber}</Typography>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                            const room = window.prompt('Sua phong', location.roomName);
-                            const shelf = window.prompt('Sua ke', location.shelfNumber);
-                            if (room && room.trim() && shelf && shelf.trim()) {
-                                props.onUpdateLocation(location.id, room.trim(), shelf.trim());
-                            }
-                        }}
-                    >
-                        Sua
-                    </Button>
-                    <Button size="small" color="error" onClick={() => props.onDeleteLocation(location.id)}>Xoa</Button>
-                </Stack>
-            ))}
+            {props.pagedLocations.length === 0 ? (
+                <Typography color="text.secondary" sx={{ mb: 1 }}>Chưa có dữ liệu</Typography>
+            ) : (
+                props.pagedLocations.map((location) => (
+                    <Stack key={location.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
+                        <Typography sx={{ flex: 1 }}>{location.roomName} - {location.shelfNumber}</Typography>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                                const room = window.prompt('Sua phong', location.roomName);
+                                const shelf = window.prompt('Sua ke', location.shelfNumber);
+                                if (room && room.trim() && shelf && shelf.trim()) {
+                                    props.onUpdateLocation(location.id, room.trim(), shelf.trim());
+                                }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                        <Button size="small" color="error" onClick={() => props.onDeleteLocation(location.id)}>Delete</Button>
+                    </Stack>
+                ))
+            )}
             <LibrarianTablePagination
                 count={props.filteredLocationsCount}
                 page={props.locationPage}

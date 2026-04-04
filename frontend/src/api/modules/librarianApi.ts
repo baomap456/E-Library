@@ -2,6 +2,7 @@ import axiosClient from '../axiosClient';
 import type {
     LibrarianAuthor,
     LibrarianBook,
+    LibrarianBookPayload,
     LibrarianBorrowerOption,
     LibrarianCategory,
     LibrarianCreateUserPayload,
@@ -84,6 +85,18 @@ export function checkoutGuestBook(
         citizenId,
         barcode,
     });
+}
+
+export function createBook(payload: LibrarianBookPayload) {
+    return axiosClient.post('/librarian/books', payload);
+}
+
+export function updateBook(id: number, payload: LibrarianBookPayload) {
+    return axiosClient.put(`/librarian/books/${id}`, payload);
+}
+
+export function deleteBook(id: number) {
+    return axiosClient.delete(`/librarian/books/${id}`);
 }
 
 export function createLibrarianUser(payload: LibrarianCreateUserPayload) {

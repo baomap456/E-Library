@@ -3,8 +3,10 @@ import {
     checkinBook,
     checkoutGuestBook,
     checkoutBook,
+    createBook,
     createDigitalDocument,
     createLibrarianUser,
+    deleteBook,
     deleteDigitalDocument,
     createAuthor,
     createCategory,
@@ -16,6 +18,7 @@ import {
     fetchLibrarianData,
     payFinePartial,
     reportBorrowIncident,
+    updateBook,
     updateDigitalDocument,
     upgradeAccountDirect,
     updateAuthor,
@@ -311,6 +314,16 @@ export function useLibrarianPanel() {
             }
         }
 
+        // Calculate compensation amount for LOST books
+        let compensationAmountValue: number | undefined;
+        if (incidentType === 'LOST') {
+            const selectedDebtor = debtors.find((d) => String(d.recordId) === incidentRecordId);
+            const selectedBook = selectedDebtor ? books.find((b) => b.title === selectedDebtor.bookTitle) : null;
+            if (selectedBook && lostCompensationRate) {
+                compensationAmountValue = ((selectedBook.price || 0) * Number.parseInt(lostCompensationRate, 10)) / 100;
+            }
+        }
+
         try {
             const result = await reportBorrowIncident({
                 recordId,
@@ -318,6 +331,7 @@ export function useLibrarianPanel() {
                 damageSeverity: incidentType === 'DAMAGED' ? damageSeverity : undefined,
                 repairCost: incidentType === 'DAMAGED' ? Number.parseFloat(repairCost) : undefined,
                 lostCompensationRate: incidentType === 'LOST' ? Number.parseInt(lostCompensationRate, 10) as 100 | 150 : undefined,
+                compensationAmount: compensationAmountValue,
                 note: incident.trim() || undefined,
             });
             setError('');
@@ -337,6 +351,37 @@ export function useLibrarianPanel() {
         }
         await createAuthor(newAuthor.trim());
         setNewAuthor('');
+        await loadData();
+    };
+
+    const handleCreateBook = async (payload: {
+        title: string;
+        description: string;
+        publishYear: number;
+        publisher: string;
+        price: number;
+        coverImageUrl: string;
+        digital: boolean;
+    }) => {
+        await createBook(payload);
+        await loadData();
+    };
+
+    const handleUpdateBook = async (id: number, payload: {
+        title: string;
+        description: string;
+        publishYear: number;
+        publisher: string;
+        price: number;
+        coverImageUrl: string;
+        digital: boolean;
+    }) => {
+        await updateBook(id, payload);
+        await loadData();
+    };
+
+    const handleDeleteBook = async (id: number) => {
+        await deleteBook(id);
         await loadData();
     };
 
@@ -526,6 +571,9 @@ export function useLibrarianPanel() {
         handleUpgradeAccountDirect,
         handleIncident,
         handleReportBorrowIncident,
+        handleCreateBook,
+        handleUpdateBook,
+        handleDeleteBook,
         handleCreateAuthor,
         handleCreateDigitalDocument,
         handleUpdateDigitalDocument,

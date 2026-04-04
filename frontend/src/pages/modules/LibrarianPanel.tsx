@@ -2,9 +2,9 @@ import {
     Alert,
     Box,
     CircularProgress,
-    Tab,
-    Tabs,
 } from '@mui/material';
+import type { ComponentProps } from 'react';
+import { Outlet } from 'react-router-dom';
 import BorrowRequestReviewDialog from '../../components/librarian/BorrowRequestReviewDialog';
 import LibrarianBorrowRequestsTab from '../../components/librarian/LibrarianBorrowRequestsTab';
 import LibrarianManagementTab from '../../components/librarian/LibrarianManagementTab';
@@ -12,9 +12,10 @@ import LibrarianPageHeader from '../../components/librarian/LibrarianPageHeader'
 import { useLibrarianPanel } from '../../hooks/modules/useLibrarianPanel';
 import { useBorrowRequestReview } from '../../hooks/modules/useBorrowRequestReview';
 import { useLibrarianPanelUiState } from '../../hooks/modules/useLibrarianPanelUiState';
+import { useInventoryReports } from '../../hooks/modules/useInventoryReports';
+import type { ReportsKpi } from '../../types/modules/reports';
 
 export default function LibrarianPanel() {
-
     const {
         dashboard,
         books,
@@ -101,8 +102,11 @@ export default function LibrarianPanel() {
         handleIncident,
         handleReportBorrowIncident,
         handleCreateAuthor,
+        handleCreateBook,
         handleCreateDigitalDocument,
+        handleDeleteBook,
         handleUpdateDigitalDocument,
+        handleUpdateBook,
         handleDeleteDigitalDocument,
         handlePartialDebtPayment,
         handleUpdateAuthor,
@@ -126,9 +130,9 @@ export default function LibrarianPanel() {
         handleReject,
     } = useBorrowRequestReview();
 
+    const { kpis } = useInventoryReports();
+
     const {
-        tabValue,
-        setTabValue,
         selectedRequest,
         setSelectedRequest,
         reviewNote,
@@ -190,14 +194,6 @@ export default function LibrarianPanel() {
         filterStatus,
     });
 
-    if (loading && tabValue !== 1) {
-        return (
-            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
-                <CircularProgress />
-            </Box>
-        );
-    }
-
     const handleReviewSubmit = async () => {
         if (selectedRequest) {
             if (reviewAction === 'approve') {
@@ -210,7 +206,13 @@ export default function LibrarianPanel() {
         }
     };
 
-    const pendingLabel = pendingCount > 0 ? `Duyệt yêu cầu (${pendingCount})` : 'Duyệt yêu cầu';
+    if (loading) {
+        return (
+            <Box sx={{ display: 'grid', placeItems: 'center', minHeight: 260 }}>
+                <CircularProgress />
+            </Box>
+        );
+    }
     const membershipPackageOptions = membershipPackages.map((item) => item.name);
 
     const handleOpenApprove = (id: number) => {
@@ -268,13 +270,33 @@ export default function LibrarianPanel() {
         onUpgradeAccountDirect: () => { void handleUpgradeAccountDirect(); },
     };
 
+    // Calculate compensation amount based on selected record and ratio
+    const selectedIncidentRecord = debtors.find((d) => String(d.recordId) === incidentRecordId);
+    const selectedBook = selectedIncidentRecord ? books.find((b) => b.title === selectedIncidentRecord.bookTitle) : null;
+    const compensationAmount = selectedBook && lostCompensationRate 
+        ? ((selectedBook.price || 0) * Number.parseInt(lostCompensationRate, 10)) / 100
+        : 0;
+
     const incidentManagementProps = {
         incident,
         incidentRecordId,
+        incidentRecordOptions: Array.from(
+            new Map(
+                debtors.map((item) => [
+                    item.recordId,
+                    {
+                        recordId: item.recordId,
+                        label: `#${item.recordId} - ${item.username} - ${item.bookTitle}`,
+                        bookPrice: books.find((b) => b.title === item.bookTitle)?.price || 0,
+                    },
+                ]),
+            ).values(),
+        ),
         incidentType,
         damageSeverity,
         repairCost,
         lostCompensationRate,
+        compensationAmount: incidentType === 'LOST' ? compensationAmount : 0,
         onIncidentChange: setIncident,
         onIncidentRecordIdChange: setIncidentRecordId,
         onIncidentTypeChange: setIncidentType,
@@ -347,6 +369,7 @@ export default function LibrarianPanel() {
 
     const managementTabProps = {
         dashboard,
+        kpis,
         allBooks: books,
         pagedBooks,
         booksCount: filteredBooksCount,
@@ -356,6 +379,25 @@ export default function LibrarianPanel() {
         bookRowsPerPage,
         onBookPageChange,
         onBookRowsPerPageChange,
+        onCreateBook: (payload: {
+            title: string;
+            description: string;
+            publishYear: number;
+            publisher: string;
+            price: number;
+            coverImageUrl: string;
+            digital: boolean;
+        }) => { void handleCreateBook(payload); },
+        onUpdateBook: (id: number, payload: {
+            title: string;
+            description: string;
+            publishYear: number;
+            publisher: string;
+            price: number;
+            coverImageUrl: string;
+            digital: boolean;
+        }) => { void handleUpdateBook(id, payload); },
+        onDeleteBook: (id: number) => { void handleDeleteBook(id); },
         pagedDebtors,
         debtorsCount: filteredDebtorsCount,
         debtorOverdueOnly,
@@ -390,22 +432,18 @@ export default function LibrarianPanel() {
         onOpenReject: handleOpenReject,
     };
 
+    const outletContext: LibrarianPanelOutletContext = {
+        managementTabProps,
+        borrowRequestsTabProps,
+    };
+
     return (
         <Box>
             <LibrarianPageHeader />
 
             {(error || requestsError) && <Alert severity="warning" sx={{ mb: 2 }}>{error || requestsError}</Alert>}
 
-            <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={tabValue} onChange={(_, val) => setTabValue(val)}>
-                    <Tab label="Quản lý mượn trả" />
-                    <Tab label={pendingLabel} />
-                </Tabs>
-            </Box>
-
-            {tabValue === 0 && <LibrarianManagementTab {...managementTabProps} />}
-
-            {tabValue === 1 && <LibrarianBorrowRequestsTab {...borrowRequestsTabProps} />}
+            <Outlet context={outletContext} />
 
             <BorrowRequestReviewDialog
                 open={selectedRequest !== null}
@@ -417,4 +455,9 @@ export default function LibrarianPanel() {
             />
         </Box>
     );
+}
+
+export interface LibrarianPanelOutletContext {
+    managementTabProps: Omit<ComponentProps<typeof LibrarianManagementTab>, 'view'> & { kpis: ReportsKpi | null };
+    borrowRequestsTabProps: ComponentProps<typeof LibrarianBorrowRequestsTab>;
 }
