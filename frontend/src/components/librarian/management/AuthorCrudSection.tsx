@@ -23,26 +23,30 @@ export default function AuthorCrudSection() {
                     value={props.newAuthor}
                     onChange={(e) => props.onNewAuthorChange(e.target.value)}
                 />
-                <Button variant="contained" onClick={props.onCreateAuthor}>Them</Button>
+                <Button variant="contained" onClick={props.onCreateAuthor}>Add</Button>
             </Stack>
-            {props.pagedAuthors.map((author) => (
-                <Stack key={author.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
-                    <Typography sx={{ flex: 1 }}>{author.name}</Typography>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                            const next = window.prompt('Sua ten tac gia', author.name);
-                            if (next && next.trim()) {
-                                props.onUpdateAuthor(author.id, next.trim());
-                            }
-                        }}
-                    >
-                        Sua
-                    </Button>
-                    <Button size="small" color="error" onClick={() => props.onDeleteAuthor(author.id)}>Xoa</Button>
-                </Stack>
-            ))}
+            {props.pagedAuthors.length === 0 ? (
+                <Typography color="text.secondary" sx={{ mb: 1 }}>Chưa có dữ liệu</Typography>
+            ) : (
+                props.pagedAuthors.map((author) => (
+                    <Stack key={author.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
+                        <Typography sx={{ flex: 1 }}>{author.name}</Typography>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                                const next = window.prompt('Sua ten tac gia', author.name);
+                                if (next && next.trim()) {
+                                    props.onUpdateAuthor(author.id, next.trim());
+                                }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                        <Button size="small" color="error" onClick={() => props.onDeleteAuthor(author.id)}>Delete</Button>
+                    </Stack>
+                ))
+            )}
             <LibrarianTablePagination
                 count={props.filteredAuthorsCount}
                 page={props.authorPage}

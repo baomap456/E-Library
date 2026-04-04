@@ -23,26 +23,30 @@ export default function CategoryCrudSection() {
                     value={props.newCategory}
                     onChange={(e) => props.onNewCategoryChange(e.target.value)}
                 />
-                <Button variant="contained" onClick={props.onCreateCategory}>Them</Button>
+                <Button variant="contained" onClick={props.onCreateCategory}>Add</Button>
             </Stack>
-            {props.pagedCategories.map((category) => (
-                <Stack key={category.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
-                    <Typography sx={{ flex: 1 }}>{category.name}</Typography>
-                    <Button
-                        size="small"
-                        variant="outlined"
-                        onClick={() => {
-                            const next = window.prompt('Sua ten the loai', category.name);
-                            if (next && next.trim()) {
-                                props.onUpdateCategory(category.id, next.trim());
-                            }
-                        }}
-                    >
-                        Sua
-                    </Button>
-                    <Button size="small" color="error" onClick={() => props.onDeleteCategory(category.id)}>Xoa</Button>
-                </Stack>
-            ))}
+            {props.pagedCategories.length === 0 ? (
+                <Typography color="text.secondary" sx={{ mb: 1 }}>Chưa có dữ liệu</Typography>
+            ) : (
+                props.pagedCategories.map((category) => (
+                    <Stack key={category.id} direction="row" spacing={1} sx={{ mb: 0.7 }}>
+                        <Typography sx={{ flex: 1 }}>{category.name}</Typography>
+                        <Button
+                            size="small"
+                            variant="outlined"
+                            onClick={() => {
+                                const next = window.prompt('Sua ten the loai', category.name);
+                                if (next && next.trim()) {
+                                    props.onUpdateCategory(category.id, next.trim());
+                                }
+                            }}
+                        >
+                            Edit
+                        </Button>
+                        <Button size="small" color="error" onClick={() => props.onDeleteCategory(category.id)}>Delete</Button>
+                    </Stack>
+                ))
+            )}
             <LibrarianTablePagination
                 count={props.filteredCategoriesCount}
                 page={props.categoryPage}

@@ -7,11 +7,25 @@ export interface LibrarianDashboard {
 export interface LibrarianBook {
     id: number;
     title: string;
+    description?: string;
     publishYear: number;
     publisher: string;
+    price?: number;
+    coverImageUrl?: string;
+    digital?: boolean;
     canTakeHome?: boolean;
     availableCopies: number;
     availableBarcode: string | null;
+}
+
+export interface LibrarianBookPayload {
+    title: string;
+    description: string;
+    publishYear: number;
+    publisher: string;
+    price: number;
+    coverImageUrl: string;
+    digital: boolean;
 }
 
 export interface LibrarianDebtor {
@@ -84,6 +98,7 @@ export interface LibrarianReportIncidentPayload {
     damageSeverity?: 'LIGHT' | 'HEAVY';
     repairCost?: number;
     lostCompensationRate?: 100 | 150;
+    compensationAmount?: number;
     note?: string;
 }
 

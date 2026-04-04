@@ -67,7 +67,7 @@ export default function DigitalCrudSection() {
                     <TextField label="Năm" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
                     <TextField label="ISBN" value={props.digitalIsbn} onChange={(e) => props.onDigitalIsbnChange(e.target.value)} />
                     <TextField label="File URL" value={props.digitalFileUrl} onChange={(e) => props.onDigitalFileUrlChange(e.target.value)} />
-                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Thêm tài liệu số</Button>
+                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Add</Button>
                 </Stack>
 
                 <Table size="small">
@@ -80,22 +80,28 @@ export default function DigitalCrudSection() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {props.digitalDocuments.map((doc) => (
-                            <TableRow key={doc.id}>
-                                <TableCell>{doc.title}</TableCell>
-                                <TableCell>{doc.publishYear}</TableCell>
-                                <TableCell>{doc.fileUrl}</TableCell>
-                                <TableCell align="right">
-                                    <Button
-                                        size="small"
-                                        onClick={() => handleEditDocument(doc)}
-                                    >
-                                        Sửa
-                                    </Button>
-                                    <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Xóa</Button>
-                                </TableCell>
+                        {props.digitalDocuments.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={4} align="center">Chưa có dữ liệu</TableCell>
                             </TableRow>
-                        ))}
+                        ) : (
+                            props.digitalDocuments.map((doc) => (
+                                <TableRow key={doc.id}>
+                                    <TableCell>{doc.title}</TableCell>
+                                    <TableCell>{doc.publishYear}</TableCell>
+                                    <TableCell>{doc.fileUrl}</TableCell>
+                                    <TableCell align="right">
+                                        <Button
+                                            size="small"
+                                            onClick={() => handleEditDocument(doc)}
+                                        >
+                                            Edit
+                                        </Button>
+                                        <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Delete</Button>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>

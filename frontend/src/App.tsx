@@ -22,7 +22,15 @@ const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx
 const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
 const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
 const LibrarianPanel = lazy(() => import('./pages/modules/LibrarianPanel.tsx'));
-const InventoryReports = lazy(() => import('./pages/modules/InventoryReports.tsx'));
+const LibrarianDashboardPage = lazy(() => import('./pages/modules/librarian/LibrarianDashboardPage.tsx'));
+const LibrarianCirculationPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationPage.tsx'));
+const LibrarianCatalogPage = lazy(() => import('./pages/modules/librarian/LibrarianCatalogPage.tsx'));
+const LibrarianDebtorsPage = lazy(() => import('./pages/modules/librarian/LibrarianDebtorsPage.tsx'));
+const LibrarianIncidentsPage = lazy(() => import('./pages/modules/librarian/LibrarianIncidentsPage.tsx'));
+const LibrarianDigitalPage = lazy(() => import('./pages/modules/librarian/LibrarianDigitalPage.tsx'));
+const LibrarianAccountsPage = lazy(() => import('./pages/modules/librarian/LibrarianAccountsPage.tsx'));
+const LibrarianRequestsPage = lazy(() => import('./pages/modules/librarian/LibrarianRequestsPage.tsx'));
+const LibrarianInventoryPage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryPage.tsx'));
 
 const theme = createTheme({
   palette: {
@@ -101,8 +109,19 @@ function App() {
 
               <Route element={<RequireLibrarian />}>
                 <Route element={<StaffLayout />}>
-                  <Route path="/app/librarian" element={<LibrarianPanel />} />
-                  <Route path="/app/reports" element={<InventoryReports />} />
+                  <Route path="/app/librarian" element={<LibrarianPanel />}>
+                    <Route index element={<Navigate to="dashboard" replace />} />
+                    <Route path="dashboard" element={<LibrarianDashboardPage />} />
+                    <Route path="circulation" element={<LibrarianCirculationPage />} />
+                    <Route path="catalog" element={<LibrarianCatalogPage />} />
+                    <Route path="debtors" element={<LibrarianDebtorsPage />} />
+                    <Route path="incidents" element={<LibrarianIncidentsPage />} />
+                    <Route path="digital" element={<LibrarianDigitalPage />} />
+                    <Route path="accounts" element={<LibrarianAccountsPage />} />
+                    <Route path="requests" element={<LibrarianRequestsPage />} />
+                    <Route path="inventory" element={<LibrarianInventoryPage />} />
+                  </Route>
+                  <Route path="/app/reports" element={<Navigate to="/app/librarian/dashboard" replace />} />
                 </Route>
               </Route>
             </Route>

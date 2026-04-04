@@ -1,9 +1,12 @@
 import {
     Alert,
     Box,
+    Button,
     CircularProgress,
     Grid,
+    Stack,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 import BorrowingFinesCard from '../../components/borrowing/BorrowingFinesCard';
 import BorrowingRequestsCard from '../../components/borrowing/BorrowingRequestsCard';
 import BorrowingWaitlistCard from '../../components/borrowing/BorrowingWaitlistCard';
@@ -12,6 +15,7 @@ import ProfilePageHeader from '../../components/profile/ProfilePageHeader';
 import { useAuthPersonal } from '../../hooks/modules/useAuthPersonal';
 
 export default function AuthenticationPersonal() {
+    const navigate = useNavigate();
     const {
         profile,
         card,
@@ -33,7 +37,19 @@ export default function AuthenticationPersonal() {
 
     return (
         <Box>
-            <ProfilePageHeader />
+            <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.2}
+                justifyContent="space-between"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
+            >
+                <Box sx={{ flex: 1 }}>
+                    <ProfilePageHeader />
+                </Box>
+                <Button variant="outlined" onClick={() => navigate('/')} sx={{ mb: { xs: 2, sm: 3 } }}>
+                    Quay về trang chủ
+                </Button>
+            </Stack>
 
             {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
 

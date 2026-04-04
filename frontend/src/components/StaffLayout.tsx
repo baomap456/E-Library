@@ -16,8 +16,15 @@ import { getStoredUser } from '../api/session';
 const drawerWidth = 280;
 
 const navItems = [
-    { label: 'Quản trị thư viện', path: '/app/librarian' },
-    { label: 'Báo cáo kho', path: '/app/reports' },
+    { label: 'Dashboard', path: '/app/librarian/dashboard' },
+    { label: 'Mượn trả', path: '/app/librarian/circulation' },
+    { label: 'Quản lý đầu sách', path: '/app/librarian/catalog' },
+    { label: 'Công nợ', path: '/app/librarian/debtors' },
+    { label: 'Sự cố', path: '/app/librarian/incidents' },
+    { label: 'Tài liệu số', path: '/app/librarian/digital' },
+    { label: 'Tài khoản', path: '/app/librarian/accounts' },
+    { label: 'Duyệt yêu cầu', path: '/app/librarian/requests' },
+    { label: 'Báo cáo kho', path: '/app/librarian/inventory' },
 ];
 
 export default function StaffLayout() {

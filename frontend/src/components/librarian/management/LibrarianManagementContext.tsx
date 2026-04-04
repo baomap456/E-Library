@@ -24,6 +24,25 @@ export interface LibrarianManagementContextValue {
     bookRowsPerPage: number;
     onBookPageChange: OnPageChange;
     onBookRowsPerPageChange: RowsPerPageChange;
+    onCreateBook: (payload: {
+        title: string;
+        description: string;
+        publishYear: number;
+        publisher: string;
+        price: number;
+        coverImageUrl: string;
+        digital: boolean;
+    }) => void;
+    onUpdateBook: (id: number, payload: {
+        title: string;
+        description: string;
+        publishYear: number;
+        publisher: string;
+        price: number;
+        coverImageUrl: string;
+        digital: boolean;
+    }) => void;
+    onDeleteBook: (id: number) => void;
     username: string;
     borrowers: LibrarianBorrowerOption[];
     guestBorrowMode: boolean;
@@ -63,10 +82,16 @@ export interface LibrarianManagementContextValue {
     onUpgradeAccountDirect: () => void;
     incident: string;
     incidentRecordId: string;
+    incidentRecordOptions: Array<{
+        recordId: number;
+        label: string;
+        bookPrice: number;
+    }>;
     incidentType: 'LOST' | 'DAMAGED';
     damageSeverity: 'LIGHT' | 'HEAVY';
     repairCost: string;
     lostCompensationRate: '100' | '150';
+    compensationAmount: number;
     onIncidentChange: (value: string) => void;
     onIncidentRecordIdChange: (value: string) => void;
     onIncidentTypeChange: (value: 'LOST' | 'DAMAGED') => void;
