@@ -168,7 +168,8 @@ public class DataInitializer implements ApplicationRunner {
         // No need to set membership for librarians
 
         ensureBookItemStatusEnum();
-        seedCatalogData();
+        // Catalog data is loaded via data.sql on application startup
+        // seedCatalogData();
     }
 
     private void ensureBookItemStatusEnum() {

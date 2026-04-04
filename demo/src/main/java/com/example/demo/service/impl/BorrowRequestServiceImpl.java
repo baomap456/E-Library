@@ -15,6 +15,7 @@ import com.example.demo.dto.borrowing.BorrowRequestResponse;
 import com.example.demo.dto.borrowing.CreateBorrowRequestDto;
 import com.example.demo.mapper.BorrowingMapper;
 import com.example.demo.model.BookItem;
+import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
 import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
@@ -56,6 +57,13 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             request.setStatus(BorrowRequestStatus.CANCELLED);
             request.setApprovalDate(LocalDateTime.now());
             request.setApprovalNote("Quá hạn ngày lấy sách, hệ thống tự hủy phiếu");
+
+            // Release reserved copy back to shelf when request is auto-cancelled.
+            if (request.getBookItem() != null && request.getBookItem().getStatus() == BookStatus.RESERVED) {
+                request.getBookItem().setStatus(BookStatus.AVAILABLE);
+                bookItemRepository.save(request.getBookItem());
+            }
+
             borrowRequestRepository.save(request);
 
                 notificationDispatchService.createAndDispatch(
@@ -129,21 +137,19 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             throw new IllegalArgumentException("Bạn đã có yêu cầu mượn sách này đang chờ duyệt");
         }
 
-        long physicalAvailable = bookItemRepository.countByBookIdAndStatus(request.bookId(), com.example.demo.model.BookStatus.AVAILABLE);
-        long pendingRequests = borrowRequestRepository.countByStatusAndBookItemBookId(BorrowRequestStatus.PENDING, request.bookId());
+        long physicalAvailable = bookItemRepository.countByBookIdAndStatus(request.bookId(), BookStatus.AVAILABLE);
         long waitingUsers = reservationRepository.countByBookIdAndStatusIn(
                 request.bookId(),
                 EnumSet.of(ReservationStatus.PENDING, ReservationStatus.NOTIFIED));
         if (waitingUsers > 0) {
             throw new IllegalArgumentException("Sách này đang có người chờ. Bạn cần tham gia hàng chờ thay vì lập phiếu mượn trực tiếp");
         }
-        if (physicalAvailable <= pendingRequests) {
+        if (physicalAvailable <= 0) {
             throw new IllegalArgumentException("Sách đã hết số lượng khả dụng. Vui lòng tham gia hàng chờ");
         }
 
         BookItem bookItem = bookItemRepository.findByBookId(request.bookId()).stream()
-            .filter(item -> item.getStatus() == com.example.demo.model.BookStatus.AVAILABLE)
-            .filter(item -> !borrowRequestRepository.existsByStatusAndBookItemId(BorrowRequestStatus.PENDING, item.getId()))
+            .filter(item -> item.getStatus() == BookStatus.AVAILABLE)
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException("Hiện không còn bản sách khả dụng để lập phiếu mượn"));
 
@@ -154,6 +160,10 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
         borrowRequest.setRequestDate(LocalDateTime.now());
         borrowRequest.setRequestedPickupDate(request.requestedPickupDate());
         borrowRequest.setRequestedReturnDate(request.requestedReturnDate());
+
+        // Reserve selected copy immediately so stock reflects pending requests in real time.
+        bookItem.setStatus(BookStatus.RESERVED);
+        bookItemRepository.save(bookItem);
 
         BorrowRequest saved = borrowRequestRepository.save(borrowRequest);
         return borrowingMapper.toBorrowRequestResponse(saved);
@@ -212,7 +222,8 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
         }
 
         if (dto.approve()) {
-            if (request.getBookItem().getStatus() != com.example.demo.model.BookStatus.AVAILABLE) {
+            BookStatus currentStatus = request.getBookItem().getStatus();
+            if (currentStatus != BookStatus.AVAILABLE && currentStatus != BookStatus.RESERVED) {
                 throw new IllegalArgumentException("Sách không còn khả dụng để duyệt mượn");
             }
 
@@ -232,7 +243,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             borrowRecord.setFineAmount(0.0);
             borrowRecordRepository.save(borrowRecord);
 
-            request.getBookItem().setStatus(com.example.demo.model.BookStatus.BORROWING);
+            request.getBookItem().setStatus(BookStatus.BORROWING);
             bookItemRepository.save(request.getBookItem());
 
             request.setStatus(BorrowRequestStatus.APPROVED);
@@ -241,6 +252,11 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             request.setApprovalNote(dto.note() != null ? dto.note() : "Được duyệt");
         } else {
             // Reject
+            if (request.getBookItem() != null && request.getBookItem().getStatus() == BookStatus.RESERVED) {
+                request.getBookItem().setStatus(BookStatus.AVAILABLE);
+                bookItemRepository.save(request.getBookItem());
+            }
+
             request.setStatus(BorrowRequestStatus.REJECTED);
             request.setApprovalDate(LocalDateTime.now());
             request.setApprovedBy(librarian);
@@ -267,7 +283,14 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             throw new IllegalArgumentException("Chỉ có thể hủy yêu cầu đang chờ duyệt");
         }
 
+        if (request.getBookItem() != null && request.getBookItem().getStatus() == BookStatus.RESERVED) {
+            request.getBookItem().setStatus(BookStatus.AVAILABLE);
+            bookItemRepository.save(request.getBookItem());
+        }
+
         request.setStatus(BorrowRequestStatus.CANCELLED);
+        request.setApprovalDate(LocalDateTime.now());
+        request.setApprovalNote("Người dùng hủy phiếu mượn");
         BorrowRequest updated = borrowRequestRepository.save(request);
         return borrowingMapper.toBorrowRequestResponse(updated);
     }

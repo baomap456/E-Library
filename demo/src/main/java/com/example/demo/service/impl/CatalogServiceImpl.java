@@ -71,7 +71,7 @@ public class CatalogServiceImpl implements CatalogService {
                 .map(book -> {
                     long physicalAvailable = bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE);
                     long pendingRequests = borrowRequestRepository.countByStatusAndBookItemBookId(BorrowRequestStatus.PENDING, book.getId());
-                    long availableItems = Math.max(0, physicalAvailable - pendingRequests);
+                                        long availableItems = physicalAvailable;
                     String inventoryStatus = availableItems > 0 ? "AVAILABLE" : "BORROWED";
                     return catalogMapper.toBookSearchResponse(
                             book,
