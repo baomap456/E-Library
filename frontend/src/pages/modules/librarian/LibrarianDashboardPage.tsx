@@ -1,8 +1,9 @@
 import { useOutletContext } from 'react-router-dom';
 import LibrarianManagementTab from '../../../components/librarian/LibrarianManagementTab';
-import type { LibrarianPanelOutletContext } from '../LibrarianPanel';
+import type { LibrarianLayoutOutletContext } from './LibrarianLayout';
 
 export default function LibrarianDashboardPage() {
-    const { managementTabProps } = useOutletContext<LibrarianPanelOutletContext>();
+    const { managementTabProps } = useOutletContext<LibrarianLayoutOutletContext>();
     return <LibrarianManagementTab {...managementTabProps} view="dashboard" />;
 }
+

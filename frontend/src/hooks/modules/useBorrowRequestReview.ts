@@ -3,11 +3,30 @@ import { getPendingBorrowRequests, getAllBorrowRequests, approveBorrowRequest, r
 import type { BorrowRequestResponse } from '../../types/borrowing';
 
 export function useBorrowRequestReview() {
+    const [allRequests, setAllRequests] = useState<BorrowRequestResponse[]>([]);
     const [requests, setRequests] = useState<BorrowRequestResponse[]>([]);
     const [pendingCount, setPendingCount] = useState(0);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'PENDING' | 'ALL'>('PENDING');
+    const [filterStatus, setFilterStatus] = useState<'PENDING' | 'ALL'>('ALL');
+    const [requestTypeFilter, setRequestTypeFilter] = useState<'ALL' | 'BORROW' | 'RENEWAL'>('ALL');
+    const [sourceFilter, setSourceFilter] = useState<'ALL' | 'REQUEST' | 'DESK'>('ALL');
+
+    const applyClientFilters = (
+        source: BorrowRequestResponse[],
+        typeFilter: 'ALL' | 'BORROW' | 'RENEWAL',
+        requestSourceFilter: 'ALL' | 'REQUEST' | 'DESK',
+    ) => {
+        const typeFiltered = typeFilter === 'ALL'
+            ? source
+            : source.filter((item) => (item.requestType ?? 'BORROW') === typeFilter);
+
+        if (requestSourceFilter === 'ALL') {
+            return typeFiltered;
+        }
+
+        return typeFiltered.filter((item) => (item.source ?? 'REQUEST') === requestSourceFilter);
+    };
 
     const loadRequests = async () => {
         try {
@@ -15,12 +34,13 @@ export function useBorrowRequestReview() {
             const data = filterStatus === 'PENDING'
                 ? await getPendingBorrowRequests()
                 : await getAllBorrowRequests();
-            setRequests(data);
+            setAllRequests(data);
+            setRequests(applyClientFilters(data, requestTypeFilter, sourceFilter));
             const pending = data.filter(r => r.status === 'PENDING').length;
             setPendingCount(pending);
             setError('');
         } catch (err) {
-            setError('Không thể tải danh sách yêu cầu mượn');
+            setError('Không thể tải danh sách yêu cầu');
             console.error(err);
         } finally {
             setLoading(false);
@@ -31,12 +51,16 @@ export function useBorrowRequestReview() {
         void loadRequests();
     }, [filterStatus]);
 
+    useEffect(() => {
+        setRequests(applyClientFilters(allRequests, requestTypeFilter, sourceFilter));
+    }, [allRequests, requestTypeFilter, sourceFilter]);
+
     const handleApprove = async (requestId: number, note?: string) => {
         try {
             await approveBorrowRequest(requestId, note);
             await loadRequests();
         } catch (err) {
-            setError('Không thể duyệt yêu cầu');
+            setError('Không thể duyệt yêu cầu này');
             console.error(err);
         }
     };
@@ -46,7 +70,7 @@ export function useBorrowRequestReview() {
             await rejectBorrowRequest(requestId, note);
             await loadRequests();
         } catch (err) {
-            setError('Không thể từ chối yêu cầu');
+            setError('Không thể từ chối yêu cầu này');
             console.error(err);
         }
     };
@@ -58,6 +82,10 @@ export function useBorrowRequestReview() {
         error,
         filterStatus,
         setFilterStatus,
+        requestTypeFilter,
+        setRequestTypeFilter,
+        sourceFilter,
+        setSourceFilter,
         handleApprove,
         handleReject,
         loadRequests,

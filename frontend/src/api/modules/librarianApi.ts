@@ -9,20 +9,27 @@ import type {
     LibrarianCreateUserResponse,
     LibrarianDashboard,
     LibrarianDebtor,
+    LibrarianFineInvoice,
+    LibrarianMembershipInvoice,
     LibrarianDigitalDocument,
     LibrarianDigitalDocumentPayload,
     LibrarianLocation,
     LibrarianMembershipPackageOption,
     LibrarianReportIncidentPayload,
     LibrarianReportIncidentResponse,
+    LibrarianUserFineSummary,
     LibrarianUpgradeAccountResponse,
 } from '../../types/modules/librarian';
 import type { BorrowRequestResponse } from '../../types/borrowing';
+import type { BorrowingRecord } from '../../types/modules/borrowing';
 
 export async function fetchLibrarianData(): Promise<{
     dashboard: LibrarianDashboard;
     books: LibrarianBook[];
     debtors: LibrarianDebtor[];
+    fineInvoices: LibrarianFineInvoice[];
+    membershipInvoices: LibrarianMembershipInvoice[];
+    userFineSummaries: LibrarianUserFineSummary[];
     digitalDocuments: LibrarianDigitalDocument[];
     authors: LibrarianAuthor[];
     categories: LibrarianCategory[];
@@ -30,10 +37,13 @@ export async function fetchLibrarianData(): Promise<{
     membershipPackages: LibrarianMembershipPackageOption[];
     borrowers: LibrarianBorrowerOption[];
 }> {
-    const [dashboard, books, debtors, digitalDocuments, authors, categories, locations, membershipPackages, borrowers] = await Promise.all([
+    const [dashboard, books, debtors, fineInvoices, membershipInvoices, userFineSummaries, digitalDocuments, authors, categories, locations, membershipPackages, borrowers] = await Promise.all([
         axiosClient.get<unknown, LibrarianDashboard>('/librarian/dashboard'),
         axiosClient.get<unknown, LibrarianBook[]>('/librarian/books'),
         axiosClient.get<unknown, LibrarianDebtor[]>('/librarian/fines/debtors'),
+        axiosClient.get<unknown, LibrarianFineInvoice[]>('/librarian/fines/invoices'),
+        axiosClient.get<unknown, LibrarianMembershipInvoice[]>('/librarian/accounts/membership-invoices'),
+        axiosClient.get<unknown, LibrarianUserFineSummary[]>('/librarian/fines/users'),
         axiosClient.get<unknown, LibrarianDigitalDocument[]>('/librarian/digital-documents'),
         axiosClient.get<unknown, LibrarianAuthor[]>('/librarian/authors'),
         axiosClient.get<unknown, LibrarianCategory[]>('/librarian/categories'),
@@ -42,7 +52,7 @@ export async function fetchLibrarianData(): Promise<{
         axiosClient.get<unknown, LibrarianBorrowerOption[]>('/librarian/borrowers'),
     ]);
 
-    return { dashboard, books, debtors, digitalDocuments, authors, categories, locations, membershipPackages, borrowers };
+    return { dashboard, books, debtors, fineInvoices, membershipInvoices, userFineSummaries, digitalDocuments, authors, categories, locations, membershipPackages, borrowers };
 }
 
 export function createDigitalDocument(payload: LibrarianDigitalDocumentPayload) {
@@ -61,12 +71,16 @@ export function payFinePartial(recordId: number, amount: number, paymentMethod =
     return axiosClient.post('/borrowing/fines/pay', { recordId, amount, paymentMethod });
 }
 
-export function checkoutBook(username: string, barcode: string) {
-    return axiosClient.post('/librarian/checkout', { username, barcode });
+export function checkoutBook(username: string, barcode: string, dueDate: string) {
+    return axiosClient.post('/librarian/checkout', { username, barcode, dueDate });
 }
 
 export function checkinBook(barcode: string) {
     return axiosClient.post<unknown, { message: string; recordId: number; fineAmount: number }>('/librarian/checkin', { barcode });
+}
+
+export function fetchBorrowRecordByBarcode(barcode: string) {
+    return axiosClient.get<unknown, BorrowingRecord>('/borrowing/records/by-barcode', { params: { barcode } });
 }
 
 export function checkoutGuestBook(
@@ -76,6 +90,7 @@ export function checkoutGuestBook(
     borrowMode: 'TAKE_HOME' | 'READ_ON_SITE',
     depositAmount?: number,
     citizenId?: string,
+    dueDate?: string,
 ) {
     return axiosClient.post('/librarian/checkout/guest', {
         guestName,
@@ -84,6 +99,7 @@ export function checkoutGuestBook(
         depositAmount,
         citizenId,
         barcode,
+        dueDate,
     });
 }
 

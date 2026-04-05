@@ -68,6 +68,8 @@ export function useHomePage() {
         publishYear: '',
     });
 
+    const safeBooks = Array.isArray(books) ? books : [];
+
     const loadContent = async (withSpinner = false) => {
         if (withSpinner) {
             setRefreshing(true);
@@ -82,7 +84,7 @@ export function useHomePage() {
                 fetchCatalogBooks({}),
             ]);
             setHome(homeData);
-            setBooks(bookData);
+            setBooks(Array.isArray(bookData) ? bookData : []);
         } catch {
             setError('Không thể tải dữ liệu trang chủ. Vui lòng thử lại sau.');
         } finally {
@@ -110,16 +112,16 @@ export function useHomePage() {
     }, [search.q, search.category, search.author, search.publishYear]);
 
     const categoryOptions = useMemo(() => {
-        return Array.from(new Set(books.map((book) => book.category).filter(Boolean))).sort((left, right) => left.localeCompare(right));
-    }, [books]);
+        return Array.from(new Set(safeBooks.map((book) => book.category).filter(Boolean))).sort((left, right) => left.localeCompare(right));
+    }, [safeBooks]);
 
     const authorOptions = useMemo(() => {
-        return Array.from(new Set(books.flatMap((book) => book.author).filter(Boolean))).sort((left, right) => left.localeCompare(right));
-    }, [books]);
+        return Array.from(new Set(safeBooks.flatMap((book) => book.author).filter(Boolean))).sort((left, right) => left.localeCompare(right));
+    }, [safeBooks]);
 
     const yearOptions = useMemo(() => {
-        return Array.from(new Set(books.map((book) => book.publishYear))).sort((left, right) => right - left);
-    }, [books]);
+        return Array.from(new Set(safeBooks.map((book) => book.publishYear))).sort((left, right) => right - left);
+    }, [safeBooks]);
 
     const filteredBooks = useMemo(() => {
         const normalizedQuery = search.q.trim().toLowerCase();
@@ -127,7 +129,7 @@ export function useHomePage() {
         const normalizedCategory = search.category.trim().toLowerCase();
         const normalizedYear = search.publishYear.trim();
 
-        return books.filter((book) => {
+        return safeBooks.filter((book) => {
             const matchesQuery = !normalizedQuery
                 || book.title.toLowerCase().includes(normalizedQuery)
                 || book.isbn.toLowerCase().includes(normalizedQuery)
@@ -139,7 +141,7 @@ export function useHomePage() {
 
             return matchesQuery && matchesAuthor && matchesCategory && matchesYear;
         });
-    }, [books, search.author, search.category, search.publishYear, search.q]);
+    }, [safeBooks, search.author, search.category, search.publishYear, search.q]);
 
     const totalBookPages = Math.max(1, Math.ceil(filteredBooks.length / booksPerPage));
     const pagedBooks = useMemo(() => {

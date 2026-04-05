@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 public record LibrarianDebtorResponse(
         Long recordId,
         String username,
+        String fullName,
         String bookTitle,
         Double fineAmount,
         LocalDateTime dueDate,

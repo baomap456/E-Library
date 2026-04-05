@@ -9,6 +9,11 @@ export function useLibrarianCirculationState() {
     const [guestLoanType, setGuestLoanType] = useState<'TAKE_HOME' | 'READ_ON_SITE'>('TAKE_HOME');
     const [guestDepositAmount, setGuestDepositAmount] = useState('');
     const [guestCitizenId, setGuestCitizenId] = useState('');
+    const [borrowDueDate, setBorrowDueDate] = useState(() => {
+        const date = new Date();
+        date.setDate(date.getDate() + 7);
+        return date.toISOString().slice(0, 16);
+    });
     const [debtPaymentRecordId, setDebtPaymentRecordId] = useState('');
     const [debtPaymentAmount, setDebtPaymentAmount] = useState('');
 
@@ -29,6 +34,8 @@ export function useLibrarianCirculationState() {
         setGuestDepositAmount,
         guestCitizenId,
         setGuestCitizenId,
+        borrowDueDate,
+        setBorrowDueDate,
         debtPaymentRecordId,
         setDebtPaymentRecordId,
         debtPaymentAmount,

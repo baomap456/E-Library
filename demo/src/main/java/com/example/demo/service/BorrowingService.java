@@ -25,6 +25,10 @@ public interface BorrowingService {
 
     List<BorrowRecordResponse> getRecords(String username);
 
+    BorrowRecordResponse getRecord(Long recordId);
+
+    BorrowRecordResponse getRecordByBarcode(String barcode);
+
     List<WaitlistItemResponse> getMyWaitlist(String username);
 
     RenewRecordResponse renew(Long recordId);

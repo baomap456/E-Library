@@ -5,7 +5,14 @@ export interface BorrowingCartItem {
 
 export interface BorrowingRecord {
     recordId: number;
+    userId?: number | null;
+    username?: string;
+    userFullName?: string;
+    bookId?: number | null;
+    bookItemId?: number | null;
     bookTitle: string;
+    barcode?: string;
+    borrowDate?: string;
     dueDate: string;
     returnDate: string;
     status: string;
@@ -14,6 +21,15 @@ export interface BorrowingRecord {
     canRenew: boolean;
     renewDisabledReason: string | null;
     daysUntilDue: number;
+    borrowMode?: 'TAKE_HOME' | 'READ_ON_SITE';
+    depositAmount?: number;
+    borrowerCitizenId?: string | null;
+    temporaryRecord?: boolean;
+    fineAmount?: number;
+    incidentType?: string | null;
+    damageSeverity?: string | null;
+    compensationAmount?: number | null;
+    incidentNote?: string | null;
 }
 
 export interface BorrowingFinesResponse {

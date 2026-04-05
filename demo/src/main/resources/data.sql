@@ -212,6 +212,11 @@ INSERT IGNORE INTO roles (name) VALUES
 ('MEMBER'),
 ('GUEST');
 
+-- Insert Membership Packages (Free + Premium)
+INSERT IGNORE INTO membership_types (id, name, paid, max_books, borrow_duration_days, fine_rate_per_day, privilege_note) VALUES
+(1, 'Free', FALSE, 3, 14, 5000, 'Goi mien phi phu hop nhu cau co ban'),
+(2, 'Premium', TRUE, 10, 30, 2000, 'Goi tra phi voi han muc cao va uu tien dat cho');
+
 -- Insert 4 user accounts (one account per role)
 -- Passwords:
 -- admin01 / Admin@123
@@ -233,6 +238,13 @@ INSERT IGNORE INTO users (
 ('librarian02', '$2y$10$v83I3Qxfl8ev4p54aoOq9Ofu36ccI4Jn15V4xnUvh7FKuEoBQY11O', 'librarian02@elib.local', 'Librarian Two', NULL, TRUE, 0, FALSE, NOW()),
 ('member02', '$2y$10$SyZMDSHNiMN5jOBM2xyTqeZ6gzBPUGKuzB.0VmV97XKhfcpKbBJpa', 'member02@elib.local', 'Member Two', 'SV30002', TRUE, 0, FALSE, NOW()),
 ('guest01', '$2y$10$bdZdkx7/s6VjMLWuhXCgJ.enLnUCfuaZYelPxO/35mUaaSIhnAs9C', 'guest01@elib.local', 'Guest One', NULL, TRUE, 0, FALSE, NOW());
+
+-- Assign default membership package for sample member
+UPDATE users u
+JOIN membership_types m ON m.name = 'Free'
+SET u.membership_type_id = m.id
+WHERE u.username = 'member02'
+	AND (u.membership_type_id IS NULL OR u.membership_type_id <> m.id);
 
 -- Map each account to a different role
 INSERT IGNORE INTO user_roles (user_id, role_id)

@@ -30,6 +30,10 @@ public class BorrowRequest {
     @JoinColumn(name = "book_item_id")
     private BookItem bookItem;
 
+    @ManyToOne
+    @JoinColumn(name = "borrow_record_id")
+    private BorrowRecord borrowRecord;
+
     private LocalDateTime requestDate = LocalDateTime.now();
     private LocalDate requestedPickupDate;
     private LocalDate requestedReturnDate;
@@ -42,4 +46,7 @@ public class BorrowRequest {
 
     @Enumerated(EnumType.STRING)
     private BorrowRequestStatus status = BorrowRequestStatus.PENDING;
+
+    @Enumerated(EnumType.STRING)
+    private BorrowRequestType requestType = BorrowRequestType.BORROW;
 }

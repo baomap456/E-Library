@@ -19,6 +19,7 @@ import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
 import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.model.ReservationStatus;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
@@ -29,6 +30,7 @@ import com.example.demo.repository.ReservationRepository;
 import com.example.demo.service.BorrowRequestService;
 import com.example.demo.service.DebtRestrictionService;
 import com.example.demo.service.NotificationDispatchService;
+import com.example.demo.service.RenewalPolicyService;
 import com.example.demo.service.UserContextService;
 
 import lombok.RequiredArgsConstructor;
@@ -45,6 +47,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
     private final UserContextService userContextService;
     private final BorrowingMapper borrowingMapper;
     private final DebtRestrictionService debtRestrictionService;
+    private final RenewalPolicyService renewalPolicyService;
 
     @Scheduled(cron = "0 15 1 * * *")
     @Transactional
@@ -156,6 +159,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
         BorrowRequest borrowRequest = new BorrowRequest();
         borrowRequest.setUser(user);
         borrowRequest.setBookItem(bookItem);
+        borrowRequest.setRequestType(BorrowRequestType.BORROW);
         borrowRequest.setStatus(BorrowRequestStatus.PENDING);
         borrowRequest.setRequestDate(LocalDateTime.now());
         borrowRequest.setRequestedPickupDate(request.requestedPickupDate());
@@ -221,6 +225,10 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             throw new IllegalArgumentException("Yêu cầu mượn này đã được xử lý");
         }
 
+        if (request.getRequestType() == BorrowRequestType.RENEWAL) {
+            return processRenewalRequest(librarian, request, dto);
+        }
+
         if (dto.approve()) {
             BookStatus currentStatus = request.getBookItem().getStatus();
             if (currentStatus != BookStatus.AVAILABLE && currentStatus != BookStatus.RESERVED) {
@@ -267,6 +275,37 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
         return borrowingMapper.toBorrowRequestResponse(updated);
     }
 
+    private BorrowRequestResponse processRenewalRequest(User librarian, BorrowRequest request, ApproveBorrowRequestDto dto) {
+        BorrowRecord borrowRecord = request.getBorrowRecord();
+        if (borrowRecord == null) {
+            throw new IllegalArgumentException("Phiếu gia hạn không hợp lệ do thiếu bản ghi mượn");
+        }
+
+        if (dto.approve()) {
+            RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluate(borrowRecord);
+            if (!decision.allowed()) {
+                throw new IllegalArgumentException(decision.reason());
+            }
+
+            renewalPolicyService.applyRenewal(borrowRecord);
+            borrowRecordRepository.save(borrowRecord);
+
+            request.setStatus(BorrowRequestStatus.APPROVED);
+            request.setApprovalDate(LocalDateTime.now());
+            request.setApprovedBy(librarian);
+            request.setApprovalNote(dto.note() != null ? dto.note() : "Yêu cầu gia hạn đã được duyệt");
+            request.setRequestedReturnDate(borrowRecord.getDueDate().toLocalDate());
+        } else {
+            request.setStatus(BorrowRequestStatus.REJECTED);
+            request.setApprovalDate(LocalDateTime.now());
+            request.setApprovedBy(librarian);
+            request.setApprovalNote(dto.note() != null ? dto.note() : "Yêu cầu gia hạn bị từ chối");
+        }
+
+        BorrowRequest updated = borrowRequestRepository.save(request);
+        return borrowingMapper.toBorrowRequestResponse(updated);
+    }
+
     @Override
     @Transactional
     public BorrowRequestResponse cancelRequest(Long requestId) {
@@ -283,14 +322,18 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
             throw new IllegalArgumentException("Chỉ có thể hủy yêu cầu đang chờ duyệt");
         }
 
-        if (request.getBookItem() != null && request.getBookItem().getStatus() == BookStatus.RESERVED) {
+        if (request.getRequestType() == BorrowRequestType.BORROW
+            && request.getBookItem() != null
+            && request.getBookItem().getStatus() == BookStatus.RESERVED) {
             request.getBookItem().setStatus(BookStatus.AVAILABLE);
             bookItemRepository.save(request.getBookItem());
         }
 
         request.setStatus(BorrowRequestStatus.CANCELLED);
         request.setApprovalDate(LocalDateTime.now());
-        request.setApprovalNote("Người dùng hủy phiếu mượn");
+        request.setApprovalNote(request.getRequestType() == BorrowRequestType.RENEWAL
+            ? "Người dùng hủy yêu cầu gia hạn"
+            : "Người dùng hủy phiếu mượn");
         BorrowRequest updated = borrowRequestRepository.save(request);
         return borrowingMapper.toBorrowRequestResponse(updated);
     }

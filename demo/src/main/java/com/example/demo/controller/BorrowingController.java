@@ -60,6 +60,16 @@ public class BorrowingController {
         return ResponseEntity.ok(borrowingService.getRecords(username));
     }
 
+    @GetMapping("/records/{recordId}")
+    public ResponseEntity<BorrowRecordResponse> record(@PathVariable Long recordId) {
+        return ResponseEntity.ok(borrowingService.getRecord(recordId));
+    }
+
+    @GetMapping("/records/by-barcode")
+    public ResponseEntity<BorrowRecordResponse> recordByBarcode(@RequestParam String barcode) {
+        return ResponseEntity.ok(borrowingService.getRecordByBarcode(barcode));
+    }
+
     @GetMapping("/waitlist/me")
     public ResponseEntity<List<WaitlistItemResponse>> myWaitlist(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getMyWaitlist(username));

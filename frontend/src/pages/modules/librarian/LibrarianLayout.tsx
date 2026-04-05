@@ -5,27 +5,30 @@ import {
 } from '@mui/material';
 import type { ComponentProps } from 'react';
 import { Outlet } from 'react-router-dom';
-import BorrowRequestReviewDialog from '../../components/librarian/BorrowRequestReviewDialog';
-import LibrarianBorrowRequestsTab from '../../components/librarian/LibrarianBorrowRequestsTab';
-import LibrarianManagementTab from '../../components/librarian/LibrarianManagementTab';
-import LibrarianPageHeader from '../../components/librarian/LibrarianPageHeader';
-import { useLibrarianPanel } from '../../hooks/modules/useLibrarianPanel';
-import { useBorrowRequestReview } from '../../hooks/modules/useBorrowRequestReview';
-import { useLibrarianPanelUiState } from '../../hooks/modules/useLibrarianPanelUiState';
-import { useInventoryReports } from '../../hooks/modules/useInventoryReports';
-import type { ReportsKpi } from '../../types/modules/reports';
+import BorrowRequestReviewDialog from '../../../components/librarian/BorrowRequestReviewDialog';
+import LibrarianBorrowRequestsTab from '../../../components/librarian/LibrarianBorrowRequestsTab';
+import LibrarianManagementTab from '../../../components/librarian/LibrarianManagementTab';
+import LibrarianPageHeader from '../../../components/librarian/LibrarianPageHeader';
+import { useLibrarianPanel } from '../../../hooks/modules/useLibrarianPanel';
+import { useBorrowRequestReview } from '../../../hooks/modules/useBorrowRequestReview';
+import { useLibrarianPanelUiState } from '../../../hooks/modules/useLibrarianPanelUiState';
+import { useInventoryReports } from '../../../hooks/modules/useInventoryReports';
+import type { ReportsKpi } from '../../../types/modules/reports';
 
-export default function LibrarianPanel() {
+export default function LibrarianLayout() {
     const {
         dashboard,
         books,
         debtors,
+        membershipInvoices,
         digitalDocuments,
         authors,
         categories,
         locations,
         borrowers,
         membershipPackages,
+        fineInvoices,
+        userFineSummaries,
         barcode,
         setBarcode,
         username,
@@ -42,6 +45,8 @@ export default function LibrarianPanel() {
         setGuestDepositAmount,
         guestCitizenId,
         setGuestCitizenId,
+        borrowDueDate,
+        setBorrowDueDate,
         newUserUsername,
         setNewUserUsername,
         newUserPassword,
@@ -126,8 +131,13 @@ export default function LibrarianPanel() {
         error: requestsError,
         filterStatus,
         setFilterStatus,
+        requestTypeFilter,
+        setRequestTypeFilter,
+        sourceFilter,
+        setSourceFilter,
         handleApprove,
         handleReject,
+        loadRequests,
     } = useBorrowRequestReview();
 
     const { kpis } = useInventoryReports();
@@ -149,8 +159,13 @@ export default function LibrarianPanel() {
         debtorRowsPerPage,
         debtorOverdueOnly,
         setDebtorOverdueOnly,
+        debtorSearch,
+        setDebtorSearch,
         filteredDebtorsCount,
         pagedDebtors,
+        fineInvoices: uiFineInvoices,
+        membershipInvoices: uiMembershipInvoices,
+        userFineSummaries: uiUserFineSummaries,
         requestPage,
         requestRowsPerPage,
         pagedRequests,
@@ -187,6 +202,8 @@ export default function LibrarianPanel() {
     } = useLibrarianPanelUiState({
         books,
         debtors,
+        fineInvoices,
+        userFineSummaries,
         requests,
         authors,
         categories,
@@ -213,7 +230,10 @@ export default function LibrarianPanel() {
             </Box>
         );
     }
-    const membershipPackageOptions = membershipPackages.map((item) => item.name);
+    const membershipPackageOptions = membershipPackages.map((item) => ({
+        name: item.name,
+        price: item.price || 0,
+    }));
 
     const handleOpenApprove = (id: number) => {
         setSelectedRequest(id);
@@ -244,10 +264,18 @@ export default function LibrarianPanel() {
         onGuestLoanTypeChange: setGuestLoanType,
         onGuestDepositAmountChange: setGuestDepositAmount,
         onGuestCitizenIdChange: setGuestCitizenId,
+        borrowDueDate,
+        onBorrowDueDateChange: setBorrowDueDate,
         onBarcodeChange: setBarcode,
-        onCheckout: () => { void handleCheckout(); },
-        onGuestCheckout: () => { void handleGuestCheckout(); },
-        onCheckin: () => { void handleCheckin(); },
+        onCheckout: async () => {
+            await handleCheckout();
+            await loadRequests();
+        },
+        onGuestCheckout: async () => {
+            await handleGuestCheckout();
+            await loadRequests();
+        },
+        onCheckin: async () => handleCheckin(),
     };
 
     const accountManagementProps = {
@@ -273,7 +301,7 @@ export default function LibrarianPanel() {
     // Calculate compensation amount based on selected record and ratio
     const selectedIncidentRecord = debtors.find((d) => String(d.recordId) === incidentRecordId);
     const selectedBook = selectedIncidentRecord ? books.find((b) => b.title === selectedIncidentRecord.bookTitle) : null;
-    const compensationAmount = selectedBook && lostCompensationRate 
+    const compensationAmount = selectedBook && lostCompensationRate
         ? ((selectedBook.price || 0) * Number.parseInt(lostCompensationRate, 10)) / 100
         : 0;
 
@@ -328,7 +356,7 @@ export default function LibrarianPanel() {
         onAuthorSearchChange: setAuthorSearch,
         newAuthor,
         onNewAuthorChange: setNewAuthor,
-        onCreateAuthor: () => { void handleCreateAuthor(); },
+        onCreateAuthor: (name?: string) => { void handleCreateAuthor(name); },
         pagedAuthors,
         filteredAuthorsCount: filteredAuthors.length,
         authorPage,
@@ -341,7 +369,7 @@ export default function LibrarianPanel() {
         onCategorySearchChange: setCategorySearch,
         newCategory,
         onNewCategoryChange: setNewCategory,
-        onCreateCategory: () => { void handleCreateCategory(); },
+        onCreateCategory: (name?: string) => { void handleCreateCategory(name); },
         pagedCategories,
         filteredCategoriesCount: filteredCategories.length,
         categoryPage,
@@ -356,7 +384,7 @@ export default function LibrarianPanel() {
         onNewRoomChange: setNewRoom,
         newShelf,
         onNewShelfChange: setNewShelf,
-        onCreateLocation: () => { void handleCreateLocation(); },
+        onCreateLocation: (roomName?: string, shelfNumber?: string) => { void handleCreateLocation(roomName, shelfNumber); },
         pagedLocations,
         filteredLocationsCount: filteredLocations.length,
         locationPage,
@@ -371,6 +399,9 @@ export default function LibrarianPanel() {
         dashboard,
         kpis,
         allBooks: books,
+        allAuthors: authors,
+        allCategories: categories,
+        allLocations: locations,
         pagedBooks,
         booksCount: filteredBooksCount,
         bookAvailableOnly,
@@ -387,6 +418,9 @@ export default function LibrarianPanel() {
             price: number;
             coverImageUrl: string;
             digital: boolean;
+            authorIds: number[];
+            categoryId: number;
+            locationId?: number | null;
         }) => { void handleCreateBook(payload); },
         onUpdateBook: (id: number, payload: {
             title: string;
@@ -396,12 +430,20 @@ export default function LibrarianPanel() {
             price: number;
             coverImageUrl: string;
             digital: boolean;
+            authorIds: number[];
+            categoryId: number;
+            locationId?: number | null;
         }) => { void handleUpdateBook(id, payload); },
         onDeleteBook: (id: number) => { void handleDeleteBook(id); },
         pagedDebtors,
         debtorsCount: filteredDebtorsCount,
         debtorOverdueOnly,
         onDebtorOverdueOnlyChange: setDebtorOverdueOnly,
+        debtorSearch,
+        onDebtorSearchChange: setDebtorSearch,
+        fineInvoices: uiFineInvoices,
+        membershipInvoices: uiMembershipInvoices,
+        userFineSummaries: uiUserFineSummaries,
         debtorPage,
         debtorRowsPerPage,
         debtPaymentRecordId,
@@ -423,6 +465,10 @@ export default function LibrarianPanel() {
         pendingCount,
         filterStatus,
         onFilterStatusChange: setFilterStatus,
+        requestTypeFilter,
+        onRequestTypeFilterChange: setRequestTypeFilter,
+        sourceFilter,
+        onSourceFilterChange: setSourceFilter,
         pagedRequests,
         requestPage,
         requestRowsPerPage,
@@ -432,7 +478,7 @@ export default function LibrarianPanel() {
         onOpenReject: handleOpenReject,
     };
 
-    const outletContext: LibrarianPanelOutletContext = {
+    const outletContext: LibrarianLayoutOutletContext = {
         managementTabProps,
         borrowRequestsTabProps,
     };
@@ -457,7 +503,7 @@ export default function LibrarianPanel() {
     );
 }
 
-export interface LibrarianPanelOutletContext {
+export interface LibrarianLayoutOutletContext {
     managementTabProps: Omit<ComponentProps<typeof LibrarianManagementTab>, 'view'> & { kpis: ReportsKpi | null };
     borrowRequestsTabProps: ComponentProps<typeof LibrarianBorrowRequestsTab>;
 }

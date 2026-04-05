@@ -1,8 +1,6 @@
-import { useOutletContext } from 'react-router-dom';
-import LibrarianManagementTab from '../../../components/librarian/LibrarianManagementTab';
-import type { LibrarianPanelOutletContext } from '../LibrarianPanel';
+import { Navigate } from 'react-router-dom';
 
 export default function LibrarianCirculationPage() {
-    const { managementTabProps } = useOutletContext<LibrarianPanelOutletContext>();
-    return <LibrarianManagementTab {...managementTabProps} view="circulation" />;
+    return <Navigate to="/app/librarian/circulation/borrow" replace />;
 }
+

@@ -43,11 +43,12 @@ public class ProfileMapper {
                 borrowingCount);
     }
 
-    public MembershipPackageResponse toMembershipPackageResponse(MembershipType membershipType) {
+    public MembershipPackageResponse toMembershipPackageResponse(MembershipType membershipType, double price) {
         return new MembershipPackageResponse(
                 membershipType.getId(),
                 membershipType.getName(),
                 membershipType.isPaid(),
+                price,
                 membershipType.getMaxBooks(),
                 membershipType.getBorrowDurationDays(),
                 membershipType.getFineRatePerDay(),
@@ -78,6 +79,7 @@ public class ProfileMapper {
         return new MembershipTransactionResponse(
                 transaction.getId(),
                 transaction.getActorUsername(),
+                transaction.getPaymentChannel(),
                 transaction.getAction(),
                 transaction.getFromPackage(),
                 transaction.getToPackage(),

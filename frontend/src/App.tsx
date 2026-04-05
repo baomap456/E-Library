@@ -21,10 +21,16 @@ const BookDetail = lazy(() => import('./pages/modules/BookDetail.tsx'));
 const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx'));
 const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
 const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
-const LibrarianPanel = lazy(() => import('./pages/modules/LibrarianPanel.tsx'));
+const LibrarianLayout = lazy(() => import('./pages/modules/librarian/LibrarianLayout.tsx'));
 const LibrarianDashboardPage = lazy(() => import('./pages/modules/librarian/LibrarianDashboardPage.tsx'));
 const LibrarianCirculationPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationPage.tsx'));
+const LibrarianCirculationBorrowPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationBorrowPage.tsx'));
+const LibrarianCirculationReturnPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationReturnPage.tsx'));
 const LibrarianCatalogPage = lazy(() => import('./pages/modules/librarian/LibrarianCatalogPage.tsx'));
+const LibrarianBookManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianBookManagementPage.tsx'));
+const LibrarianAuthorManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianAuthorManagementPage.tsx'));
+const LibrarianCategoryManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianCategoryManagementPage.tsx'));
+const LibrarianLocationManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianLocationManagementPage.tsx'));
 const LibrarianDebtorsPage = lazy(() => import('./pages/modules/librarian/LibrarianDebtorsPage.tsx'));
 const LibrarianIncidentsPage = lazy(() => import('./pages/modules/librarian/LibrarianIncidentsPage.tsx'));
 const LibrarianDigitalPage = lazy(() => import('./pages/modules/librarian/LibrarianDigitalPage.tsx'));
@@ -64,6 +70,11 @@ function RequireLibrarian() {
   return allowed ? <Outlet /> : <Navigate to="/app/profile" replace />;
 }
 
+function RequireGuest() {
+  const token = getStoredToken();
+  return token ? <Navigate to="/" replace /> : <Outlet />;
+}
+
 function NotFound() {
   return (
     <Box sx={{ textAlign: 'center', mt: 8 }}>
@@ -91,8 +102,11 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+
+            <Route element={<RequireGuest />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+            </Route>
 
             <Route element={<RequireAuth />}>
               <Route element={<RequireMember />}>
@@ -109,11 +123,17 @@ function App() {
 
               <Route element={<RequireLibrarian />}>
                 <Route element={<StaffLayout />}>
-                  <Route path="/app/librarian" element={<LibrarianPanel />}>
+                  <Route path="/app/librarian" element={<LibrarianLayout />}>
                     <Route index element={<Navigate to="dashboard" replace />} />
                     <Route path="dashboard" element={<LibrarianDashboardPage />} />
                     <Route path="circulation" element={<LibrarianCirculationPage />} />
+                    <Route path="circulation/borrow" element={<LibrarianCirculationBorrowPage />} />
+                    <Route path="circulation/return" element={<LibrarianCirculationReturnPage />} />
                     <Route path="catalog" element={<LibrarianCatalogPage />} />
+                    <Route path="catalog/books" element={<LibrarianBookManagementPage />} />
+                    <Route path="catalog/authors" element={<LibrarianAuthorManagementPage />} />
+                    <Route path="catalog/categories" element={<LibrarianCategoryManagementPage />} />
+                    <Route path="catalog/locations" element={<LibrarianLocationManagementPage />} />
                     <Route path="debtors" element={<LibrarianDebtorsPage />} />
                     <Route path="incidents" element={<LibrarianIncidentsPage />} />
                     <Route path="digital" element={<LibrarianDigitalPage />} />

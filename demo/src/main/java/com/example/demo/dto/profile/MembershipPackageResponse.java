@@ -6,6 +6,7 @@ public record MembershipPackageResponse(
         Integer id,
         String name,
         boolean paid,
+        Double price,
         Integer maxBooks,
         Integer borrowDurationDays,
         Double fineRatePerDay,

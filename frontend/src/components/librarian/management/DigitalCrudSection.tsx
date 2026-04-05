@@ -59,15 +59,15 @@ export default function DigitalCrudSection() {
     return (
         <Card>
             <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.2 }}>CRUD tài liệu số</Typography>
+                <Typography variant="h6" sx={{ mb: 1.2 }}>Quản lý tài liệu số</Typography>
                 <Stack spacing={1} sx={{ mb: 2 }}>
                     <TextField label="Tên tài liệu" value={props.digitalTitle} onChange={(e) => props.onDigitalTitleChange(e.target.value)} />
                     <TextField label="Mô tả" value={props.digitalDescription} onChange={(e) => props.onDigitalDescriptionChange(e.target.value)} />
-                    <TextField label="NXB" value={props.digitalPublisher} onChange={(e) => props.onDigitalPublisherChange(e.target.value)} />
-                    <TextField label="Năm" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
+                    <TextField label="Nhà xuất bản" value={props.digitalPublisher} onChange={(e) => props.onDigitalPublisherChange(e.target.value)} />
+                    <TextField label="Năm xuất bản" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
                     <TextField label="ISBN" value={props.digitalIsbn} onChange={(e) => props.onDigitalIsbnChange(e.target.value)} />
                     <TextField label="File URL" value={props.digitalFileUrl} onChange={(e) => props.onDigitalFileUrlChange(e.target.value)} />
-                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Add</Button>
+                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Thêm</Button>
                 </Stack>
 
                 <Table size="small">
@@ -95,9 +95,9 @@ export default function DigitalCrudSection() {
                                             size="small"
                                             onClick={() => handleEditDocument(doc)}
                                         >
-                                            Edit
+                                            Sửa
                                         </Button>
-                                        <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Delete</Button>
+                                        <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Xóa</Button>
                                     </TableCell>
                                 </TableRow>
                             ))

@@ -17,6 +17,7 @@ type Props = Readonly<{
     records: BorrowingRecord[];
     renewingRecordId: number | null;
     onRenew: (recordId: number) => Promise<void>;
+    onViewDetail?: (record: BorrowingRecord) => void;
 }>;
 
 function isOverdueRecord(record: BorrowingRecord): boolean {
@@ -47,7 +48,7 @@ function statusColor(record: BorrowingRecord, isBorrowing: boolean): 'error' | '
     return isBorrowing ? 'primary' : 'default';
 }
 
-export default function BorrowingRecordsCard({ records, renewingRecordId, onRenew }: Props) {
+export default function BorrowingRecordsCard({ records, renewingRecordId, onRenew, onViewDetail }: Props) {
     return (
         <Card>
             <CardContent>
@@ -58,6 +59,7 @@ export default function BorrowingRecordsCard({ records, renewingRecordId, onRene
                             <TableCell>Sách</TableCell>
                             <TableCell>Hạn trả</TableCell>
                             <TableCell>Trạng thái</TableCell>
+                            <TableCell align="center">Chi tiết</TableCell>
                             <TableCell align="right">Hành động</TableCell>
                         </TableRow>
                     </TableHead>
@@ -97,6 +99,13 @@ export default function BorrowingRecordsCard({ records, renewingRecordId, onRene
                                             color={chipColor}
                                         />
                                     </TableCell>
+                                    <TableCell align="center">
+                                        {onViewDetail ? (
+                                            <Button size="small" variant="outlined" onClick={() => onViewDetail(row)}>
+                                                Xem chi tiết
+                                            </Button>
+                                        ) : '-'}
+                                    </TableCell>
                                     <TableCell align="right">
                                         {isBorrowing ? (
                                             <>
@@ -107,7 +116,7 @@ export default function BorrowingRecordsCard({ records, renewingRecordId, onRene
                                                     onClick={() => void onRenew(row.recordId)}
                                                     startIcon={isRenewing ? <CircularProgress size={14} /> : undefined}
                                                 >
-                                                    {isRenewing ? 'Đang gia hạn...' : 'Gia hạn'}
+                                                    {isRenewing ? 'Đang gửi yêu cầu...' : 'Gửi yêu cầu gia hạn'}
                                                 </Button>
                                                 {disableReason && (
                                                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>

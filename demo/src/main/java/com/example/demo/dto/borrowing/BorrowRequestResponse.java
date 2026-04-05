@@ -4,10 +4,12 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 
 public record BorrowRequestResponse(
     Long id,
     Long userId,
+    Long borrowRecordId,
     String username,
     String userFullName,
     Long bookId,
@@ -20,5 +22,7 @@ public record BorrowRequestResponse(
     LocalDateTime approvalDate,
     String approvalNote,
     String approvedByUsername,
-    BorrowRequestStatus status
+    BorrowRequestStatus status,
+    BorrowRequestType requestType,
+    String source
 ) {}

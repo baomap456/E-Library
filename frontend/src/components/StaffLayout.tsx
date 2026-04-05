@@ -17,8 +17,12 @@ const drawerWidth = 280;
 
 const navItems = [
     { label: 'Dashboard', path: '/app/librarian/dashboard' },
-    { label: 'Mượn trả', path: '/app/librarian/circulation' },
-    { label: 'Quản lý đầu sách', path: '/app/librarian/catalog' },
+    { label: 'Mượn sách', path: '/app/librarian/circulation/borrow' },
+    { label: 'Trả sách', path: '/app/librarian/circulation/return' },
+    { label: 'Quản lý sách', path: '/app/librarian/catalog/books' },
+    { label: 'Quản lý tác giả', path: '/app/librarian/catalog/authors' },
+    { label: 'Quản lý danh mục', path: '/app/librarian/catalog/categories' },
+    { label: 'Quản lý vị trí sách', path: '/app/librarian/catalog/locations' },
     { label: 'Công nợ', path: '/app/librarian/debtors' },
     { label: 'Sự cố', path: '/app/librarian/incidents' },
     { label: 'Tài liệu số', path: '/app/librarian/digital' },

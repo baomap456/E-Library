@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client';
 import { fetchAuthPersonalData, renewMembership, upgradeMembership } from '../../api/modules/authPersonalApi';
-import { fetchBorrowingData, fetchMyWaitlist, getMyBorrowRequests } from '../../api/modules/borrowingApi';
+import { fetchBorrowingData, fetchMyWaitlist, getMyBorrowRequests, renewBorrowingRecord } from '../../api/modules/borrowingApi';
 import { getStoredUser } from '../../api/session';
 import type {
     CardResponse,
@@ -12,7 +12,7 @@ import type {
     ProfileResponse,
 } from '../../types/modules/authPersonal';
 import type { BorrowRequestResponse } from '../../types/borrowing';
-import type { BorrowingFinesResponse, BorrowingWaitlistItem } from '../../types/modules/borrowing';
+import type { BorrowingFinesResponse, BorrowingRecord, BorrowingWaitlistItem } from '../../types/modules/borrowing';
 
 const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'http://localhost:8080';
 
@@ -21,12 +21,14 @@ export function useAuthPersonal() {
     const [card, setCard] = useState<CardResponse | null>(null);
     const [notifications, setNotifications] = useState<NotificationResponse[]>([]);
     const [myRequests, setMyRequests] = useState<BorrowRequestResponse[]>([]);
+    const [records, setRecords] = useState<BorrowingRecord[]>([]);
     const [waitlist, setWaitlist] = useState<BorrowingWaitlistItem[]>([]);
     const [fines, setFines] = useState<BorrowingFinesResponse | null>(null);
     const [packages, setPackages] = useState<MembershipPackageResponse[]>([]);
     const [transactions, setTransactions] = useState<MembershipTransactionResponse[]>([]);
     const [loading, setLoading] = useState(true);
     const [upgrading, setUpgrading] = useState(false);
+    const [renewingRecordId, setRenewingRecordId] = useState<number | null>(null);
     const [renewing, setRenewing] = useState(false);
     const [error, setError] = useState('');
 
@@ -62,6 +64,7 @@ export function useAuthPersonal() {
         setPackages(data.packages);
         setTransactions(data.transactions);
         setMyRequests(userRequests);
+        setRecords(borrowingData.records);
         setWaitlist(userWaitlist);
         setFines(borrowingData.fines);
     };
@@ -104,11 +107,11 @@ export function useAuthPersonal() {
         };
     }, [profile?.id]);
 
-    const handleUpgrade = async (targetPackage: string) => {
+    const handleUpgrade = async (targetPackage: string, paymentChannel: 'QR' | 'COUNTER' = 'QR') => {
         setUpgrading(true);
         setError('');
         try {
-            const result = await upgradeMembership(targetPackage);
+            const result = await upgradeMembership(targetPackage, paymentChannel);
             await loadData();
             alert(result.message || 'Nang cap goi thanh cong.');
         } catch {
@@ -132,6 +135,20 @@ export function useAuthPersonal() {
         }
     };
 
+    const handleRenewBorrowRecord = async (recordId: number) => {
+        setRenewingRecordId(recordId);
+        setError('');
+        try {
+            const response = await renewBorrowingRecord(recordId);
+            await loadData();
+            alert(response.message || 'Đã gửi yêu cầu gia hạn.');
+        } catch {
+            setError('Không thể gửi yêu cầu gia hạn lúc này.');
+        } finally {
+            setRenewingRecordId(null);
+        }
+    };
+
     const qrData = useMemo(() => card?.qrPayload || profile?.username || 'member', [card, profile]);
 
     return {
@@ -139,16 +156,19 @@ export function useAuthPersonal() {
         card,
         notifications,
         myRequests,
+        records,
         waitlist,
         fines,
         packages,
         transactions,
         loading,
         upgrading,
+        renewingRecordId,
         renewing,
         error,
         qrData,
         handleUpgrade,
         handleRenew,
+        handleRenewBorrowRecord,
     };
 }

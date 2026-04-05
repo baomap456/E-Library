@@ -28,6 +28,11 @@ public class BorrowingMapper {
             Long daysUntilDue) {
         return new BorrowRecordResponse(
                 record.getId(),
+            record.getUser() == null ? null : record.getUser().getId(),
+            record.getUser() == null ? null : record.getUser().getUsername(),
+            record.getUser() == null ? null : record.getUser().getFullName(),
+            record.getBookItem() == null || record.getBookItem().getBook() == null ? null : record.getBookItem().getBook().getId(),
+            record.getBookItem() == null ? null : record.getBookItem().getId(),
                 record.getBookItem().getBook().getTitle(),
                 record.getBookItem().getBarcode(),
                 record.getBorrowDate(),
@@ -39,7 +44,15 @@ public class BorrowingMapper {
                 maxRenewals,
                 canRenew,
                 renewDisabledReason,
-                daysUntilDue);
+            daysUntilDue,
+            record.getBorrowMode(),
+            Objects.requireNonNullElse(record.getDepositAmount(), 0.0),
+            record.getBorrowerCitizenId(),
+            record.getTemporaryRecord(),
+            record.getIncidentType(),
+            record.getDamageSeverity(),
+            Objects.requireNonNullElse(record.getCompensationAmount(), 0.0),
+            record.getIncidentNote());
     }
 
     public PaidFineHistoryResponse toPaidFineHistoryResponse(FinePayment payment, String fallbackMethod) {
@@ -52,21 +65,36 @@ public class BorrowingMapper {
     }
 
     public BorrowRequestResponse toBorrowRequestResponse(BorrowRequest request) {
+        Book book = request.getBookItem() != null
+                ? request.getBookItem().getBook()
+                : request.getBorrowRecord() != null && request.getBorrowRecord().getBookItem() != null
+                    ? request.getBorrowRecord().getBookItem().getBook()
+                    : null;
+        String source = "REQUEST";
+        if (request.getRequestType() == com.example.demo.model.BorrowRequestType.BORROW
+                && request.getBorrowRecord() != null
+                && "Lập phiếu mượn trực tiếp tại quầy".equals(request.getApprovalNote())) {
+            source = "DESK";
+        }
+
         return new BorrowRequestResponse(
                 request.getId(),
                 request.getUser().getId(),
+                request.getBorrowRecord() == null ? null : request.getBorrowRecord().getId(),
                 request.getUser().getUsername(),
                 request.getUser().getFullName(),
-            request.getBookItem().getBook().getId(),
-                request.getBookItem().getId(),
-                request.getBookItem().getBook().getTitle(),
-                request.getBookItem().getBook().getIsbn(),
+                book == null ? null : book.getId(),
+                request.getBookItem() == null ? null : request.getBookItem().getId(),
+                book == null ? null : book.getTitle(),
+                book == null ? null : book.getIsbn(),
                 request.getRequestDate(),
                 request.getRequestedPickupDate(),
                 request.getRequestedReturnDate(),
                 request.getApprovalDate(),
                 request.getApprovalNote(),
                 request.getApprovedBy() == null ? null : request.getApprovedBy().getUsername(),
-                request.getStatus());
+                request.getStatus(),
+                request.getRequestType(),
+                source);
     }
 }

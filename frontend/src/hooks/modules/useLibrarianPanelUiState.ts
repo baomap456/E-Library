@@ -20,6 +20,8 @@ function readStoredString(key: string, fallback: string): string {
 interface UseLibrarianPanelUiStateParams {
     books: LibrarianBook[];
     debtors: LibrarianDebtor[];
+    fineInvoices: unknown[];
+    userFineSummaries: unknown[];
     requests: BorrowRequestResponse[];
     authors: LibrarianAuthor[];
     categories: LibrarianCategory[];
@@ -28,7 +30,7 @@ interface UseLibrarianPanelUiStateParams {
 }
 
 export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams) {
-    const { books, debtors, requests, authors, categories, locations, filterStatus } = params;
+    const { books, debtors, fineInvoices, userFineSummaries, requests, authors, categories, locations, filterStatus } = params;
 
     const [tabValue, setTabValue] = useState(() => readStoredNumber('librarian:tabValue', 0));
     const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
@@ -38,6 +40,7 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
     const [bookAvailableOnly, setBookAvailableOnly] = useState(() => readStoredString('librarian:bookAvailableOnly', 'true') === 'true');
 
     const [debtorOverdueOnly, setDebtorOverdueOnly] = useState(() => readStoredString('librarian:debtorOverdueOnly', 'false') === 'true');
+    const [debtorSearch, setDebtorSearch] = useState(() => readStoredString('librarian:debtorSearch', ''));
 
     const [authorSearch, setAuthorSearch] = useState(() => readStoredString('librarian:authorSearch', ''));
     const [categorySearch, setCategorySearch] = useState(() => readStoredString('librarian:categorySearch', ''));
@@ -57,11 +60,18 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
     });
 
     const filteredDebtors = useMemo(() => {
-        if (!debtorOverdueOnly) {
-            return debtors;
-        }
-        return debtors.filter((debtor) => debtor.overdue);
-    }, [debtors, debtorOverdueOnly]);
+        const q = debtorSearch.trim().toLowerCase();
+        return debtors.filter((debtor) => {
+            if (debtorOverdueOnly && !debtor.overdue) {
+                return false;
+            }
+            if (!q) {
+                return true;
+            }
+            const searchableText = `${debtor.fullName ?? ''} ${debtor.username}`.toLowerCase();
+            return searchableText.includes(q);
+        });
+    }, [debtors, debtorOverdueOnly, debtorSearch]);
 
     const debtorPagination = usePagination(filteredDebtors, {
         storageKey: 'librarian:debtors',
@@ -130,6 +140,10 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
     }, [debtorOverdueOnly]);
 
     useEffect(() => {
+        sessionStorage.setItem('librarian:debtorSearch', debtorSearch);
+    }, [debtorSearch]);
+
+    useEffect(() => {
         sessionStorage.setItem('librarian:authorSearch', authorSearch);
     }, [authorSearch]);
 
@@ -170,6 +184,10 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
         onDebtorRowsPerPageChange: debtorPagination.onRowsPerPageChange,
         debtorOverdueOnly,
         setDebtorOverdueOnly,
+        debtorSearch,
+        setDebtorSearch,
+        fineInvoices,
+        userFineSummaries,
         filteredDebtorsCount: filteredDebtors.length,
         pagedDebtors: debtorPagination.pagedItems,
 

@@ -1,6 +1,7 @@
 package com.example.demo.mapper;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.stereotype.Component;
@@ -16,7 +17,16 @@ import com.example.demo.model.Location;
 @Component
 public class LibrarianMapper {
 
-    public LibrarianBookResponse toBookResponse(Book book, long availableCopies, String availableBarcode) {
+        public LibrarianBookResponse toBookResponse(
+            Book book,
+            long availableCopies,
+            String availableBarcode,
+                Integer categoryId,
+            String categoryName,
+                List<Integer> authorIds,
+            List<String> authorNames,
+                Integer locationId,
+            String locationLabel) {
         return new LibrarianBookResponse(
                 book.getId(),
                 book.getTitle(),
@@ -28,7 +38,13 @@ public class LibrarianMapper {
                 book.isDigital(),
                 book.getCanTakeHome(),
                 availableCopies,
-                availableBarcode);
+                availableBarcode,
+                categoryId,
+                categoryName,
+                authorIds,
+                authorNames,
+                locationId,
+                locationLabel);
     }
 
     public LibrarianLocationResponse toLocationResponse(Location location) {

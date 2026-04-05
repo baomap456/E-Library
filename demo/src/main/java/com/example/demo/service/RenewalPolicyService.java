@@ -1,14 +1,20 @@
 package com.example.demo.service;
 
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
+import java.util.EnumSet;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.model.ReservationStatus;
+import com.example.demo.model.User;
 import com.example.demo.repository.BorrowRecordRepository;
+import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.repository.ReservationRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -16,9 +22,6 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class RenewalPolicyService {
-
-    @Value("${app.renewal.max-renewals:2}")
-    private int maxRenewals;
 
     @Value("${app.renewal.window-days:3}")
     private int renewalWindowDays;
@@ -28,6 +31,7 @@ public class RenewalPolicyService {
 
     private final ReservationRepository reservationRepository;
     private final BorrowRecordRepository borrowRecordRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
 
     public record RenewalDecision(boolean allowed, String reason, long daysUntilDue) {
     }
@@ -46,16 +50,18 @@ public class RenewalPolicyService {
             return new RenewalDecision(false, "Sách đã quá hạn, vui lòng đến quầy để xử lý", daysUntilDue);
         }
 
-        int currentRenewals = borrowRecord.getRenewalCount() == null ? 0 : borrowRecord.getRenewalCount();
-        if (currentRenewals >= maxRenewals) {
-            return new RenewalDecision(false, "Đã đạt giới hạn gia hạn", daysUntilDue);
+        User borrower = borrowRecord.getUser();
+        int monthlyLimit = monthlyLimitForUser(borrower);
+        long monthlyRenewals = approvedRenewalsThisMonth(borrower.getId());
+        if (monthlyRenewals >= monthlyLimit) {
+            return new RenewalDecision(false, "Bạn đã đạt giới hạn gia hạn trong tháng", daysUntilDue);
         }
 
-        boolean hasPendingReservation = reservationRepository.existsByBookIdAndStatus(
+        boolean hasPendingReservation = reservationRepository.existsByBookIdAndStatusIn(
                 borrowRecord.getBookItem().getBook().getId(),
-                ReservationStatus.PENDING);
+                EnumSet.of(ReservationStatus.PENDING, ReservationStatus.NOTIFIED));
         if (hasPendingReservation) {
-            return new RenewalDecision(false, "Sách đang có người đặt trước, không thể gia hạn", daysUntilDue);
+            return new RenewalDecision(false, "Sách đang có người trong hàng chờ, không thể gia hạn", daysUntilDue);
         }
 
         double outstandingDebt = borrowRecordRepository.sumOutstandingDebtByUserId(borrowRecord.getUser().getId());
@@ -70,6 +76,35 @@ public class RenewalPolicyService {
         return new RenewalDecision(true, null, daysUntilDue);
     }
 
+    public RenewalDecision evaluateForRenewalRequest(BorrowRecord borrowRecord) {
+        RenewalDecision baseDecision = evaluate(borrowRecord);
+        if (!baseDecision.allowed()) {
+            return baseDecision;
+        }
+
+        boolean hasPendingRenewalRequest = borrowRequestRepository.existsByStatusAndRequestTypeAndBorrowRecordId(
+                BorrowRequestStatus.PENDING,
+                BorrowRequestType.RENEWAL,
+                borrowRecord.getId());
+        if (hasPendingRenewalRequest) {
+            return new RenewalDecision(false, "Phiếu mượn này đã có yêu cầu gia hạn đang chờ duyệt", baseDecision.daysUntilDue());
+        }
+
+        User borrower = borrowRecord.getUser();
+        int monthlyLimit = monthlyLimitForUser(borrower);
+        long requestedThisMonth = borrowRequestRepository.countByUserIdAndRequestTypeAndStatusInAndRequestDateBetween(
+                borrower.getId(),
+                BorrowRequestType.RENEWAL,
+                EnumSet.of(BorrowRequestStatus.PENDING, BorrowRequestStatus.APPROVED),
+                monthStart(),
+                nextMonthStart());
+        if (requestedThisMonth >= monthlyLimit) {
+            return new RenewalDecision(false, "Bạn đã đạt giới hạn gửi yêu cầu gia hạn trong tháng", baseDecision.daysUntilDue());
+        }
+
+        return baseDecision;
+    }
+
     public LocalDateTime applyRenewal(BorrowRecord borrowRecord) {
         int currentRenewals = borrowRecord.getRenewalCount() == null ? 0 : borrowRecord.getRenewalCount();
         borrowRecord.setDueDate(borrowRecord.getDueDate().plusDays(renewalExtensionDays));
@@ -77,7 +112,36 @@ public class RenewalPolicyService {
         return borrowRecord.getDueDate();
     }
 
-    public int maxRenewals() {
-        return maxRenewals;
+    public int maxRenewalsForUser(User user) {
+        return monthlyLimitForUser(user);
+    }
+
+    private int monthlyLimitForUser(User user) {
+        String membershipName = user.getMembershipType() == null || user.getMembershipType().getName() == null
+                ? ""
+                : user.getMembershipType().getName().trim();
+        if ("Premium".equalsIgnoreCase(membershipName)) {
+            return 5;
+        }
+        return 3;
+    }
+
+    private long approvedRenewalsThisMonth(Long userId) {
+        return borrowRequestRepository.countByUserIdAndRequestTypeAndStatusAndRequestDateBetween(
+                userId,
+                BorrowRequestType.RENEWAL,
+                BorrowRequestStatus.APPROVED,
+                monthStart(),
+                nextMonthStart());
+    }
+
+    private LocalDateTime monthStart() {
+        YearMonth month = YearMonth.now();
+        return month.atDay(1).atStartOfDay();
+    }
+
+    private LocalDateTime nextMonthStart() {
+        YearMonth month = YearMonth.now().plusMonths(1);
+        return month.atDay(1).atStartOfDay();
     }
 }
