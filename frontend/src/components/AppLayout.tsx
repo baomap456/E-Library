@@ -16,6 +16,7 @@ import { getStoredUser, hasRole } from '../api/session';
 const drawerWidth = 280;
 
 const navItems = [
+    { label: 'Trang chủ', path: '/', librarianOnly: false },
     { label: 'Tài khoản của tôi', path: '/app/auth-personal', librarianOnly: false },
     { label: 'Tra cứu sách', path: '/app/catalog', librarianOnly: false },
     { label: 'Mượn trả của tôi', path: '/app/borrowing', librarianOnly: false, memberOnly: true },

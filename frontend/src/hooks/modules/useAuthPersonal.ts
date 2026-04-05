@@ -14,6 +14,8 @@ import type {
 import type { BorrowRequestResponse } from '../../types/borrowing';
 import type { BorrowingFinesResponse, BorrowingWaitlistItem } from '../../types/modules/borrowing';
 
+const wsBaseUrl = import.meta.env.VITE_WS_BASE_URL || 'http://localhost:8080';
+
 export function useAuthPersonal() {
     const [profile, setProfile] = useState<ProfileResponse | null>(null);
     const [card, setCard] = useState<CardResponse | null>(null);
@@ -71,7 +73,7 @@ export function useAuthPersonal() {
             try {
                 await loadData();
             } catch {
-                setError('Không tải được dữ liệu hồ sơ. Vui lòng thử lại.');
+                setError('Khong tai duoc du lieu ho so. Vui long thu lai.');
             } finally {
                 setLoading(false);
             }
@@ -85,7 +87,7 @@ export function useAuthPersonal() {
             return;
         }
 
-        const wsUrl = 'http://localhost:8081/ws';
+        const wsUrl = `${wsBaseUrl}/ws`;
         const client = new Client({
             webSocketFactory: () => new SockJS(wsUrl),
             reconnectDelay: 5000,
@@ -108,9 +110,9 @@ export function useAuthPersonal() {
         try {
             const result = await upgradeMembership(targetPackage);
             await loadData();
-            alert(result.message || 'Nâng cấp gói thành công.');
+            alert(result.message || 'Nang cap goi thanh cong.');
         } catch {
-            setError('Nâng cấp thất bại. Vui lòng thử lại.');
+            setError('Nang cap that bai. Vui long thu lai.');
         } finally {
             setUpgrading(false);
         }
@@ -122,9 +124,9 @@ export function useAuthPersonal() {
         try {
             const result = await renewMembership();
             await loadData();
-            alert(result.message || 'Gia hạn gói thành công.');
+            alert(result.message || 'Gia han goi thanh cong.');
         } catch {
-            setError('Gia hạn thất bại. Vui lòng thử lại.');
+            setError('Gia han that bai. Vui long thu lai.');
         } finally {
             setRenewing(false);
         }

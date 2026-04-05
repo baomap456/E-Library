@@ -76,7 +76,7 @@ export default function Register() {
                 }),
             );
             setSuccess('Đăng ký thành công! Hệ thống đang chuyển hướng...');
-            setTimeout(() => navigate('/app/auth-personal'), 700);
+            setTimeout(() => navigate('/', { replace: true }), 700);
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const apiError = err.response?.data as ApiErrorBody | undefined;

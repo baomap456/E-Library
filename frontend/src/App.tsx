@@ -8,7 +8,7 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import UserLayout from './components/UserLayout';
+import AppLayout from './components/AppLayout';
 import StaffLayout from './components/StaffLayout';
 import { getStoredToken, getStoredUser, hasRole } from './api/session';
 
@@ -96,7 +96,7 @@ function App() {
 
             <Route element={<RequireAuth />}>
               <Route element={<RequireMember />}>
-                <Route element={<UserLayout />}>
+                <Route element={<AppLayout />}>
                   <Route path="/app/profile" element={<AuthenticationPersonal />} />
                   <Route path="/app/auth-personal" element={<Navigate to="/app/profile" replace />} />
                   <Route path="/app/book-list" element={<BookList />} />
