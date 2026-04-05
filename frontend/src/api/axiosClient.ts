@@ -1,10 +1,13 @@
 import axios from 'axios';
 import { getStoredToken } from './session';
 
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+const rawApiBaseUrl = (import.meta.env.VITE_API_BASE_URL || '/api').trim();
+const apiBaseUrl = rawApiBaseUrl.endsWith('/api')
+    ? rawApiBaseUrl
+    : `${rawApiBaseUrl.replace(/\/+$/, '')}/api`;
 
 const axiosClient = axios.create({
-    baseURL: `${apiBaseUrl}/api`,
+    baseURL: apiBaseUrl,
     headers: {
         'Content-Type': 'application/json',
     },
