@@ -36,6 +36,7 @@ pipeline {
     options {
         timestamps()
         disableConcurrentBuilds()
+        skipDefaultCheckout()
     }
 
     stages {
@@ -78,15 +79,29 @@ pipeline {
         stage('Push Images To Harbor') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'harbor-credentials', usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD')]) {
-                    powershell '''
-                        docker login $env:HARBOR_REGISTRY -u $env:HARBOR_USERNAME -p $env:HARBOR_PASSWORD
-                        docker push $env:BACKEND_IMAGE
-                        docker tag $env:BACKEND_IMAGE $env:BACKEND_LATEST
-                        docker push $env:BACKEND_LATEST
-                        docker push $env:FRONTEND_IMAGE
-                        docker tag $env:FRONTEND_IMAGE $env:FRONTEND_LATEST
-                        docker push $env:FRONTEND_LATEST
-                    '''
+                    script {
+                        if (isUnix()) {
+                            sh '''
+                                echo "$HARBOR_PASSWORD" | docker login "$HARBOR_REGISTRY" -u "$HARBOR_USERNAME" --password-stdin
+                                docker push "$BACKEND_IMAGE"
+                                docker tag "$BACKEND_IMAGE" "$BACKEND_LATEST"
+                                docker push "$BACKEND_LATEST"
+                                docker push "$FRONTEND_IMAGE"
+                                docker tag "$FRONTEND_IMAGE" "$FRONTEND_LATEST"
+                                docker push "$FRONTEND_LATEST"
+                            '''
+                        } else {
+                            powershell '''
+                                $env:HARBOR_PASSWORD | docker login $env:HARBOR_REGISTRY --username $env:HARBOR_USERNAME --password-stdin
+                                docker push $env:BACKEND_IMAGE
+                                docker tag $env:BACKEND_IMAGE $env:BACKEND_LATEST
+                                docker push $env:BACKEND_LATEST
+                                docker push $env:FRONTEND_IMAGE
+                                docker tag $env:FRONTEND_IMAGE $env:FRONTEND_LATEST
+                                docker push $env:FRONTEND_LATEST
+                            '''
+                        }
+                    }
                 }
             }
         }
@@ -97,8 +112,44 @@ pipeline {
                     usernamePassword(credentialsId: 'harbor-credentials', usernameVariable: 'HARBOR_USERNAME', passwordVariable: 'HARBOR_PASSWORD'),
                     sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'EC2_SSH_KEY')
                 ]) {
-                    powershell '''
-                        @"
+                    script {
+                        if (isUnix()) {
+                            sh '''
+                                cat <<EOF > .env.prod
+BACKEND_IMAGE=$BACKEND_IMAGE
+FRONTEND_IMAGE=$FRONTEND_IMAGE
+FRONTEND_PUBLISHED_PORT=$FRONTEND_PUBLISHED_PORT
+BACKEND_PUBLISHED_PORT=$BACKEND_PUBLISHED_PORT
+DB_PUBLISHED_PORT=$DB_PUBLISHED_PORT
+MYSQL_ROOT_PASSWORD=$MYSQL_ROOT_PASSWORD
+MYSQL_DATABASE=$MYSQL_DATABASE
+MYSQL_USER=$MYSQL_USER
+MYSQL_PASSWORD=$MYSQL_PASSWORD
+DB_APP_USERNAME=$DB_APP_USERNAME
+DB_APP_PASSWORD=$DB_APP_PASSWORD
+SPRING_JPA_HIBERNATE_DDL_AUTO=$SPRING_JPA_HIBERNATE_DDL_AUTO
+SPRING_FLYWAY_ENABLED=$SPRING_FLYWAY_ENABLED
+SPRING_MAIL_HOST=$SPRING_MAIL_HOST
+SPRING_MAIL_PORT=$SPRING_MAIL_PORT
+SPRING_MAIL_USERNAME=$SPRING_MAIL_USERNAME
+SPRING_MAIL_PASSWORD=$SPRING_MAIL_PASSWORD
+SPRING_MAIL_SMTP_AUTH=$SPRING_MAIL_SMTP_AUTH
+SPRING_MAIL_SMTP_STARTTLS_ENABLE=$SPRING_MAIL_SMTP_STARTTLS_ENABLE
+SPRING_MAIL_SMTP_STARTTLS_REQUIRED=$SPRING_MAIL_SMTP_STARTTLS_REQUIRED
+APP_NOTIFICATION_EMAIL_ENABLED=$APP_NOTIFICATION_EMAIL_ENABLED
+APP_NOTIFICATION_FRONTEND_BASE_URL=$APP_NOTIFICATION_FRONTEND_BASE_URL
+APP_JWT_SECRET_KEY=$APP_JWT_SECRET_KEY
+APP_JWT_EXPIRATION_MS=$APP_JWT_EXPIRATION_MS
+EOF
+
+                                ssh -i "$EC2_SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "mkdir -p $EC2_DEPLOY_PATH"
+                                scp -i "$EC2_SSH_KEY" -o StrictHostKeyChecking=no docker-compose.prod.yml "$EC2_USER@$EC2_HOST:$EC2_DEPLOY_PATH/docker-compose.prod.yml"
+                                scp -i "$EC2_SSH_KEY" -o StrictHostKeyChecking=no .env.prod "$EC2_USER@$EC2_HOST:$EC2_DEPLOY_PATH/.env.prod"
+                                ssh -i "$EC2_SSH_KEY" -o StrictHostKeyChecking=no "$EC2_USER@$EC2_HOST" "docker login $HARBOR_REGISTRY -u $HARBOR_USERNAME -p $HARBOR_PASSWORD && cd $EC2_DEPLOY_PATH && docker compose --env-file .env.prod -f docker-compose.prod.yml pull && docker compose --env-file .env.prod -f docker-compose.prod.yml up -d"
+                            '''
+                        } else {
+                            powershell '''
+                                @"
 BACKEND_IMAGE=$env:BACKEND_IMAGE
 FRONTEND_IMAGE=$env:FRONTEND_IMAGE
 FRONTEND_PUBLISHED_PORT=$env:FRONTEND_PUBLISHED_PORT
@@ -125,11 +176,13 @@ APP_JWT_SECRET_KEY=$env:APP_JWT_SECRET_KEY
 APP_JWT_EXPIRATION_MS=$env:APP_JWT_EXPIRATION_MS
 "@ | Set-Content -Path .env.prod
 
-                        ssh -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no $env:EC2_USER@$env:EC2_HOST "mkdir -p $env:EC2_DEPLOY_PATH"
-                        scp -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no docker-compose.prod.yml $env:EC2_USER@$env:EC2_HOST:$env:EC2_DEPLOY_PATH/docker-compose.prod.yml
-                        scp -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no .env.prod $env:EC2_USER@$env:EC2_HOST:$env:EC2_DEPLOY_PATH/.env.prod
-                        ssh -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no $env:EC2_USER@$env:EC2_HOST "docker login $env:HARBOR_REGISTRY -u $env:HARBOR_USERNAME -p $env:HARBOR_PASSWORD && cd $env:EC2_DEPLOY_PATH && docker compose --env-file .env.prod -f docker-compose.prod.yml pull && docker compose --env-file .env.prod -f docker-compose.prod.yml up -d"
-                    '''
+                                ssh -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no $env:EC2_USER@$env:EC2_HOST "mkdir -p $env:EC2_DEPLOY_PATH"
+                                scp -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no docker-compose.prod.yml $env:EC2_USER@$env:EC2_HOST:$env:EC2_DEPLOY_PATH/docker-compose.prod.yml
+                                scp -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no .env.prod $env:EC2_USER@$env:EC2_HOST:$env:EC2_DEPLOY_PATH/.env.prod
+                                ssh -i $env:EC2_SSH_KEY -o StrictHostKeyChecking=no $env:EC2_USER@$env:EC2_HOST "docker login $env:HARBOR_REGISTRY -u $env:HARBOR_USERNAME -p $env:HARBOR_PASSWORD && cd $env:EC2_DEPLOY_PATH && docker compose --env-file .env.prod -f docker-compose.prod.yml pull && docker compose --env-file .env.prod -f docker-compose.prod.yml up -d"
+                            '''
+                        }
+                    }
                 }
             }
         }
@@ -137,7 +190,13 @@ APP_JWT_EXPIRATION_MS=$env:APP_JWT_EXPIRATION_MS
 
     post {
         always {
-            powershell 'if (Test-Path .env.prod) { Remove-Item .env.prod -Force }'
+            script {
+                if (isUnix()) {
+                    sh 'rm -f .env.prod'
+                } else {
+                    powershell 'if (Test-Path .env.prod) { Remove-Item .env.prod -Force }'
+                }
+            }
         }
     }
 }
