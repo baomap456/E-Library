@@ -1,20 +1,28 @@
-# E-Library CI/CD Pipeline Guide
+# E-Library Jenkins CI/CD Guide
 
 ## Muc tieu
 
-Tai lieu nay huong dan quy trinh deploy cho project `E-Library` theo flow:
+Tai lieu nay huong dan quy trinh deploy project `E-Library` theo mo hinh:
 
-1. Push code len GitLab
-2. GitLab trigger file `.gitlab-ci.yml`
-3. GitLab build 2 Docker image:
+1. Push code len GitLab de luu tru source
+2. Jenkins pull code tu GitLab
+3. Jenkins build 2 Docker image:
    - `frontend`
    - `backend`
-4. GitLab push 2 image len Harbor
-5. GitLab SSH vao EC2
-6. EC2rbor pull image moi tu Ha
-7. EC2 chay `docker compose up -d` de cap nhat he thong
+4. Jenkins push 2 image len Harbor
+5. Jenkins SSH vao EC2
+6. EC2 pull image moi tu Harbor
+7. EC2 chay `docker compose up -d`
 
-Database van duoc chay bang service rieng trong `docker-compose.prod.yml`.
+GitLab trong flow nay chi dong vai tro source repository. Toan bo CI/CD duoc xu ly boi Jenkins.
+
+## Cac file lien quan
+
+- [`Jenkinsfile`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/Jenkinsfile)
+- [`docker-compose.prod.yml`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/docker-compose.prod.yml)
+- [`.env.prod.example`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/.env.prod.example)
+- [`frontend/Dockerfile`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/frontend/Dockerfile)
+- [`demo/Dockerfile`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/demo/Dockerfile)
 
 ## Kien truc deploy
 
@@ -24,52 +32,62 @@ Production gom 3 service:
 - `backend`: image build tu thu muc `demo`
 - `db`: MySQL container
 
-Tren EC2, project duoc chay bang file `docker-compose.prod.yml`.
-
-## Cac file lien quan trong repo
-
-- [`.gitlab-ci.yml`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/.gitlab-ci.yml)
-- [`docker-compose.prod.yml`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/docker-compose.prod.yml)
-- [`.env.prod.example`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/.env.prod.example)
-- [`frontend/Dockerfile`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/frontend/Dockerfile)
-- [`demo/Dockerfile`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/demo/Dockerfile)
+Tren EC2, he thong duoc chay bang `docker-compose.prod.yml`.
 
 ## Luong chay tong quat
 
-### 1. Developer push code len GitLab
+### 1. Push code len GitLab
 
-Ban push code len branch duoc cau hinh deploy, thuong la branch mac dinh nhu `main` hoac `master`.
+Ban push code len branch ma Jenkins dang theo doi, thuong la `main`.
 
-### 2. GitLab build image
+### 2. Jenkins checkout source
 
-Pipeline se:
+Jenkins lay source tu GitLab thong qua webhook hoac poll SCM.
+
+### 3. Jenkins build Docker image
+
+Jenkins se:
 
 - build image backend tu `demo/Dockerfile`
 - build image frontend tu `frontend/Dockerfile`
-- gan tag theo `CI_COMMIT_SHORT_SHA`
-- neu dang o default branch thi push them tag `latest`
+- gan tag theo `BUILD_NUMBER`
+- push them tag `latest`
 
-### 3. GitLab push image len Harbor
+### 4. Jenkins push image len Harbor
 
 Hai image se duoc push len Harbor:
 
-- `harbor/.../backend:<tag>`
-- `harbor/.../frontend:<tag>`
+- `harbor/.../backend:<build-number>`
+- `harbor/.../frontend:<build-number>`
+- `harbor/.../backend:latest`
+- `harbor/.../frontend:latest`
 
-### 4. GitLab SSH vao EC2
+### 5. Jenkins deploy len EC2
 
-Job deploy se:
+Jenkins se:
 
-- tao thu muc deploy tren EC2 neu chua co
+- tao file `.env.prod` tam thoi
 - copy `docker-compose.prod.yml` len EC2
-- tao file `.env.prod` tren EC2 tu GitLab variables
+- copy `.env.prod` len EC2
 - login Harbor tren EC2
 - chay `docker compose pull`
 - chay `docker compose up -d`
 
-## Phan viec can lam tay 1 lan tren EC2
+## Jenkins can gi tren may build
 
-Pipeline khong tu cai Docker cho EC2, vi vay ban can setup may EC2 truoc.
+May Jenkins agent can co:
+
+- Git
+- Docker
+- quyen chay Docker
+- `ssh`, `scp`
+
+Neu Jenkins chay tren Windows, can co:
+
+- Docker Desktop hoac Docker Engine
+- OpenSSH client
+
+## Phan viec can lam tay 1 lan tren EC2
 
 ### 1. Cai Docker va Docker Compose
 
@@ -104,168 +122,181 @@ Vi du:
 mkdir -p ~/elibrary
 ```
 
-Thu muc nay se la noi pipeline copy file `docker-compose.prod.yml` va `.env.prod` vao.
+Thu muc nay se la noi Jenkins copy:
+
+- `docker-compose.prod.yml`
+- `.env.prod`
 
 ### 3. Mo security group
 
-Can mo cac cong phu hop tren AWS Security Group:
+Can mo cac cong can thiet:
 
 - `80` cho frontend
-- `8080` cho backend neu ban muon goi truc tiep backend
+- `8080` cho backend neu can test truc tiep
 - `22` cho SSH
-- `3307` chi mo neu ban thuc su can truy cap MySQL tu ben ngoai
+- `3307` chi mo neu ban that su muon truy cap MySQL tu ngoai
 
 Khuyen nghi:
 
 - mo `80` va `22`
 - han che mo `3307`
-- `8080` co the mo tam de test, sau nay nen cho qua reverse proxy
 
-## Bien moi truong can them trong GitLab
+## Jenkins credentials nen tao
 
-Vao `GitLab Project -> Settings -> CI/CD -> Variables` va them cac bien sau.
+Trong Jenkins, vao `Manage Jenkins -> Credentials` va tao cac credential sau.
 
-### Nhom Harbor
+### Bat buoc
 
-- `HARBOR_REGISTRY`
-- `HARBOR_PROJECT`
-- `HARBOR_USERNAME`
-- `HARBOR_PASSWORD`
+- `harbor-credentials`
+  - loai: Username with password
+  - dung de login Harbor
 
-Vi du:
+- `ec2-ssh-key`
+  - loai: SSH Username with private key
+  - dung de SSH va SCP sang EC2
 
-```text
-HARBOR_REGISTRY=harbor.example.com
-HARBOR_PROJECT=elibrary
-HARBOR_USERNAME=admin
-HARBOR_PASSWORD=your_password
-```
+### Dung dang Secret text
 
-### Nhom frontend build
+- `harbor-registry`
+- `harbor-project`
+- `vite-api-base-url`
+- `vite-ws-base-url`
+- `ec2-host`
+- `ec2-user`
+- `ec2-deploy-path`
+- `frontend-published-port`
+- `backend-published-port`
+- `db-published-port`
+- `mysql-root-password`
+- `mysql-database`
+- `mysql-user`
+- `mysql-password`
+- `db-app-username`
+- `db-app-password`
+- `spring-jpa-hibernate-ddl-auto`
+- `spring-flyway-enabled`
+- `spring-mail-host`
+- `spring-mail-port`
+- `spring-mail-username`
+- `spring-mail-password`
+- `spring-mail-smtp-auth`
+- `spring-mail-smtp-starttls-enable`
+- `spring-mail-smtp-starttls-required`
+- `app-notification-email-enabled`
+- `app-notification-frontend-base-url`
+- `app-jwt-secret-key`
+- `app-jwt-expiration-ms`
 
-- `VITE_API_BASE_URL`
-- `VITE_WS_BASE_URL`
+## Gia tri goi y cho Jenkins credentials
 
-Vi du neu frontend chay tren browser va backend expose cong `8080` tren EC2:
-
-```text
-VITE_API_BASE_URL=http://YOUR_EC2_PUBLIC_IP:8080
-VITE_WS_BASE_URL=http://YOUR_EC2_PUBLIC_IP:8080
-```
-
-Neu ban co domain thi thay bang domain:
-
-```text
-VITE_API_BASE_URL=https://api.your-domain.com
-VITE_WS_BASE_URL=https://api.your-domain.com
-```
-
-### Nhom SSH deploy
-
-- `EC2_HOST`
-- `EC2_USER`
-- `EC2_SSH_PRIVATE_KEY`
-- `EC2_DEPLOY_PATH`
-
-Vi du:
-
-```text
-EC2_HOST=3.25.100.10
-EC2_USER=ubuntu
-EC2_DEPLOY_PATH=/home/ubuntu/elibrary
-```
-
-`EC2_SSH_PRIVATE_KEY` la private key dung de SSH vao EC2. Dan toan bo noi dung key vao variable nay.
-
-### Nhom database
-
-- `MYSQL_ROOT_PASSWORD`
-- `MYSQL_DATABASE`
-- `MYSQL_USER`
-- `MYSQL_PASSWORD`
-- `DB_APP_USERNAME`
-- `DB_APP_PASSWORD`
-
-Vi du:
+### Harbor
 
 ```text
-MYSQL_ROOT_PASSWORD=super_secret_root
-MYSQL_DATABASE=elibrary
-MYSQL_USER=elibrary
-MYSQL_PASSWORD=super_secret_app
-DB_APP_USERNAME=root
-DB_APP_PASSWORD=super_secret_root
+harbor-registry=harbor.example.com
+harbor-project=elibrary
 ```
 
-Luu y:
-
-- trong file `docker-compose.prod.yml` hien tai backend dang dung `DB_APP_USERNAME` va `DB_APP_PASSWORD`
-- neu backend dung root de ket noi MySQL thi `DB_APP_USERNAME=root`
-
-### Nhom backend app
-
-- `SPRING_MAIL_HOST`
-- `SPRING_MAIL_PORT`
-- `SPRING_MAIL_USERNAME`
-- `SPRING_MAIL_PASSWORD`
-- `SPRING_MAIL_SMTP_AUTH`
-- `SPRING_MAIL_SMTP_STARTTLS_ENABLE`
-- `SPRING_MAIL_SMTP_STARTTLS_REQUIRED`
-- `APP_NOTIFICATION_EMAIL_ENABLED`
-- `APP_NOTIFICATION_FRONTEND_BASE_URL`
-- `APP_JWT_SECRET_KEY`
-- `APP_JWT_EXPIRATION_MS`
-
-Vi du:
+### Frontend build
 
 ```text
-SPRING_MAIL_HOST=sandbox.smtp.mailtrap.io
-SPRING_MAIL_PORT=2525
-SPRING_MAIL_USERNAME=your_mail_user
-SPRING_MAIL_PASSWORD=your_mail_password
-SPRING_MAIL_SMTP_AUTH=true
-SPRING_MAIL_SMTP_STARTTLS_ENABLE=true
-SPRING_MAIL_SMTP_STARTTLS_REQUIRED=true
-APP_NOTIFICATION_EMAIL_ENABLED=true
-APP_NOTIFICATION_FRONTEND_BASE_URL=http://YOUR_EC2_PUBLIC_IP
-APP_JWT_SECRET_KEY=your_base64_secret
-APP_JWT_EXPIRATION_MS=86400000
+vite-api-base-url=http://YOUR_EC2_PUBLIC_IP:8080
+vite-ws-base-url=http://YOUR_EC2_PUBLIC_IP:8080
 ```
 
-### Nhom port tuy chon
-
-- `FRONTEND_PUBLISHED_PORT`
-- `BACKEND_PUBLISHED_PORT`
-- `DB_PUBLISHED_PORT`
-
-Vi du:
+Neu co domain:
 
 ```text
-FRONTEND_PUBLISHED_PORT=80
-BACKEND_PUBLISHED_PORT=8080
-DB_PUBLISHED_PORT=3307
+vite-api-base-url=https://api.your-domain.com
+vite-ws-base-url=https://api.your-domain.com
 ```
+
+### EC2 deploy
+
+```text
+ec2-host=3.25.100.10
+ec2-user=ubuntu
+ec2-deploy-path=/home/ubuntu/elibrary
+frontend-published-port=80
+backend-published-port=8080
+db-published-port=3307
+```
+
+### Database
+
+```text
+mysql-root-password=super_secret_root
+mysql-database=elibrary
+mysql-user=elibrary
+mysql-password=super_secret_app
+db-app-username=root
+db-app-password=super_secret_root
+```
+
+### Backend app
+
+```text
+spring-jpa-hibernate-ddl-auto=update
+spring-flyway-enabled=false
+spring-mail-host=sandbox.smtp.mailtrap.io
+spring-mail-port=2525
+spring-mail-username=your_mail_user
+spring-mail-password=your_mail_password
+spring-mail-smtp-auth=true
+spring-mail-smtp-starttls-enable=true
+spring-mail-smtp-starttls-required=true
+app-notification-email-enabled=true
+app-notification-frontend-base-url=http://YOUR_EC2_PUBLIC_IP
+app-jwt-secret-key=your_base64_secret
+app-jwt-expiration-ms=86400000
+```
+
+## Cach tao Jenkins pipeline
+
+### 1. Tao job moi
+
+Trong Jenkins:
+
+1. Chon `New Item`
+2. Dat ten, vi du `e-library-deploy`
+3. Chon `Pipeline`
+4. Bam `OK`
+
+### 2. Cau hinh SCM
+
+Trong phan pipeline:
+
+- chon `Pipeline script from SCM`
+- SCM: `Git`
+- Repository URL: URL repo GitLab cua ban
+- Credentials: chon credential de Jenkins pull source tu GitLab
+- Branch: `*/main`
+- Script Path: `Jenkinsfile`
+
+### 3. Neu dung webhook GitLab
+
+Trong GitLab:
+
+1. vao `Settings -> Webhooks`
+2. them URL webhook cua Jenkins
+3. bat su kien `Push events`
+
+Neu chua dung webhook, ban co the dung `Poll SCM` tam thoi.
 
 ## File compose production dung de lam gi
 
-File [`docker-compose.prod.yml`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/docker-compose.prod.yml) la file ma EC2 se dung de chay service.
+File [`docker-compose.prod.yml`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/docker-compose.prod.yml) la file ma EC2 dung de chay service.
 
-No khac voi file `docker-compose.yml` local o cho:
+No duoc thiet ke cho deploy:
 
-- production dung `image:` thay vi `build:`
-- gia tri config duoc lay tu `.env.prod`
+- dung `image:` thay vi `build:`
+- nhan gia tri tu `.env.prod`
 - phu hop voi flow pull image tu Harbor
 
-Ban khong can build source code tren EC2.
+EC2 khong can build source.
 
-EC2 chi can:
+## Cac buoc test tay truoc khi noi vao Jenkins
 
-1. pull image da co san
-2. chay compose
-
-## Cac buoc deploy tay lan dau de test
-
-Neu ban muon test thu cong truoc khi dua vao pipeline, co the lam theo cac buoc sau.
+Neu muon test deploy tay truoc, lam theo cac buoc sau.
 
 ### 1. SSH vao EC2
 
@@ -280,15 +311,13 @@ mkdir -p ~/elibrary
 cd ~/elibrary
 ```
 
-### 3. Paste file compose production
-
-Tao file:
+### 3. Copy file compose production
 
 ```bash
 nano docker-compose.prod.yml
 ```
 
-Dan noi dung file `docker-compose.prod.yml` trong repo vao.
+Dan noi dung file `docker-compose.prod.yml` vao.
 
 ### 4. Tao file `.env.prod`
 
@@ -296,7 +325,7 @@ Dan noi dung file `docker-compose.prod.yml` trong repo vao.
 nano .env.prod
 ```
 
-Co the bat dau tu file [`.env.prod.example`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/.env.prod.example), sau do thay bang gia tri that.
+Co the bat dau tu [`.env.prod.example`](/c:/Users/nguye/OneDrive/Máy tính/E_LB/E-Library/.env.prod.example), sau do thay thanh gia tri that.
 
 ### 5. Login Harbor
 
@@ -311,139 +340,93 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml pull
 docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
 ```
 
-### 7. Kiem tra container
+### 7. Kiem tra
 
 ```bash
 docker ps
 docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f
 ```
 
-## Pipeline dang tu dong hoa nhung gi
+## Lenh Jenkins dang thuc hien ve y tuong
 
-Sau khi ban da setup GitLab variables va EC2 xong, moi lan push len branch deploy:
-
-- GitLab tu build image
-- GitLab tu push len Harbor
-- GitLab tu SSH vao EC2
-- GitLab tu cap nhat `docker-compose.prod.yml`
-- GitLab tu tao `.env.prod`
-- GitLab tu pull image moi
-- GitLab tu restart service
-
-Nghia la ve sau ban khong can SSH len EC2 de paste compose moi moi lan deploy.
-
-## Lenh pipeline dang chay tren EC2
-
-Ve mat y tuong, pipeline se chay logic tuong duong:
+Jenkins dang thuc hien logic tuong duong:
 
 ```bash
+docker build -t <backend-image> -f demo/Dockerfile demo
+docker build --build-arg VITE_API_BASE_URL=<api-url> --build-arg VITE_WS_BASE_URL=<ws-url> -t <frontend-image> -f frontend/Dockerfile frontend
 docker login <harbor>
-cd /path/to/deploy
-docker compose --env-file .env.prod -f docker-compose.prod.yml pull
-docker compose --env-file .env.prod -f docker-compose.prod.yml up -d
+docker push <backend-image>
+docker push <frontend-image>
+scp docker-compose.prod.yml <ec2>
+scp .env.prod <ec2>
+ssh <ec2> "docker compose pull && docker compose up -d"
 ```
-
-## Khi nao can file `docker-compose.prod.yml` tren EC2
-
-Can. EC2 can file nay de biet:
-
-- service nao can chay
-- image nao can pull
-- map cong nao
-- env nao truyen vao backend
-- volume nao dung cho MySQL
-
-Pipeline hien tai se copy file nay len EC2 giup ban.
 
 ## Vi sao frontend khong nen hardcode localhost
 
-Khi frontend duoc build thanh static file va mo tren may nguoi dung:
-
-- neu frontend goi `http://localhost:8080`
-- browser se hieu `localhost` la may cua nguoi dung, khong phai EC2
+Frontend production duoc mo trong browser cua nguoi dung. Neu hardcode `http://localhost:8080`, browser se goi ve may nguoi dung thay vi EC2.
 
 Vi vay frontend da duoc doi sang doc:
 
 - `VITE_API_BASE_URL`
 - `VITE_WS_BASE_URL`
 
-Hai gia tri nay duoc truyen vao luc GitLab build image frontend.
+Hai bien nay duoc truyen vao luc Jenkins build image frontend.
 
-## Goi y branch strategy
+## Loi thuong gap
 
-Ban co the dung cach don gian:
-
-- push len branch `main`
-- `main` se build va deploy production
-
-Hoac tach ro hon:
-
-- branch `develop`: chi build image
-- branch `main`: build + deploy production
-
-Neu muon tach staging va production, co the nang cap `.gitlab-ci.yml` sau.
-
-## Cac loi thuong gap
-
-### 1. Frontend vao duoc nhung goi API that bai
-
-Nguyen nhan thuong la:
-
-- `VITE_API_BASE_URL` dang de sai IP/domain
-- backend chua mo cong `8080`
-- CORS hoac security group AWS chua mo dung
-
-### 2. Backend len nhung ket noi DB that bai
+### 1. Jenkins build duoc nhung push Harbor that bai
 
 Kiem tra:
 
-- `MYSQL_ROOT_PASSWORD`
-- `DB_APP_USERNAME`
-- `DB_APP_PASSWORD`
-- MySQL healthcheck
-- log container backend
+- `harbor-credentials`
+- `harbor-registry`
+- `harbor-project`
 
-### 3. Pipeline build duoc nhung deploy that bai
+### 2. Jenkins push xong nhung deploy EC2 that bai
 
 Kiem tra:
 
-- `EC2_HOST`, `EC2_USER`, `EC2_DEPLOY_PATH`
-- `EC2_SSH_PRIVATE_KEY`
-- EC2 co cai Docker chua
-- EC2 co login duoc Harbor khong
+- `ec2-ssh-key`
+- `ec2-host`
+- `ec2-user`
+- `ec2-deploy-path`
+- EC2 da cai Docker chua
 
-### 4. Pull image tu Harbor bi fail
+### 3. Frontend vao duoc nhung goi API that bai
 
 Kiem tra:
 
-- Harbor credentials
-- project/image name
-- tag image
-- EC2 co truy cap mang toi Harbor khong
+- `vite-api-base-url`
+- `vite-ws-base-url`
+- security group AWS
+- backend co mo cong `8080` khong
+
+### 4. Backend len nhung khong ket noi duoc MySQL
+
+Kiem tra:
+
+- `mysql-root-password`
+- `db-app-username`
+- `db-app-password`
+- log service `db`
+- log service `backend`
 
 ## Kiem tra nhanh sau deploy
 
-Sau khi deploy thanh cong, test theo thu tu:
-
-1. Mo frontend:
+1. Frontend:
 
 ```text
 http://YOUR_EC2_PUBLIC_IP
 ```
 
-2. Test backend:
+2. Backend:
 
 ```text
 http://YOUR_EC2_PUBLIC_IP:8080/swagger-ui/index.html
 ```
 
-3. Kiem tra container:
-
-```bash
-docker ps
-```
-
-4. Kiem tra log:
+3. Logs:
 
 ```bash
 docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f backend
@@ -451,24 +434,15 @@ docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f frontend
 docker compose --env-file .env.prod -f docker-compose.prod.yml logs -f db
 ```
 
-## Khuyen nghi cho production that
-
-Ban co the deploy theo cau hinh hien tai de demo hoac do an. Tuy nhien neu muon on dinh hon:
-
-- dung AWS RDS thay vi MySQL container
-- dung Nginx reverse proxy va SSL
-- dung domain thay vi IP
-- dua secrets vao GitLab masked variables
-- backup volume MySQL dinh ky
-
 ## Tom tat ngan
 
-Ban dang di dung huong voi mo hinh:
+Flow moi cua ban la:
 
 1. Push code len GitLab
-2. GitLab build frontend/backend
-3. GitLab push image len Harbor
-4. GitLab SSH vao EC2
-5. EC2 pull image va chay `docker compose`
+2. GitLab luu source
+3. Jenkins build frontend/backend
+4. Jenkins push image len Harbor
+5. Jenkins SSH vao EC2
+6. EC2 pull image va chay `docker compose`
 
-EC2 van can `docker-compose.prod.yml`, nhung pipeline da duoc viet de copy file do len tu dong cho ban.
+Mo hinh nay phu hop hon neu ban muon GitLab chi de luu tru source code.
