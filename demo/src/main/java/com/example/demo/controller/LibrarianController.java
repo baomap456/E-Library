@@ -32,17 +32,20 @@ import com.example.demo.dto.librarian.LibrarianDebtorResponse;
 import com.example.demo.dto.librarian.LibrarianDeleteBookResponse;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentRequest;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentResponse;
+import com.example.demo.dto.librarian.LibrarianFineInvoiceResponse;
+import com.example.demo.dto.librarian.LibrarianGuestCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentResponse;
-import com.example.demo.dto.librarian.LibrarianGuestCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianLocationRequest;
 import com.example.demo.dto.librarian.LibrarianLocationResponse;
+import com.example.demo.dto.librarian.LibrarianMembershipInvoiceResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
+import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianReportIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianReportIncidentResponse;
-import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountRequest;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountResponse;
+import com.example.demo.dto.librarian.LibrarianUserFineSummaryResponse;
 import com.example.demo.service.LibrarianService;
 
 import jakarta.validation.Valid;
@@ -214,6 +217,21 @@ public class LibrarianController {
     @GetMapping("/fines/debtors")
     public ResponseEntity<List<LibrarianDebtorResponse>> debtors() {
         return ResponseEntity.ok(librarianService.debtors());
+    }
+
+    @GetMapping("/fines/invoices")
+    public ResponseEntity<List<LibrarianFineInvoiceResponse>> fineInvoices() {
+        return ResponseEntity.ok(librarianService.fineInvoices());
+    }
+
+    @GetMapping("/fines/users")
+    public ResponseEntity<List<LibrarianUserFineSummaryResponse>> userFineSummaries() {
+        return ResponseEntity.ok(librarianService.userFineSummaries());
+    }
+
+    @GetMapping("/accounts/membership-invoices")
+    public ResponseEntity<List<LibrarianMembershipInvoiceResponse>> membershipInvoices() {
+        return ResponseEntity.ok(librarianService.membershipInvoices());
     }
 
     @GetMapping("/incidents")

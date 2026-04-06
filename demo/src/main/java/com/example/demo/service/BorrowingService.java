@@ -6,6 +6,7 @@ import com.example.demo.dto.borrowing.AddCartItemRequest;
 import com.example.demo.dto.borrowing.BorrowRecordResponse;
 import com.example.demo.dto.borrowing.CartItemActionResponse;
 import com.example.demo.dto.borrowing.CartItemResponse;
+import com.example.demo.dto.borrowing.FinePaymentQrResponse;
 import com.example.demo.dto.borrowing.FinePaymentResponse;
 import com.example.demo.dto.borrowing.FinesResponse;
 import com.example.demo.dto.borrowing.PayFineRequest;
@@ -25,6 +26,10 @@ public interface BorrowingService {
 
     List<BorrowRecordResponse> getRecords(String username);
 
+    BorrowRecordResponse getRecord(Long recordId);
+
+    BorrowRecordResponse getRecordByBarcode(String barcode);
+
     List<WaitlistItemResponse> getMyWaitlist(String username);
 
     RenewRecordResponse renew(Long recordId);
@@ -34,6 +39,8 @@ public interface BorrowingService {
     WaitlistResponse cancelReservation(Long reservationId, String username);
 
     FinesResponse getFines(String username);
+
+    FinePaymentQrResponse getFinePaymentQr();
 
     FinePaymentResponse payFine(PayFineRequest request);
 

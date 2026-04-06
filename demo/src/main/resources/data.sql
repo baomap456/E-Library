@@ -151,7 +151,7 @@ INSERT IGNORE INTO book_items (id, barcode, status, book_id, location_id) VALUES
 -- Book 3 - 5 items
 (11, 'BK003-001', 'AVAILABLE', 3, 11), (12, 'BK003-002', 'BORROWING', 3, 12), (13, 'BK003-003', 'DAMAGED', 3, 13), (14, 'BK003-004', 'AVAILABLE', 3, 14), (15, 'BK003-005', 'OVERDUE', 3, 15),
 -- Book 4 - 5 items
-(16, 'BK004-001', 'AVAILABLE', 4, 16), (17, 'BK004-002', 'AVAILABLE', 4, 17), (18, 'BK004-003', 'OVERDUE', 4, 18), (19, 'BK004-004', 'BORROWED', 4, 19), (20, 'BK004-005', 'AVAILABLE', 4, 20),
+(16, 'BK004-001', 'AVAILABLE', 4, 16), (17, 'BK004-002', 'AVAILABLE', 4, 17), (18, 'BK004-003', 'OVERDUE', 4, 18), (19, 'BK004-004', 'BORROWING', 4, 19), (20, 'BK004-005', 'AVAILABLE', 4, 20),
 -- Book 5 - 5 items
 (21, 'BK005-001', 'RESERVED', 5, 21), (22, 'BK005-002', 'AVAILABLE', 5, 22), (23, 'BK005-003', 'BORROWING', 5, 23), (24, 'BK005-004', 'AVAILABLE', 5, 24), (25, 'BK005-005', 'AVAILABLE', 5, 25),
 -- Book 6 - 5 items
@@ -212,6 +212,32 @@ INSERT IGNORE INTO roles (name) VALUES
 ('MEMBER'),
 ('GUEST');
 
+-- Data healing for previously loaded legacy values
+-- 1) Invalid legacy status in historical data
+UPDATE book_items
+SET status = 'BORROWING'
+WHERE status = 'BORROWED';
+
+-- 1b) Corrupted empty status values in historical data
+UPDATE book_items
+SET status = 'BORROWING'
+WHERE status IS NULL OR status = '';
+
+-- 2) Legacy ROLE_* names -> canonical names and preserve existing user-role links
+UPDATE user_roles ur
+JOIN roles oldr ON ur.role_id = oldr.id
+JOIN roles newr ON newr.name = REPLACE(oldr.name, 'ROLE_', '')
+SET ur.role_id = newr.id
+WHERE oldr.name IN ('ROLE_ADMIN', 'ROLE_LIBRARIAN', 'ROLE_MEMBER', 'ROLE_GUEST');
+
+DELETE FROM roles
+WHERE name IN ('ROLE_ADMIN', 'ROLE_LIBRARIAN', 'ROLE_MEMBER', 'ROLE_GUEST');
+
+-- Insert Membership Packages (Free + Premium)
+INSERT IGNORE INTO membership_types (id, name, paid, max_books, borrow_duration_days, fine_rate_per_day, privilege_note) VALUES
+(1, 'Free', FALSE, 3, 14, 5000, 'Goi mien phi phu hop nhu cau co ban'),
+(2, 'Premium', TRUE, 10, 30, 2000, 'Goi tra phi voi han muc cao va uu tien dat cho');
+
 -- Insert 4 user accounts (one account per role)
 -- Passwords:
 -- admin01 / Admin@123
@@ -225,7 +251,7 @@ INSERT IGNORE INTO users (
 	full_name,
 	student_id,
 	active,
-	outstanding_debt,
+	outstanding_debt,	
 	borrowing_locked,
 	created_at
 ) VALUES
@@ -234,29 +260,36 @@ INSERT IGNORE INTO users (
 ('member02', '$2y$10$SyZMDSHNiMN5jOBM2xyTqeZ6gzBPUGKuzB.0VmV97XKhfcpKbBJpa', 'member02@elib.local', 'Member Two', 'SV30002', TRUE, 0, FALSE, NOW()),
 ('guest01', '$2y$10$bdZdkx7/s6VjMLWuhXCgJ.enLnUCfuaZYelPxO/35mUaaSIhnAs9C', 'guest01@elib.local', 'Guest One', NULL, TRUE, 0, FALSE, NOW());
 
+-- Assign default membership package for sample member
+UPDATE users u
+JOIN membership_types m ON m.name = 'Free'
+SET u.membership_type_id = m.id
+WHERE u.username = 'member02'
+	AND (u.membership_type_id IS NULL OR u.membership_type_id <> m.id);
+
 -- Map each account to a different role
 INSERT IGNORE INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u
-JOIN roles r ON r.name = 'ROLE_ADMIN'
+JOIN roles r ON r.name = 'ADMIN'
 WHERE u.username = 'admin01';
 
 INSERT IGNORE INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u
-JOIN roles r ON r.name = 'ROLE_LIBRARIAN'
+JOIN roles r ON r.name = 'LIBRARIAN'
 WHERE u.username = 'librarian02';
 
 INSERT IGNORE INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u
-JOIN roles r ON r.name = 'ROLE_MEMBER'
+JOIN roles r ON r.name = 'MEMBER'
 WHERE u.username = 'member02';
 
 INSERT IGNORE INTO user_roles (user_id, role_id)
 SELECT u.id, r.id
 FROM users u
-JOIN roles r ON r.name = 'ROLE_GUEST'
+JOIN roles r ON r.name = 'GUEST'
 WHERE u.username = 'guest01';
 
 -- =====================================================

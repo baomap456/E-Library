@@ -15,13 +15,21 @@ import com.example.demo.model.BookStatus;
 public interface BookItemRepository extends JpaRepository<BookItem, Long> {
     List<BookItem> findByBookId(Long bookId);
 
+    List<BookItem> findByBookIdAndStatusNot(Long bookId, BookStatus status);
+
     long countByBookIdAndStatus(Long bookId, BookStatus status);
+
+    long countByBookIdAndStatusNot(Long bookId, BookStatus status);
 
     long countByStatusIn(Collection<BookStatus> statuses);
 
     Optional<BookItem> findFirstByBookIdAndStatus(Long bookId, BookStatus status);
 
     Optional<BookItem> findByBarcode(String barcode);
+
+    List<BookItem> findByBarcodeIn(List<String> barcodes);
+
+    List<BookItem> findByStatusNot(BookStatus status);
 
     List<BookItem> findByBookIdIn(List<Long> bookIds);
 

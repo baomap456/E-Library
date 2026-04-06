@@ -11,11 +11,30 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useMemo, useState } from 'react';
+import LibrarianTablePagination from '../LibrarianTablePagination';
 import type { LibrarianDigitalDocument } from '../../../types/modules/librarian';
 import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
 export default function DigitalCrudSection() {
     const props = useLibrarianManagementContext();
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    const pagedDocuments = useMemo(() => {
+        const start = page * rowsPerPage;
+        return props.digitalDocuments.slice(start, start + rowsPerPage);
+    }, [props.digitalDocuments, page, rowsPerPage]);
+
+    const handlePageChange = (_: unknown, nextPage: number) => {
+        setPage(nextPage);
+    };
+
+    const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setRowsPerPage(Number.parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
     const handleEditDocument = (doc: LibrarianDigitalDocument) => {
         const title = globalThis.prompt('Tên tài liệu', doc.title);
         if (title === null) {
@@ -59,15 +78,15 @@ export default function DigitalCrudSection() {
     return (
         <Card>
             <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.2 }}>CRUD tài liệu số</Typography>
+                <Typography variant="h6" sx={{ mb: 1.2 }}>Quản lý tài liệu số</Typography>
                 <Stack spacing={1} sx={{ mb: 2 }}>
                     <TextField label="Tên tài liệu" value={props.digitalTitle} onChange={(e) => props.onDigitalTitleChange(e.target.value)} />
                     <TextField label="Mô tả" value={props.digitalDescription} onChange={(e) => props.onDigitalDescriptionChange(e.target.value)} />
-                    <TextField label="NXB" value={props.digitalPublisher} onChange={(e) => props.onDigitalPublisherChange(e.target.value)} />
-                    <TextField label="Năm" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
+                    <TextField label="Nhà xuất bản" value={props.digitalPublisher} onChange={(e) => props.onDigitalPublisherChange(e.target.value)} />
+                    <TextField label="Năm xuất bản" value={props.digitalPublishYear} onChange={(e) => props.onDigitalPublishYearChange(e.target.value)} />
                     <TextField label="ISBN" value={props.digitalIsbn} onChange={(e) => props.onDigitalIsbnChange(e.target.value)} />
                     <TextField label="File URL" value={props.digitalFileUrl} onChange={(e) => props.onDigitalFileUrlChange(e.target.value)} />
-                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Add</Button>
+                    <Button variant="contained" onClick={props.onCreateDigitalDocument}>Thêm</Button>
                 </Stack>
 
                 <Table size="small">
@@ -85,7 +104,7 @@ export default function DigitalCrudSection() {
                                 <TableCell colSpan={4} align="center">Chưa có dữ liệu</TableCell>
                             </TableRow>
                         ) : (
-                            props.digitalDocuments.map((doc) => (
+                            pagedDocuments.map((doc) => (
                                 <TableRow key={doc.id}>
                                     <TableCell>{doc.title}</TableCell>
                                     <TableCell>{doc.publishYear}</TableCell>
@@ -95,15 +114,23 @@ export default function DigitalCrudSection() {
                                             size="small"
                                             onClick={() => handleEditDocument(doc)}
                                         >
-                                            Edit
+                                            Sửa
                                         </Button>
-                                        <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Delete</Button>
+                                        <Button size="small" color="error" onClick={() => props.onDeleteDigitalDocument(doc.id)}>Xóa</Button>
                                     </TableCell>
                                 </TableRow>
                             ))
                         )}
                     </TableBody>
                 </Table>
+                <LibrarianTablePagination
+                    count={props.digitalDocuments.length}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleRowsPerPageChange}
+                    rowsPerPageOptions={[5, 10, 20]}
+                />
             </CardContent>
         </Card>
     );

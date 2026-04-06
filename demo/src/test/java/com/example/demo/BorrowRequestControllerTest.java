@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import com.example.demo.controller.BorrowRequestController;
 import com.example.demo.dto.borrowing.BorrowRequestResponse;
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.service.BorrowRequestService;
 
 @ExtendWith(MockitoExtension.class)
@@ -99,6 +100,7 @@ class BorrowRequestControllerTest {
         return new BorrowRequestResponse(
             101L,
             1L,
+            null,
             "reader01",
             "Reader",
             10L,
@@ -111,6 +113,8 @@ class BorrowRequestControllerTest {
             null,
             null,
             null,
-            status);
+            status,
+            BorrowRequestType.BORROW,
+            "REQUEST");
     }
 }

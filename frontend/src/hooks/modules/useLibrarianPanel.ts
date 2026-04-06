@@ -36,15 +36,21 @@ import type {
     LibrarianCategory,
     LibrarianDashboard,
     LibrarianDebtor,
+    LibrarianFineInvoice,
+    LibrarianMembershipInvoice,
     LibrarianDigitalDocument,
     LibrarianLocation,
     LibrarianMembershipPackageOption,
+    LibrarianUserFineSummary,
 } from '../../types/modules/librarian';
 
 export function useLibrarianPanel() {
     const [dashboard, setDashboard] = useState<LibrarianDashboard | null>(null);
     const [books, setBooks] = useState<LibrarianBook[]>([]);
     const [debtors, setDebtors] = useState<LibrarianDebtor[]>([]);
+    const [fineInvoices, setFineInvoices] = useState<LibrarianFineInvoice[]>([]);
+    const [membershipInvoices, setMembershipInvoices] = useState<LibrarianMembershipInvoice[]>([]);
+    const [userFineSummaries, setUserFineSummaries] = useState<LibrarianUserFineSummary[]>([]);
     const [digitalDocuments, setDigitalDocuments] = useState<LibrarianDigitalDocument[]>([]);
     const [authors, setAuthors] = useState<LibrarianAuthor[]>([]);
     const [categories, setCategories] = useState<LibrarianCategory[]>([]);
@@ -73,6 +79,8 @@ export function useLibrarianPanel() {
         setGuestDepositAmount,
         guestCitizenId,
         setGuestCitizenId,
+        borrowDueDate,
+        setBorrowDueDate,
         debtPaymentRecordId,
         setDebtPaymentRecordId,
         debtPaymentAmount,
@@ -141,6 +149,9 @@ export function useLibrarianPanel() {
         setDashboard(data.dashboard);
         setBooks(data.books);
         setDebtors(data.debtors);
+        setFineInvoices(data.fineInvoices);
+        setMembershipInvoices(data.membershipInvoices);
+        setUserFineSummaries(data.userFineSummaries);
         setDigitalDocuments(data.digitalDocuments);
         setAuthors(data.authors);
         setCategories(data.categories);
@@ -179,7 +190,7 @@ export function useLibrarianPanel() {
             return;
         }
         try {
-            await checkoutBook(username, barcode);
+            await checkoutBook(username, barcode, borrowDueDate);
             setError('');
             await loadData();
         } catch {
@@ -215,6 +226,7 @@ export function useLibrarianPanel() {
                 guestLoanType,
                 guestLoanType === 'TAKE_HOME' ? numericDeposit : 0,
                 guestLoanType === 'TAKE_HOME' ? guestCitizenId.trim() : undefined,
+                borrowDueDate,
             );
             setError('');
             setGuestName('');
@@ -222,6 +234,11 @@ export function useLibrarianPanel() {
             setGuestLoanType('TAKE_HOME');
             setGuestDepositAmount('');
             setGuestCitizenId('');
+            setBorrowDueDate(() => {
+                const date = new Date();
+                date.setDate(date.getDate() + 7);
+                return date.toISOString().slice(0, 16);
+            });
             await loadData();
         } catch {
             setError('Lập phiếu mượn cho khách thất bại.');
@@ -239,8 +256,10 @@ export function useLibrarianPanel() {
                 setError('');
             }
             await loadData();
+            return true;
         } catch {
             setError('Check-in thất bại.');
+            return false;
         }
     };
 
@@ -274,6 +293,12 @@ export function useLibrarianPanel() {
     const handleUpgradeAccountDirect = async () => {
         if (!upgradeUsername.trim() || !upgradeTargetPackage.trim()) {
             setError('Vui lòng nhập username và gói cần nâng cấp.');
+            return;
+        }
+
+        const selectedBorrower = borrowers.find((borrower) => borrower.username === upgradeUsername.trim());
+        if (!selectedBorrower) {
+            setError('Vui lòng chọn user hợp lệ từ danh sách tìm kiếm.');
             return;
         }
 
@@ -345,11 +370,12 @@ export function useLibrarianPanel() {
         }
     };
 
-    const handleCreateAuthor = async () => {
-        if (!newAuthor.trim()) {
+    const handleCreateAuthor = async (name?: string) => {
+        const nextName = (name ?? newAuthor).trim();
+        if (!nextName) {
             return;
         }
-        await createAuthor(newAuthor.trim());
+        await createAuthor(nextName);
         setNewAuthor('');
         await loadData();
     };
@@ -362,6 +388,9 @@ export function useLibrarianPanel() {
         price: number;
         coverImageUrl: string;
         digital: boolean;
+        authorIds: number[];
+        categoryId: number;
+        locationId?: number | null;
     }) => {
         await createBook(payload);
         await loadData();
@@ -375,6 +404,9 @@ export function useLibrarianPanel() {
         price: number;
         coverImageUrl: string;
         digital: boolean;
+        authorIds: number[];
+        categoryId: number;
+        locationId?: number | null;
     }) => {
         await updateBook(id, payload);
         await loadData();
@@ -447,11 +479,12 @@ export function useLibrarianPanel() {
         await loadData();
     };
 
-    const handleCreateCategory = async () => {
-        if (!newCategory.trim()) {
+    const handleCreateCategory = async (name?: string) => {
+        const nextName = (name ?? newCategory).trim();
+        if (!nextName) {
             return;
         }
-        await createCategory(newCategory.trim());
+        await createCategory(nextName);
         setNewCategory('');
         await loadData();
     };
@@ -466,11 +499,13 @@ export function useLibrarianPanel() {
         await loadData();
     };
 
-    const handleCreateLocation = async () => {
-        if (!newRoom.trim() || !newShelf.trim()) {
+    const handleCreateLocation = async (roomName?: string, shelfNumber?: string) => {
+        const nextRoom = (roomName ?? newRoom).trim();
+        const nextShelf = (shelfNumber ?? newShelf).trim();
+        if (!nextRoom || !nextShelf) {
             return;
         }
-        await createLocation(newRoom.trim(), newShelf.trim());
+        await createLocation(nextRoom, nextShelf);
         setNewRoom('');
         setNewShelf('');
         await loadData();
@@ -489,11 +524,14 @@ export function useLibrarianPanel() {
     return {
         dashboard,
         books,
-        debtors,
-        digitalDocuments,
         authors,
         categories,
         locations,
+        debtors,
+        fineInvoices,
+        membershipInvoices,
+        userFineSummaries,
+        digitalDocuments,
         borrowers,
         membershipPackages,
         barcode,
@@ -512,6 +550,8 @@ export function useLibrarianPanel() {
         setGuestDepositAmount,
         guestCitizenId,
         setGuestCitizenId,
+        borrowDueDate,
+        setBorrowDueDate,
         newUserUsername,
         setNewUserUsername,
         newUserPassword,

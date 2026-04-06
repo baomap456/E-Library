@@ -17,6 +17,7 @@ import com.example.demo.dto.borrowing.AddCartItemRequest;
 import com.example.demo.dto.borrowing.BorrowRecordResponse;
 import com.example.demo.dto.borrowing.CartItemActionResponse;
 import com.example.demo.dto.borrowing.CartItemResponse;
+import com.example.demo.dto.borrowing.FinePaymentQrResponse;
 import com.example.demo.dto.borrowing.FinePaymentResponse;
 import com.example.demo.dto.borrowing.FinesResponse;
 import com.example.demo.dto.borrowing.PayFineRequest;
@@ -60,6 +61,16 @@ public class BorrowingController {
         return ResponseEntity.ok(borrowingService.getRecords(username));
     }
 
+    @GetMapping("/records/{recordId}")
+    public ResponseEntity<BorrowRecordResponse> record(@PathVariable Long recordId) {
+        return ResponseEntity.ok(borrowingService.getRecord(recordId));
+    }
+
+    @GetMapping("/records/by-barcode")
+    public ResponseEntity<BorrowRecordResponse> recordByBarcode(@RequestParam String barcode) {
+        return ResponseEntity.ok(borrowingService.getRecordByBarcode(barcode));
+    }
+
     @GetMapping("/waitlist/me")
     public ResponseEntity<List<WaitlistItemResponse>> myWaitlist(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getMyWaitlist(username));
@@ -85,6 +96,11 @@ public class BorrowingController {
     @GetMapping("/fines")
     public ResponseEntity<FinesResponse> fines(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getFines(username));
+    }
+
+    @GetMapping("/fines/payment-qr")
+    public ResponseEntity<FinePaymentQrResponse> finePaymentQr() {
+        return ResponseEntity.ok(borrowingService.getFinePaymentQr());
     }
 
     @PostMapping("/fines/pay")

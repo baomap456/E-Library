@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,7 @@ import com.example.demo.dto.borrowing.AddCartItemRequest;
 import com.example.demo.dto.borrowing.BorrowRecordResponse;
 import com.example.demo.dto.borrowing.CartItemActionResponse;
 import com.example.demo.dto.borrowing.CartItemResponse;
+import com.example.demo.dto.borrowing.FinePaymentQrResponse;
 import com.example.demo.dto.borrowing.FinePaymentResponse;
 import com.example.demo.dto.borrowing.FinesResponse;
 import com.example.demo.dto.borrowing.PaidFineHistoryResponse;
@@ -33,7 +35,9 @@ import com.example.demo.model.Book;
 import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.model.FinePayment;
 import com.example.demo.model.Reservation;
 import com.example.demo.model.ReservationStatus;
@@ -132,12 +136,53 @@ public class BorrowingServiceImpl implements BorrowingService {
                     RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluate(borrowRecord);
                     return borrowingMapper.toBorrowRecordResponse(
                             borrowRecord,
-                            renewalPolicyService.maxRenewals(),
+                            renewalPolicyService.maxRenewalsForUser(user),
                             decision.allowed(),
                             decision.reason(),
                             decision.daysUntilDue());
                 })
                 .toList();
+    }
+
+    @Override
+    public BorrowRecordResponse getRecord(Long recordId) {
+        User currentUser = userContextService.getCurrentUser();
+        BorrowRecord borrowRecord = borrowRecordRepository.findById(recordId)
+                .orElseThrow(() -> new IllegalArgumentException(BORROW_RECORD_NOT_FOUND));
+        if (!Objects.equals(borrowRecord.getUser().getId(), currentUser.getId()) && !isLibrarian(currentUser)) {
+            throw new IllegalArgumentException("Bạn không có quyền xem phiếu mượn này");
+        }
+
+        RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluate(borrowRecord);
+        return borrowingMapper.toBorrowRecordResponse(
+                borrowRecord,
+                renewalPolicyService.maxRenewalsForUser(borrowRecord.getUser()),
+                decision.allowed(),
+                decision.reason(),
+                decision.daysUntilDue());
+    }
+
+    @Override
+    public BorrowRecordResponse getRecordByBarcode(String barcode) {
+        if (barcode == null || barcode.isBlank()) {
+            throw new IllegalArgumentException("barcode không được để trống");
+        }
+
+        User currentUser = userContextService.getCurrentUser();
+        if (!isLibrarian(currentUser)) {
+            throw new IllegalArgumentException("Chỉ thủ thư mới có quyền tra cứu phiếu mượn theo barcode");
+        }
+
+        BorrowRecord borrowRecord = borrowRecordRepository.findFirstByBookItemBarcodeAndReturnDateIsNull(barcode.trim())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiếu mượn đang mở theo barcode này"));
+
+        RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluate(borrowRecord);
+        return borrowingMapper.toBorrowRecordResponse(
+                borrowRecord,
+                renewalPolicyService.maxRenewalsForUser(borrowRecord.getUser()),
+                decision.allowed(),
+                decision.reason(),
+                decision.daysUntilDue());
     }
 
     @Override
@@ -168,14 +213,22 @@ public class BorrowingServiceImpl implements BorrowingService {
             throw new IllegalArgumentException("Bạn không có quyền gia hạn phiếu mượn này");
         }
 
-        RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluate(borrowRecord);
+        RenewalPolicyService.RenewalDecision decision = renewalPolicyService.evaluateForRenewalRequest(borrowRecord);
         if (!decision.allowed()) {
             throw new IllegalArgumentException(decision.reason());
         }
 
-        renewalPolicyService.applyRenewal(borrowRecord);
-        borrowRecordRepository.save(borrowRecord);
-        return new RenewRecordResponse("Gia hạn thành công", borrowRecord.getDueDate());
+        BorrowRequest renewalRequest = new BorrowRequest();
+        renewalRequest.setUser(borrowRecord.getUser());
+        renewalRequest.setBookItem(borrowRecord.getBookItem());
+        renewalRequest.setBorrowRecord(borrowRecord);
+        renewalRequest.setRequestType(BorrowRequestType.RENEWAL);
+        renewalRequest.setRequestDate(LocalDateTime.now());
+        renewalRequest.setRequestedReturnDate(borrowRecord.getDueDate().plusDays(7).toLocalDate());
+        renewalRequest.setStatus(BorrowRequestStatus.PENDING);
+        borrowRequestRepository.save(renewalRequest);
+
+        return new RenewRecordResponse("Đã gửi yêu cầu gia hạn, vui lòng chờ thủ thư duyệt", borrowRecord.getDueDate());
     }
 
     @Override
@@ -295,6 +348,26 @@ public class BorrowingServiceImpl implements BorrowingService {
     }
 
     @Override
+    public FinePaymentQrResponse getFinePaymentQr() {
+        User user = userContextService.getCurrentUser();
+        FinesResponse fines = getFines(user.getUsername());
+        double amount = Objects.requireNonNullElse(fines.totalDebt(), 0.0);
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Bạn hiện không có công nợ để thanh toán");
+        }
+
+        String paymentReference = "FINE-" + user.getId() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String qrPayload = String.join("|",
+                "E-Library",
+                "FINE_PAYMENT",
+                user.getUsername(),
+                String.valueOf(Math.round(amount)),
+                paymentReference);
+
+        return new FinePaymentQrResponse(qrPayload, amount, paymentReference, DEFAULT_PAYMENT_METHOD);
+    }
+
+    @Override
     public FinePaymentResponse payFine(PayFineRequest request) {
         if (request.recordId() == null) {
             throw new IllegalArgumentException("recordId không được để trống");
@@ -361,7 +434,7 @@ public class BorrowingServiceImpl implements BorrowingService {
     private boolean isLibrarian(User user) {
         return user.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(name -> name.equals("ROLE_LIBRARIAN"));
+                .anyMatch(name -> name.equals("LIBRARIAN"));
     }
 
     private int waitlistPosition(Reservation reservation) {

@@ -16,6 +16,12 @@ export interface LibrarianBook {
     canTakeHome?: boolean;
     availableCopies: number;
     availableBarcode: string | null;
+    categoryId?: number | null;
+    categoryName?: string | null;
+    authorIds?: number[];
+    authorNames?: string[];
+    locationId?: number | null;
+    locationLabel?: string | null;
 }
 
 export interface LibrarianBookPayload {
@@ -26,17 +32,56 @@ export interface LibrarianBookPayload {
     price: number;
     coverImageUrl: string;
     digital: boolean;
+    authorIds: number[];
+    categoryId: number;
+    locationId?: number | null;
 }
 
 export interface LibrarianDebtor {
     recordId: number;
     username: string;
+    fullName?: string;
     bookTitle: string;
     fineAmount: number;
     outstandingDebt?: number;
     borrowingLocked?: boolean;
     overdueDays?: number;
     overdue?: boolean;
+}
+
+export interface LibrarianFineInvoice {
+    paymentId: number;
+    recordId: number;
+    username: string;
+    fullName?: string;
+    bookTitle?: string;
+    amount: number;
+    paymentDate: string;
+    paymentMethod: string;
+}
+
+export interface LibrarianUserFineSummary {
+    userId: number;
+    username: string;
+    fullName?: string;
+    totalPaidAmount: number;
+    outstandingDebt: number;
+    paymentCount: number;
+    borrowingLocked: boolean;
+}
+
+export interface LibrarianMembershipInvoice {
+    transactionId: number;
+    username?: string;
+    fullName?: string;
+    actorUsername?: string;
+    paymentChannel?: string;
+    action: string;
+    fromPackage?: string;
+    toPackage?: string;
+    amount: number;
+    note?: string;
+    createdAt: string;
 }
 
 export interface LibrarianAuthor {
@@ -59,6 +104,7 @@ export interface LibrarianMembershipPackageOption {
     id: number;
     name: string;
     paid: boolean;
+    price: number;
 }
 
 export interface LibrarianCreateUserPayload {
@@ -90,6 +136,9 @@ export interface LibrarianBorrowerOption {
     username: string;
     fullName: string;
     email: string;
+    phone?: string;
+    studentId?: string;
+    membershipName?: string;
 }
 
 export interface LibrarianReportIncidentPayload {

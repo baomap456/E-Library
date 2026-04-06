@@ -3,6 +3,9 @@ import {
     createInventorySession,
     discardBooks,
     exportReport,
+    fetchDiscardReportDetail,
+    fetchDiscardReports,
+    fetchDiscardSuggestions,
     fetchReportsData,
     runDigitalAudit,
     runPhysicalAudit,
@@ -10,6 +13,11 @@ import {
 import type {
     ReportsAuditLog,
     ReportsDigitalAuditResponse,
+    ReportsDiscardBooksResponse,
+    ReportsDiscardReportDetail,
+    ReportsDiscardReportSummary,
+    ReportsDiscardSuggestion,
+    ReportsDiscardSuggestionsResponse,
     ReportsDiscrepancy,
     ReportsFinancial,
     ReportsKpi,
@@ -33,8 +41,13 @@ export function useInventoryReports() {
     const [lastPhysicalAudit, setLastPhysicalAudit] = useState<ReportsPhysicalAuditResponse | null>(null);
     const [lastDigitalAudit, setLastDigitalAudit] = useState<ReportsDigitalAuditResponse | null>(null);
 
-    const [discardBookIdsRaw, setDiscardBookIdsRaw] = useState('');
+    const [discardBarcodesRaw, setDiscardBarcodesRaw] = useState('');
     const [discardReason, setDiscardReason] = useState('Sách lỗi thời hoặc hỏng không thể sửa');
+    const [discardSuggestions, setDiscardSuggestions] = useState<ReportsDiscardSuggestion[]>([]);
+    const [discardSuggestionSummary, setDiscardSuggestionSummary] = useState<ReportsDiscardSuggestionsResponse | null>(null);
+    const [lastDiscardReport, setLastDiscardReport] = useState<ReportsDiscardBooksResponse | null>(null);
+    const [discardReportHistory, setDiscardReportHistory] = useState<ReportsDiscardReportSummary[]>([]);
+    const [selectedDiscardReportDetail, setSelectedDiscardReportDetail] = useState<ReportsDiscardReportDetail | null>(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -60,6 +73,11 @@ export function useInventoryReports() {
             setError('');
             try {
                 await loadData(period);
+                const suggestions = await fetchDiscardSuggestions();
+                setDiscardSuggestions(suggestions.candidates || []);
+                setDiscardSuggestionSummary(suggestions);
+                const reports = await fetchDiscardReports();
+                setDiscardReportHistory(reports || []);
             } catch (err) {
                 console.error('Error loading reports data:', err);
                 setError('Không tải được dữ liệu báo cáo.');
@@ -108,24 +126,44 @@ export function useInventoryReports() {
     };
 
     const handleDiscardBooks = async () => {
-        const ids = discardBookIdsRaw
+        const barcodes = discardBarcodesRaw
             .split(',')
-            .map((part) => Number.parseInt(part.trim(), 10))
-            .filter((id) => Number.isFinite(id));
+            .map((part) => part.trim())
+            .filter((barcode) => barcode.length > 0);
 
-        if (ids.length === 0) {
-            setError('Nhập ít nhất 1 bookId để thanh lý (cách nhau bởi dấu phẩy).');
+        if (barcodes.length === 0) {
+            setError('Nhập ít nhất 1 barcode để thanh lý (cách nhau bởi dấu phẩy).');
             return;
         }
 
         try {
-            const result = await discardBooks(ids, discardReason);
-            setSuccessMessage(`${result.message} (${result.discardedCount} sách)`);
+            const result = await discardBooks(barcodes, discardReason);
+            setLastDiscardReport(result);
+            setSuccessMessage(`${result.message} (${result.discardedCount} bản sách)`);
             setError('');
             await loadData(period);
+            const suggestions = await fetchDiscardSuggestions();
+            setDiscardSuggestions(suggestions.candidates || []);
+            setDiscardSuggestionSummary(suggestions);
+            const reports = await fetchDiscardReports();
+            setDiscardReportHistory(reports || []);
         } catch {
-            setError('Không thể thanh lý sách. Hãy kiểm tra sách có đang mượn/đặt trước không.');
+            setError('Không thể thanh lý sách. Hãy kiểm tra barcode có đang mượn/đặt trước hoặc đã thanh lý.');
         }
+    };
+
+    const handleUseSuggestedBarcodes = () => {
+        const barcodes = discardSuggestions.map((candidate) => candidate.barcode);
+        setDiscardBarcodesRaw(barcodes.join(','));
+    };
+
+    const handleOpenDiscardReportDetail = async (reportId: number) => {
+        const detail = await fetchDiscardReportDetail(reportId);
+        setSelectedDiscardReportDetail(detail);
+    };
+
+    const handleCloseDiscardReportDetail = () => {
+        setSelectedDiscardReportDetail(null);
     };
 
     const handleExport = async (format: 'excel' | 'pdf') => {
@@ -159,10 +197,15 @@ export function useInventoryReports() {
         setAuditNote,
         lastPhysicalAudit,
         lastDigitalAudit,
-        discardBookIdsRaw,
-        setDiscardBookIdsRaw,
+        discardBarcodesRaw,
+        setDiscardBarcodesRaw,
         discardReason,
         setDiscardReason,
+        discardSuggestions,
+        discardSuggestionSummary,
+        lastDiscardReport,
+        discardReportHistory,
+        selectedDiscardReportDetail,
         loading,
         error,
         successMessage,
@@ -170,6 +213,9 @@ export function useInventoryReports() {
         handleRunPhysicalAudit,
         handleRunDigitalAudit,
         handleDiscardBooks,
+        handleUseSuggestedBarcodes,
+        handleOpenDiscardReportDetail,
+        handleCloseDiscardReportDetail,
         handleExport,
     };
 }

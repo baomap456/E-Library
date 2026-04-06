@@ -2,6 +2,9 @@ package com.example.demo.service.impl;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,17 +37,20 @@ import com.example.demo.dto.librarian.LibrarianDebtorResponse;
 import com.example.demo.dto.librarian.LibrarianDeleteBookResponse;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentRequest;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentResponse;
+import com.example.demo.dto.librarian.LibrarianFineInvoiceResponse;
 import com.example.demo.dto.librarian.LibrarianGuestCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentResponse;
 import com.example.demo.dto.librarian.LibrarianLocationRequest;
 import com.example.demo.dto.librarian.LibrarianLocationResponse;
+import com.example.demo.dto.librarian.LibrarianMembershipInvoiceResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
 import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianReportIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianReportIncidentResponse;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountRequest;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountResponse;
+import com.example.demo.dto.librarian.LibrarianUserFineSummaryResponse;
 import com.example.demo.dto.profile.UpgradeMembershipRequest;
 import com.example.demo.dto.profile.UpgradeMembershipResponse;
 import com.example.demo.mapper.LibrarianMapper;
@@ -53,7 +59,11 @@ import com.example.demo.model.Book;
 import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.BorrowRequest;
+import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.model.Category;
+import com.example.demo.model.FinePayment;
 import com.example.demo.model.Location;
 import com.example.demo.model.MembershipType;
 import com.example.demo.model.Reservation;
@@ -64,8 +74,11 @@ import com.example.demo.repository.AuthorRepository;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.repository.BorrowRecordRepository;
+import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.repository.CategoryRepository;
+import com.example.demo.repository.FinePaymentRepository;
 import com.example.demo.repository.LocationRepository;
+import com.example.demo.repository.MembershipTransactionRepository;
 import com.example.demo.repository.MembershipTypeRepository;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.repository.RoleRepository;
@@ -85,8 +98,8 @@ import lombok.RequiredArgsConstructor;
 public class LibrarianServiceImpl implements LibrarianService {
 
     private static final double DAILY_FINE = 5000.0;
-    private static final String MEMBER_ROLE = "ROLE_MEMBER";
-    private static final String GUEST_ROLE = "ROLE_GUEST";
+    private static final String MEMBER_ROLE = "MEMBER";
+    private static final String GUEST_ROLE = "GUEST";
     private static final String BORROW_MODE_TAKE_HOME = "TAKE_HOME";
     private static final String BORROW_MODE_READ_ON_SITE = "READ_ON_SITE";
     private static final String INCIDENT_LOST = "LOST";
@@ -99,6 +112,8 @@ public class LibrarianServiceImpl implements LibrarianService {
     private final BookRepository bookRepository;
     private final BookItemRepository bookItemRepository;
     private final BorrowRecordRepository borrowRecordRepository;
+    private final BorrowRequestRepository borrowRequestRepository;
+    private final FinePaymentRepository finePaymentRepository;
     private final UserRepository userRepository;
     private final LocationRepository locationRepository;
     private final AuthorRepository authorRepository;
@@ -109,6 +124,7 @@ public class LibrarianServiceImpl implements LibrarianService {
     private final ReservationRepository reservationRepository;
     private final ModuleStateService moduleStateService;
     private final ProfileService profileService;
+    private final MembershipTransactionRepository membershipTransactionRepository;
     private final PasswordEncoder passwordEncoder;
     private final DebtRestrictionService debtRestrictionService;
     private final RenewalPolicyService renewalPolicyService;
@@ -173,6 +189,7 @@ public class LibrarianServiceImpl implements LibrarianService {
         Book book = new Book();
         applyBookRequest(book, request);
         Book saved = bookRepository.save(book);
+        syncPrimaryBookItem(saved, request);
         return toBookResponse(saved);
     }
 
@@ -182,6 +199,7 @@ public class LibrarianServiceImpl implements LibrarianService {
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sách"));
         applyBookRequest(book, request);
         Book saved = bookRepository.save(book);
+        syncPrimaryBookItem(saved, request);
         return toBookResponse(saved);
     }
 
@@ -195,13 +213,14 @@ public class LibrarianServiceImpl implements LibrarianService {
     public LibrarianCheckoutResponse checkout(LibrarianCheckoutRequest request) {
         User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
-        if (hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN")) {
+        if (hasRole(user, "LIBRARIAN") || hasRole(user, "ADMIN")) {
             throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
         }
         debtRestrictionService.assertBorrowingAllowed(user, "mượn sách");
         LibrarianCheckoutResponse response = createCheckoutForBorrower(
             user,
             request.barcode(),
+            request.dueDate(),
             "Lập phiếu mượn thành công",
             BORROW_MODE_TAKE_HOME,
             0.0,
@@ -221,6 +240,7 @@ public class LibrarianServiceImpl implements LibrarianService {
         LibrarianCheckoutResponse response = createCheckoutForBorrower(
                 guest,
                 request.barcode(),
+            request.dueDate(),
                 "Lập phiếu mượn cho khách thành công",
                 borrowMode,
                 depositAmount,
@@ -234,7 +254,10 @@ public class LibrarianServiceImpl implements LibrarianService {
     public List<LibrarianBorrowerOptionResponse> borrowers(String keyword) {
         List<User> users;
         if (keyword == null || keyword.isBlank()) {
-            users = userRepository.findTop30ByOrderByUsernameAsc();
+            users = userRepository.findAll().stream()
+                    .filter(this::isMemberBorrower)
+                    .sorted(Comparator.comparing(User::getUsername, String.CASE_INSENSITIVE_ORDER))
+                    .toList();
         } else {
             String q = keyword.trim();
             users = userRepository.findTop30ByUsernameContainingIgnoreCaseOrFullNameContainingIgnoreCaseOrderByUsernameAsc(q, q);
@@ -246,7 +269,10 @@ public class LibrarianServiceImpl implements LibrarianService {
                         user.getId(),
                         user.getUsername(),
                         user.getFullName(),
-                        user.getEmail()))
+                        user.getEmail(),
+                        user.getPhone(),
+                        user.getStudentId(),
+                        user.getMembershipType() == null ? "Free" : user.getMembershipType().getName()))
                 .toList();
         }
 
@@ -302,7 +328,7 @@ public class LibrarianServiceImpl implements LibrarianService {
     public LibrarianUpgradeAccountResponse upgradeAccount(LibrarianUpgradeAccountRequest request) {
         UpgradeMembershipResponse upgraded = profileService.upgradeMembership(
                 request.username(),
-                new UpgradeMembershipRequest(request.targetPackage()));
+                new UpgradeMembershipRequest(request.targetPackage(), "COUNTER"));
 
         return new LibrarianUpgradeAccountResponse(
                 upgraded.message(),
@@ -453,27 +479,98 @@ public class LibrarianServiceImpl implements LibrarianService {
     public List<LibrarianDebtorResponse> debtors() {
         LocalDateTime now = LocalDateTime.now();
         return borrowRecordRepository.findAll().stream()
-            .filter(borrowRecord -> borrowRecord.getFineAmount() != null && borrowRecord.getFineAmount() > 0)
-            .map(borrowRecord -> {
-                User user = borrowRecord.getUser();
-                double outstandingDebt = debtRestrictionService.refreshDebtStatus(user);
-            boolean overdue = borrowRecord.getReturnDate() == null
-                && borrowRecord.getDueDate() != null
-                && borrowRecord.getDueDate().isBefore(now);
-            long overdueDays = overdue
-                ? Math.max(1, ChronoUnit.DAYS.between(borrowRecord.getDueDate().toLocalDate(), now.toLocalDate()))
-                : 0;
-                return new LibrarianDebtorResponse(
-                        borrowRecord.getId(),
+                .filter(borrowRecord -> borrowRecord.getFineAmount() != null && borrowRecord.getFineAmount() > 0)
+                .map(borrowRecord -> {
+                    User user = borrowRecord.getUser();
+                    double outstandingDebt = debtRestrictionService.refreshDebtStatus(user);
+                    boolean overdue = borrowRecord.getReturnDate() == null
+                            && borrowRecord.getDueDate() != null
+                            && borrowRecord.getDueDate().isBefore(now);
+                    long overdueDays = overdue
+                            ? Math.max(1, ChronoUnit.DAYS.between(borrowRecord.getDueDate().toLocalDate(), now.toLocalDate()))
+                            : 0;
+                    return new LibrarianDebtorResponse(
+                            borrowRecord.getId(),
+                            user.getUsername(),
+                            user.getFullName(),
+                            borrowRecord.getBookItem().getBook().getTitle(),
+                            borrowRecord.getFineAmount(),
+                            borrowRecord.getDueDate(),
+                            outstandingDebt,
+                            user.isBorrowingLocked(),
+                            overdueDays,
+                            overdue);
+                })
+                .toList();
+    }
+
+            @Override
+            public List<LibrarianFineInvoiceResponse> fineInvoices() {
+            return finePaymentRepository.findAll().stream()
+                .sorted(Comparator.comparing(FinePayment::getPaymentDate, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .map(payment -> {
+                    BorrowRecord borrowRecord = payment.getBorrowRecord();
+                    User user = borrowRecord == null ? null : borrowRecord.getUser();
+                    String paymentMethod = payment.getPaymentMethod() == null ? "CASH" : payment.getPaymentMethod();
+                    return new LibrarianFineInvoiceResponse(
+                        payment.getId(),
+                        borrowRecord == null ? null : borrowRecord.getId(),
+                        user == null ? null : user.getUsername(),
+                        user == null ? null : user.getFullName(),
+                        borrowRecord == null || borrowRecord.getBookItem() == null || borrowRecord.getBookItem().getBook() == null
+                            ? null
+                            : borrowRecord.getBookItem().getBook().getTitle(),
+                        payment.getAmount(),
+                        payment.getPaymentDate(),
+                        paymentMethod);
+                })
+                .toList();
+            }
+
+            @Override
+            public List<LibrarianUserFineSummaryResponse> userFineSummaries() {
+            Map<Long, List<com.example.demo.model.FinePayment>> groupedByUser = finePaymentRepository.findAll().stream()
+                .filter(payment -> payment.getBorrowRecord() != null && payment.getBorrowRecord().getUser() != null)
+                .collect(java.util.stream.Collectors.groupingBy(payment -> payment.getBorrowRecord().getUser().getId(), LinkedHashMap::new, java.util.stream.Collectors.toList()));
+
+            return groupedByUser.entrySet().stream()
+                .map(entry -> {
+                    Long userId = entry.getKey();
+                    List<com.example.demo.model.FinePayment> payments = entry.getValue();
+                    User user = payments.get(0).getBorrowRecord().getUser();
+                    double totalPaidAmount = payments.stream().mapToDouble(payment -> Objects.requireNonNullElse(payment.getAmount(), 0.0)).sum();
+                    double outstandingDebt = Objects.requireNonNullElse(borrowRecordRepository.sumOutstandingDebtByUserId(userId), 0.0);
+                    return new LibrarianUserFineSummaryResponse(
+                        userId,
                         user.getUsername(),
-                        borrowRecord.getBookItem().getBook().getTitle(),
-                        borrowRecord.getFineAmount(),
-                        borrowRecord.getDueDate(),
+                        user.getFullName(),
+                        totalPaidAmount,
                         outstandingDebt,
-                user.isBorrowingLocked(),
-                overdueDays,
-                overdue);
-            })
+                        (long) payments.size(),
+                        user.isBorrowingLocked());
+                })
+                .sorted(Comparator.comparing(LibrarianUserFineSummaryResponse::totalPaidAmount, Comparator.nullsLast(Comparator.naturalOrder())).reversed())
+                .toList();
+            }
+
+    @Override
+    public List<LibrarianMembershipInvoiceResponse> membershipInvoices() {
+        return membershipTransactionRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(transaction -> {
+                    User user = transaction.getUser();
+                    return new LibrarianMembershipInvoiceResponse(
+                            transaction.getId(),
+                            user == null ? null : user.getUsername(),
+                            user == null ? null : user.getFullName(),
+                            transaction.getActorUsername(),
+                            transaction.getPaymentChannel(),
+                            transaction.getAction(),
+                            transaction.getFromPackage(),
+                            transaction.getToPackage(),
+                            transaction.getAmount(),
+                            transaction.getNote(),
+                            transaction.getCreatedAt());
+                })
                 .toList();
     }
 
@@ -569,6 +666,47 @@ public class LibrarianServiceImpl implements LibrarianService {
         if (!Boolean.TRUE.equals(request.digital())) {
             book.setCanTakeHome(true);
         }
+
+        Category category = categoryRepository.findById(request.categoryId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy danh mục"));
+        book.setCategory(category);
+
+        if (request.authorIds() == null || request.authorIds().isEmpty()) {
+            throw new IllegalArgumentException("Vui lòng chọn ít nhất một tác giả");
+        }
+        book.setAuthors(new HashSet<>(authorRepository.findAllById(request.authorIds())));
+        if (book.getAuthors().isEmpty()) {
+            throw new IllegalArgumentException("Không tìm thấy tác giả hợp lệ");
+        }
+    }
+
+    private void syncPrimaryBookItem(Book book, LibrarianBookRequest request) {
+        if (Boolean.TRUE.equals(request.digital())) {
+            return;
+        }
+
+        if (request.locationId() == null) {
+            throw new IllegalArgumentException("Vui lòng chọn vị trí sách cho đầu sách vật lý");
+        }
+
+        Location location = locationRepository.findById(request.locationId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vị trí sách"));
+
+        List<BookItem> items = bookItemRepository.findByBookId(book.getId());
+        if (items.isEmpty()) {
+            BookItem item = new BookItem();
+            item.setBarcode(String.format("BK-%06d-1", book.getId()));
+            item.setBook(book);
+            item.setLocation(location);
+            item.setStatus(BookStatus.AVAILABLE);
+            bookItemRepository.save(item);
+            return;
+        }
+
+        for (BookItem item : items) {
+            item.setLocation(location);
+        }
+        bookItemRepository.saveAll(items);
     }
 
     private void applyDigitalDocumentRequest(Book book, LibrarianDigitalDocumentRequest request) {
@@ -598,18 +736,37 @@ public class LibrarianServiceImpl implements LibrarianService {
         String availableBarcode = bookItemRepository.findFirstByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE)
                 .map(BookItem::getBarcode)
                 .orElse(null);
-        return librarianMapper.toBookResponse(book, availableCopies, availableBarcode);
+        BookItem primaryItem = bookItemRepository.findByBookId(book.getId()).stream().findFirst().orElse(null);
+        Integer categoryId = book.getCategory() == null ? null : book.getCategory().getId();
+        String categoryName = book.getCategory() == null ? null : book.getCategory().getName();
+        List<Integer> authorIds = book.getAuthors().stream().map(Author::getId).toList();
+        List<String> authorNames = book.getAuthors().stream().map(Author::getName).toList();
+        Integer locationId = primaryItem != null && primaryItem.getLocation() != null ? primaryItem.getLocation().getId() : null;
+        String locationLabel = primaryItem != null && primaryItem.getLocation() != null
+            ? primaryItem.getLocation().getRoomName() + " / Kệ " + primaryItem.getLocation().getShelfNumber()
+            : null;
+        return librarianMapper.toBookResponse(
+            book,
+            availableCopies,
+            availableBarcode,
+            categoryId,
+            categoryName,
+            authorIds,
+            authorNames,
+            locationId,
+            locationLabel);
     }
 
     private LibrarianCheckoutResponse createCheckoutForBorrower(
             User borrower,
             String barcode,
+            LocalDateTime dueDate,
             String message,
             String borrowMode,
             Double depositAmount,
             String citizenId,
             boolean temporaryRecord) {
-        if (hasRole(borrower, "ROLE_LIBRARIAN") || hasRole(borrower, "ROLE_ADMIN")) {
+        if (hasRole(borrower, "LIBRARIAN") || hasRole(borrower, "ADMIN")) {
             throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
         }
         BookItem item = bookItemRepository.findByBarcode(barcode)
@@ -623,6 +780,13 @@ public class LibrarianServiceImpl implements LibrarianService {
             throw new IllegalArgumentException("Sách này không được phép mang về nhà");
         }
 
+        if (dueDate == null) {
+            throw new IllegalArgumentException("Vui lòng chọn thời gian trả sách");
+        }
+        if (!dueDate.isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("Thời gian trả phải sau thời điểm hiện tại");
+        }
+
         item.setStatus(BookStatus.BORROWING);
         bookItemRepository.save(item);
 
@@ -630,17 +794,14 @@ public class LibrarianServiceImpl implements LibrarianService {
         borrowRecord.setUser(borrower);
         borrowRecord.setBookItem(item);
         borrowRecord.setBorrowDate(LocalDateTime.now());
-        if (BORROW_MODE_READ_ON_SITE.equals(borrowMode)) {
-            borrowRecord.setDueDate(LocalDateTime.now().plusHours(8));
-        } else {
-            borrowRecord.setDueDate(LocalDateTime.now().plusDays(14));
-        }
+        borrowRecord.setDueDate(dueDate);
         borrowRecord.setBorrowMode(borrowMode);
         borrowRecord.setDepositAmount(depositAmount == null ? 0.0 : depositAmount);
         borrowRecord.setBorrowerCitizenId(citizenId);
         borrowRecord.setTemporaryRecord(temporaryRecord);
         borrowRecord.setStatus(BookStatus.BORROWING);
         borrowRecordRepository.save(borrowRecord);
+        createDirectBorrowRequestRecord(borrowRecord);
 
         return new LibrarianCheckoutResponse(
                 message,
@@ -651,6 +812,21 @@ public class LibrarianServiceImpl implements LibrarianService {
                 borrowRecord.getDepositAmount(),
                 borrowRecord.getBorrowerCitizenId(),
                 borrowRecord.getTemporaryRecord());
+    }
+
+    private void createDirectBorrowRequestRecord(BorrowRecord borrowRecord) {
+        BorrowRequest request = new BorrowRequest();
+        request.setUser(borrowRecord.getUser());
+        request.setBookItem(borrowRecord.getBookItem());
+        request.setBorrowRecord(borrowRecord);
+        request.setRequestType(BorrowRequestType.BORROW);
+        request.setStatus(BorrowRequestStatus.APPROVED);
+        request.setRequestDate(borrowRecord.getBorrowDate());
+        request.setRequestedPickupDate(borrowRecord.getBorrowDate() == null ? null : borrowRecord.getBorrowDate().toLocalDate());
+        request.setRequestedReturnDate(borrowRecord.getDueDate() == null ? null : borrowRecord.getDueDate().toLocalDate());
+        request.setApprovalDate(LocalDateTime.now());
+        request.setApprovalNote("Lập phiếu mượn trực tiếp tại quầy");
+        borrowRequestRepository.save(request);
     }
 
     private String normalizeBorrowMode(String input) {

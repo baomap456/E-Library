@@ -16,9 +16,16 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useMemo, useState } from 'react';
+import LibrarianTablePagination from '../../components/librarian/LibrarianTablePagination';
 import { useInventoryReports } from '../../hooks/modules/useInventoryReports';
 
 export default function InventoryReports() {
+    const [discrepancyPage, setDiscrepancyPage] = useState(0);
+    const [discrepancyRowsPerPage, setDiscrepancyRowsPerPage] = useState(5);
+    const [auditPage, setAuditPage] = useState(0);
+    const [auditRowsPerPage, setAuditRowsPerPage] = useState(10);
+
     const {
         sessionName,
         setSessionName,
@@ -39,8 +46,8 @@ export default function InventoryReports() {
         setAuditNote,
         lastPhysicalAudit,
         lastDigitalAudit,
-        discardBookIdsRaw,
-        setDiscardBookIdsRaw,
+        discardBarcodesRaw,
+        setDiscardBarcodesRaw,
         discardReason,
         setDiscardReason,
         loading,
@@ -52,6 +59,34 @@ export default function InventoryReports() {
         handleDiscardBooks,
         handleExport,
     } = useInventoryReports();
+
+    const pagedDiscrepancies = useMemo(() => {
+        const start = discrepancyPage * discrepancyRowsPerPage;
+        return discrepancies.slice(start, start + discrepancyRowsPerPage);
+    }, [discrepancies, discrepancyPage, discrepancyRowsPerPage]);
+
+    const pagedAuditLogs = useMemo(() => {
+        const start = auditPage * auditRowsPerPage;
+        return auditLogs.slice(start, start + auditRowsPerPage);
+    }, [auditLogs, auditPage, auditRowsPerPage]);
+
+    const handleDiscrepancyPageChange = (_: unknown, nextPage: number) => {
+        setDiscrepancyPage(nextPage);
+    };
+
+    const handleDiscrepancyRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setDiscrepancyRowsPerPage(Number.parseInt(event.target.value, 10));
+        setDiscrepancyPage(0);
+    };
+
+    const handleAuditPageChange = (_: unknown, nextPage: number) => {
+        setAuditPage(nextPage);
+    };
+
+    const handleAuditRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setAuditRowsPerPage(Number.parseInt(event.target.value, 10));
+        setAuditPage(0);
+    };
 
     if (loading) {
         return (
@@ -185,7 +220,7 @@ export default function InventoryReports() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {discrepancies.map((row) => (
+                                    {pagedDiscrepancies.map((row) => (
                                         <TableRow key={row.title} sx={{ background: row.difference < 0 ? 'rgba(244,67,54,0.08)' : 'transparent' }}>
                                             <TableCell>{row.title}</TableCell>
                                             <TableCell align="right">{row.systemCount}</TableCell>
@@ -195,6 +230,14 @@ export default function InventoryReports() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            <LibrarianTablePagination
+                                count={discrepancies.length}
+                                page={discrepancyPage}
+                                rowsPerPage={discrepancyRowsPerPage}
+                                onPageChange={handleDiscrepancyPageChange}
+                                onRowsPerPageChange={handleDiscrepancyRowsPerPageChange}
+                                rowsPerPageOptions={[5, 10, 20]}
+                            />
                         </CardContent>
                     </Card>
                 </Grid>
@@ -204,7 +247,7 @@ export default function InventoryReports() {
                         <CardContent>
                             <Typography variant="h6" sx={{ mb: 1 }}>Thanh lý sách (DISCARDED)</Typography>
                             <Stack spacing={1.2}>
-                                <TextField label="Book IDs (vd: 1,2,3)" value={discardBookIdsRaw} onChange={(e) => setDiscardBookIdsRaw(e.target.value)} />
+                                <TextField label="Barcodes (vd: BK001-001,BK001-002)" value={discardBarcodesRaw} onChange={(e) => setDiscardBarcodesRaw(e.target.value)} />
                                 <TextField label="Lý do thanh lý" value={discardReason} onChange={(e) => setDiscardReason(e.target.value)} />
                                 <Button color="error" variant="contained" onClick={() => void handleDiscardBooks()}>Thanh lý</Button>
                             </Stack>
@@ -216,6 +259,9 @@ export default function InventoryReports() {
                     <Card>
                         <CardContent>
                             <Typography variant="h6" sx={{ mb: 1 }}>Export</Typography>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                                File Excel sẽ được lưu tại thư mục Downloads/E-Library-Exports.
+                            </Typography>
                             <Stack direction="row" spacing={1}>
                                 <Button variant="contained" onClick={() => void handleExport('excel')}>Xuất Excel</Button>
                                 <Button variant="outlined" onClick={() => void handleExport('pdf')}>Xuất PDF</Button>
@@ -251,7 +297,7 @@ export default function InventoryReports() {
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {auditLogs.slice(0, 30).map((log) => (
+                                    {pagedAuditLogs.map((log) => (
                                         <TableRow key={log.id}>
                                             <TableCell>{String(log.createdAt).replace('T', ' ').slice(0, 19)}</TableCell>
                                             <TableCell>{log.actor}</TableCell>
@@ -262,6 +308,14 @@ export default function InventoryReports() {
                                     ))}
                                 </TableBody>
                             </Table>
+                            <LibrarianTablePagination
+                                count={auditLogs.length}
+                                page={auditPage}
+                                rowsPerPage={auditRowsPerPage}
+                                onPageChange={handleAuditPageChange}
+                                onRowsPerPageChange={handleAuditRowsPerPageChange}
+                                rowsPerPageOptions={[10, 20, 30]}
+                            />
                         </CardContent>
                     </Card>
                 </Grid>

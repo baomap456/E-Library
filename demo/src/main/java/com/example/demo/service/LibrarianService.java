@@ -21,17 +21,20 @@ import com.example.demo.dto.librarian.LibrarianDebtorResponse;
 import com.example.demo.dto.librarian.LibrarianDeleteBookResponse;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentRequest;
 import com.example.demo.dto.librarian.LibrarianDigitalDocumentResponse;
+import com.example.demo.dto.librarian.LibrarianFineInvoiceResponse;
 import com.example.demo.dto.librarian.LibrarianGuestCheckoutRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianIncidentResponse;
 import com.example.demo.dto.librarian.LibrarianLocationRequest;
 import com.example.demo.dto.librarian.LibrarianLocationResponse;
+import com.example.demo.dto.librarian.LibrarianMembershipInvoiceResponse;
 import com.example.demo.dto.librarian.LibrarianRejectRenewResponse;
+import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianReportIncidentRequest;
 import com.example.demo.dto.librarian.LibrarianReportIncidentResponse;
-import com.example.demo.dto.librarian.LibrarianRenewalRequestResponse;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountRequest;
 import com.example.demo.dto.librarian.LibrarianUpgradeAccountResponse;
+import com.example.demo.dto.librarian.LibrarianUserFineSummaryResponse;
 
 public interface LibrarianService {
     LibrarianDashboardResponse dashboard();
@@ -95,6 +98,12 @@ public interface LibrarianService {
     LibrarianRejectRenewResponse rejectRenew(Long recordId);
 
     List<LibrarianDebtorResponse> debtors();
+
+    List<LibrarianFineInvoiceResponse> fineInvoices();
+
+    List<LibrarianMembershipInvoiceResponse> membershipInvoices();
+
+    List<LibrarianUserFineSummaryResponse> userFineSummaries();
 
     List<LibrarianIncidentResponse> incidents();
 

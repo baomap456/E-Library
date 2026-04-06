@@ -7,9 +7,7 @@ import {
     Stack,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import BorrowingFinesCard from '../../components/borrowing/BorrowingFinesCard';
-import BorrowingRequestsCard from '../../components/borrowing/BorrowingRequestsCard';
-import BorrowingWaitlistCard from '../../components/borrowing/BorrowingWaitlistCard';
+import MembershipPackagesCard from '../../components/profile/MembershipPackagesCard';
 import ProfileInfoCard from '../../components/profile/ProfileInfoCard';
 import ProfilePageHeader from '../../components/profile/ProfilePageHeader';
 import { useAuthPersonal } from '../../hooks/modules/useAuthPersonal';
@@ -20,9 +18,9 @@ export default function AuthenticationPersonal() {
         profile,
         card,
         qrData,
-        myRequests,
-        waitlist,
-        fines,
+        packages,
+        upgrading,
+        handleUpgrade,
         loading,
         error,
     } = useAuthPersonal();
@@ -63,15 +61,12 @@ export default function AuthenticationPersonal() {
                 </Grid>
 
                 <Grid size={{ xs: 12 }}>
-                    <BorrowingRequestsCard myRequests={myRequests} />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 7 }}>
-                    <BorrowingWaitlistCard waitlist={waitlist} />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 5 }}>
-                    <BorrowingFinesCard fines={fines} showPayButton={false} />
+                    <MembershipPackagesCard
+                        profile={profile}
+                        packages={packages}
+                        upgrading={upgrading}
+                        onUpgrade={handleUpgrade}
+                    />
                 </Grid>
             </Grid>
         </Box>

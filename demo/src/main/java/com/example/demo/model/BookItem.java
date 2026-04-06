@@ -1,7 +1,5 @@
 package com.example.demo.model;
 
-
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -28,6 +26,7 @@ public class BookItem {
     @Enumerated(EnumType.STRING)
     private BookStatus status = BookStatus.AVAILABLE;
 
+
     @ManyToOne
     @JoinColumn(name = "book_id")
     private Book book;
@@ -35,5 +34,6 @@ public class BookItem {
     @ManyToOne
     @JoinColumn(name = "location_id")
     private Location location;
+
     
 }

@@ -8,29 +8,42 @@ import {
   Typography,
   CircularProgress,
 } from '@mui/material';
-import UserLayout from './components/UserLayout';
+import AppLayout from './components/AppLayout';
 import StaffLayout from './components/StaffLayout';
 import { getStoredToken, getStoredUser, hasRole } from './api/session';
 
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const AuthenticationPersonal = lazy(() => import('./pages/modules/AuthenticationPersonal.tsx'));
+const UpgradeInvoicesPage = lazy(() => import('./pages/modules/account-services/UpgradeInvoicesPage.tsx'));
+const MyRequestsPage = lazy(() => import('./pages/modules/account-services/MyRequestsPage.tsx'));
+const WaitingBooksPage = lazy(() => import('./pages/modules/account-services/WaitingBooksPage.tsx'));
+const DebtHistoryPage = lazy(() => import('./pages/modules/account-services/DebtHistoryPage.tsx'));
 const HomePage = lazy(() => import('./pages/modules/HomePage.tsx'));
 const BookList = lazy(() => import('./pages/modules/BookList.tsx'));
 const BookDetail = lazy(() => import('./pages/modules/BookDetail.tsx'));
 const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx'));
-const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
+const BorrowBooksPage = lazy(() => import('./pages/modules/BorrowBooksPage.tsx'));
+const ReturnBooksPage = lazy(() => import('./pages/modules/ReturnBooksPage.tsx'));
 const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
-const LibrarianPanel = lazy(() => import('./pages/modules/LibrarianPanel.tsx'));
+const LibrarianLayout = lazy(() => import('./pages/modules/librarian/LibrarianLayout.tsx'));
 const LibrarianDashboardPage = lazy(() => import('./pages/modules/librarian/LibrarianDashboardPage.tsx'));
 const LibrarianCirculationPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationPage.tsx'));
+const LibrarianCirculationBorrowPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationBorrowPage.tsx'));
+const LibrarianCirculationReturnPage = lazy(() => import('./pages/modules/librarian/LibrarianCirculationReturnPage.tsx'));
 const LibrarianCatalogPage = lazy(() => import('./pages/modules/librarian/LibrarianCatalogPage.tsx'));
+const LibrarianBookManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianBookManagementPage.tsx'));
+const LibrarianAuthorManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianAuthorManagementPage.tsx'));
+const LibrarianCategoryManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianCategoryManagementPage.tsx'));
+const LibrarianLocationManagementPage = lazy(() => import('./pages/modules/librarian/LibrarianLocationManagementPage.tsx'));
 const LibrarianDebtorsPage = lazy(() => import('./pages/modules/librarian/LibrarianDebtorsPage.tsx'));
 const LibrarianIncidentsPage = lazy(() => import('./pages/modules/librarian/LibrarianIncidentsPage.tsx'));
 const LibrarianDigitalPage = lazy(() => import('./pages/modules/librarian/LibrarianDigitalPage.tsx'));
 const LibrarianAccountsPage = lazy(() => import('./pages/modules/librarian/LibrarianAccountsPage.tsx'));
 const LibrarianRequestsPage = lazy(() => import('./pages/modules/librarian/LibrarianRequestsPage.tsx'));
-const LibrarianInventoryPage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryPage.tsx'));
+const LibrarianInventoryWorkflowPage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryWorkflowPage.tsx'));
+const LibrarianInventoryFeaturePage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryFeaturePage.tsx'));
 
 const theme = createTheme({
   palette: {
@@ -64,6 +77,11 @@ function RequireLibrarian() {
   return allowed ? <Outlet /> : <Navigate to="/app/profile" replace />;
 }
 
+function RequireGuest() {
+  const token = getStoredToken();
+  return token ? <Navigate to="/" replace /> : <Outlet />;
+}
+
 function NotFound() {
   return (
     <Box sx={{ textAlign: 'center', mt: 8 }}>
@@ -91,35 +109,58 @@ function App() {
         <Suspense fallback={<RouteFallback />}>
           <Routes>
             <Route path="/" element={<HomePage />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+
+            <Route element={<RequireGuest />}>
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+            </Route>
 
             <Route element={<RequireAuth />}>
               <Route element={<RequireMember />}>
-                <Route element={<UserLayout />}>
+                <Route element={<AppLayout />}>
                   <Route path="/app/profile" element={<AuthenticationPersonal />} />
+                  <Route path="/app/account-services/upgrade-invoices" element={<UpgradeInvoicesPage />} />
+                  <Route path="/app/account-services/my-requests" element={<MyRequestsPage />} />
+                  <Route path="/app/account-services/waiting-books" element={<WaitingBooksPage />} />
+                  <Route path="/app/account-services/debt-history" element={<DebtHistoryPage />} />
                   <Route path="/app/auth-personal" element={<Navigate to="/app/profile" replace />} />
                   <Route path="/app/book-list" element={<BookList />} />
                   <Route path="/app/book-detail/:bookId" element={<BookDetail />} />
                   <Route path="/app/catalog" element={<CatalogDiscovery />} />
-                  <Route path="/app/borrowing" element={<BorrowingReservation />} />
+                  <Route path="/app/borrowing" element={<Navigate to="/app/borrowing/borrow" replace />} />
+                  <Route path="/app/borrowing/borrow" element={<BorrowBooksPage />} />
+                  <Route path="/app/borrowing/return" element={<ReturnBooksPage />} />
                   <Route path="/app/digital" element={<DigitalLibrary />} />
                 </Route>
               </Route>
 
               <Route element={<RequireLibrarian />}>
                 <Route element={<StaffLayout />}>
-                  <Route path="/app/librarian" element={<LibrarianPanel />}>
+                  <Route path="/app/librarian" element={<LibrarianLayout />}>
                     <Route index element={<Navigate to="dashboard" replace />} />
                     <Route path="dashboard" element={<LibrarianDashboardPage />} />
                     <Route path="circulation" element={<LibrarianCirculationPage />} />
+                    <Route path="circulation/borrow" element={<LibrarianCirculationBorrowPage />} />
+                    <Route path="circulation/return" element={<LibrarianCirculationReturnPage />} />
                     <Route path="catalog" element={<LibrarianCatalogPage />} />
+                    <Route path="catalog/books" element={<LibrarianBookManagementPage />} />
+                    <Route path="catalog/authors" element={<LibrarianAuthorManagementPage />} />
+                    <Route path="catalog/categories" element={<LibrarianCategoryManagementPage />} />
+                    <Route path="catalog/locations" element={<LibrarianLocationManagementPage />} />
                     <Route path="debtors" element={<LibrarianDebtorsPage />} />
                     <Route path="incidents" element={<LibrarianIncidentsPage />} />
                     <Route path="digital" element={<LibrarianDigitalPage />} />
-                    <Route path="accounts" element={<LibrarianAccountsPage />} />
+                    <Route path="user-management" element={<LibrarianAccountsPage />} />
+                    <Route path="accounts" element={<Navigate to="../user-management" replace />} />
                     <Route path="requests" element={<LibrarianRequestsPage />} />
-                    <Route path="inventory" element={<LibrarianInventoryPage />} />
+                    <Route path="inventory" element={<Navigate to="inventory/workflow" replace />} />
+                    <Route path="inventory/workflow" element={<LibrarianInventoryWorkflowPage />} />
+                    <Route path="inventory/digital-audit" element={<LibrarianInventoryFeaturePage feature="digital-audit" />} />
+                    <Route path="inventory/discrepancies" element={<LibrarianInventoryFeaturePage feature="discrepancies" />} />
+                    <Route path="inventory/discard" element={<LibrarianInventoryFeaturePage feature="discard" />} />
+                    <Route path="inventory/export" element={<LibrarianInventoryFeaturePage feature="export" />} />
+                    <Route path="inventory/audit-logs" element={<LibrarianInventoryFeaturePage feature="audit-logs" />} />
                   </Route>
                   <Route path="/app/reports" element={<Navigate to="/app/librarian/dashboard" replace />} />
                 </Route>

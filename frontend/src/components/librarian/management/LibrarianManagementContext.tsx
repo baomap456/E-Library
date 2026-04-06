@@ -6,8 +6,11 @@ import type {
     LibrarianCategory,
     LibrarianDashboard,
     LibrarianDebtor,
+    LibrarianFineInvoice,
+    LibrarianMembershipInvoice,
     LibrarianDigitalDocument,
     LibrarianLocation,
+    LibrarianUserFineSummary,
 } from '../../../types/modules/librarian';
 
 type OnPageChange = (_: unknown, page: number) => void;
@@ -16,6 +19,9 @@ type RowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAr
 export interface LibrarianManagementContextValue {
     dashboard: LibrarianDashboard | null;
     allBooks: LibrarianBook[];
+    allAuthors: LibrarianAuthor[];
+    allCategories: LibrarianCategory[];
+    allLocations: LibrarianLocation[];
     pagedBooks: LibrarianBook[];
     booksCount: number;
     bookAvailableOnly: boolean;
@@ -32,6 +38,9 @@ export interface LibrarianManagementContextValue {
         price: number;
         coverImageUrl: string;
         digital: boolean;
+        authorIds: number[];
+        categoryId: number;
+        locationId?: number | null;
     }) => void;
     onUpdateBook: (id: number, payload: {
         title: string;
@@ -41,6 +50,9 @@ export interface LibrarianManagementContextValue {
         price: number;
         coverImageUrl: string;
         digital: boolean;
+        authorIds: number[];
+        categoryId: number;
+        locationId?: number | null;
     }) => void;
     onDeleteBook: (id: number) => void;
     username: string;
@@ -51,6 +63,7 @@ export interface LibrarianManagementContextValue {
     guestLoanType: 'TAKE_HOME' | 'READ_ON_SITE';
     guestDepositAmount: string;
     guestCitizenId: string;
+    borrowDueDate: string;
     barcode: string;
     onUsernameChange: (value: string) => void;
     onGuestBorrowModeChange: (value: boolean) => void;
@@ -59,10 +72,11 @@ export interface LibrarianManagementContextValue {
     onGuestLoanTypeChange: (value: 'TAKE_HOME' | 'READ_ON_SITE') => void;
     onGuestDepositAmountChange: (value: string) => void;
     onGuestCitizenIdChange: (value: string) => void;
+    onBorrowDueDateChange: (value: string) => void;
     onBarcodeChange: (value: string) => void;
-    onCheckout: () => void;
-    onGuestCheckout: () => void;
-    onCheckin: () => void;
+    onCheckout: () => Promise<void>;
+    onGuestCheckout: () => Promise<void>;
+    onCheckin: () => Promise<boolean>;
     newUserUsername: string;
     newUserPassword: string;
     newUserEmail: string;
@@ -76,7 +90,10 @@ export interface LibrarianManagementContextValue {
     onCreateUserDirect: () => void;
     upgradeUsername: string;
     upgradeTargetPackage: string;
-    membershipPackageOptions: string[];
+    membershipPackageOptions: Array<{
+        name: string;
+        price: number;
+    }>;
     onUpgradeUsernameChange: (value: string) => void;
     onUpgradeTargetPackageChange: (value: string) => void;
     onUpgradeAccountDirect: () => void;
@@ -101,9 +118,14 @@ export interface LibrarianManagementContextValue {
     onCreateIncident: () => void;
     onReportBorrowIncident: () => void;
     pagedDebtors: LibrarianDebtor[];
+    fineInvoices: LibrarianFineInvoice[];
+    membershipInvoices: LibrarianMembershipInvoice[];
+    userFineSummaries: LibrarianUserFineSummary[];
     debtorsCount: number;
     debtorOverdueOnly: boolean;
     onDebtorOverdueOnlyChange: (checked: boolean) => void;
+    debtorSearch: string;
+    onDebtorSearchChange: (value: string) => void;
     debtorPage: number;
     debtorRowsPerPage: number;
     onDebtorPageChange: OnPageChange;
@@ -140,7 +162,7 @@ export interface LibrarianManagementContextValue {
     onAuthorSearchChange: (value: string) => void;
     newAuthor: string;
     onNewAuthorChange: (value: string) => void;
-    onCreateAuthor: () => void;
+    onCreateAuthor: (name?: string) => void;
     pagedAuthors: LibrarianAuthor[];
     filteredAuthorsCount: number;
     authorPage: number;
@@ -153,7 +175,7 @@ export interface LibrarianManagementContextValue {
     onCategorySearchChange: (value: string) => void;
     newCategory: string;
     onNewCategoryChange: (value: string) => void;
-    onCreateCategory: () => void;
+    onCreateCategory: (name?: string) => void;
     pagedCategories: LibrarianCategory[];
     filteredCategoriesCount: number;
     categoryPage: number;
@@ -168,7 +190,7 @@ export interface LibrarianManagementContextValue {
     onNewRoomChange: (value: string) => void;
     newShelf: string;
     onNewShelfChange: (value: string) => void;
-    onCreateLocation: () => void;
+    onCreateLocation: (roomName?: string, shelfNumber?: string) => void;
     pagedLocations: LibrarianLocation[];
     filteredLocationsCount: number;
     locationPage: number;

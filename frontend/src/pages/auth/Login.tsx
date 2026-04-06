@@ -120,7 +120,7 @@ const Login: React.FC = () => {
                             control={<Checkbox checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />}
                             label="Ghi nhớ đăng nhập"
                         />
-                        <Link href="#" underline="hover" sx={{ fontWeight: 600 }}>
+                        <Link component="button" type="button" onClick={() => navigate('/forgot-password')} underline="hover" sx={{ fontWeight: 600, background: 'none', border: 0, p: 0, cursor: 'pointer' }}>
                             Quên mật khẩu?
                         </Link>
                     </Box>

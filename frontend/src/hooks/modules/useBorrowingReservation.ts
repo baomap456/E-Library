@@ -104,12 +104,13 @@ export function useBorrowingReservation() {
             await renewBorrowingRecord(recordId);
             setError('');
             await loadData();
+            alert('Đã gửi yêu cầu gia hạn, vui lòng chờ thủ thư duyệt.');
         } catch (err: unknown) {
             if (axios.isAxiosError(err)) {
                 const message = (err.response?.data as { message?: string } | undefined)?.message;
-                setError(message || 'Gia hạn thất bại.');
+                setError(message || 'Không thể gửi yêu cầu gia hạn.');
             } else {
-                setError('Gia hạn thất bại.');
+                setError('Không thể gửi yêu cầu gia hạn.');
             }
         } finally {
             setRenewingRecordId(null);

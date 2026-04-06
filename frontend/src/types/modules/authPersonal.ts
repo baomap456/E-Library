@@ -21,6 +21,7 @@ export interface MembershipPackageResponse {
     id: number;
     name: string;
     paid: boolean;
+    price: number;
     maxBooks: number;
     borrowDurationDays: number;
     fineRatePerDay: number;
@@ -31,6 +32,7 @@ export interface MembershipPackageResponse {
 export interface MembershipTransactionResponse {
     id: number;
     actorUsername: string;
+    paymentChannel?: string;
     action: string;
     fromPackage: string;
     toPackage: string;

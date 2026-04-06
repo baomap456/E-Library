@@ -1,8 +1,9 @@
 import { useOutletContext } from 'react-router-dom';
-import LibrarianManagementTab from '../../../components/librarian/LibrarianManagementTab';
-import type { LibrarianPanelOutletContext } from '../LibrarianPanel';
+import { Navigate } from 'react-router-dom';
+import type { LibrarianLayoutOutletContext } from './LibrarianLayout';
 
 export default function LibrarianCatalogPage() {
-    const { managementTabProps } = useOutletContext<LibrarianPanelOutletContext>();
-    return <LibrarianManagementTab {...managementTabProps} view="catalog" />;
+    useOutletContext<LibrarianLayoutOutletContext>();
+    return <Navigate to="books" replace />;
 }
+

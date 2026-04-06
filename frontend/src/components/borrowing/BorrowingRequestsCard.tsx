@@ -15,23 +15,27 @@ import type { BorrowRequestResponse } from '../../types/borrowing';
 type Props = {
     myRequests: BorrowRequestResponse[];
     onCancelRequest?: (requestId: number) => Promise<void>;
+    onViewDetail?: (request: BorrowRequestResponse) => void;
 };
 
-export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: Props) {
+export default function BorrowingRequestsCard({ myRequests, onCancelRequest, onViewDetail }: Props) {
     const showActions = Boolean(onCancelRequest);
     return (
         <Card>
             <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.2 }}>Phiếu mượn của tôi</Typography>
+                <Typography variant="h6" sx={{ mb: 1.2 }}>Phiếu của tôi</Typography>
                 <Table size="small">
                     <TableHead>
                         <TableRow>
                             <TableCell>ID</TableCell>
+                            <TableCell>Loại phiếu</TableCell>
                             <TableCell>Sách</TableCell>
+                            <TableCell>Mã phiếu mượn</TableCell>
                             <TableCell>Ngày gửi</TableCell>
                             <TableCell>Ngày lấy sách</TableCell>
                             <TableCell>Ngày trả dự kiến</TableCell>
                             <TableCell>Trạng thái</TableCell>
+                            <TableCell align="center">Chi tiết</TableCell>
                             {showActions && <TableCell align="right">Hành động</TableCell>}
                         </TableRow>
                     </TableHead>
@@ -39,7 +43,15 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                         {myRequests.map((request) => (
                             <TableRow key={request.id}>
                                 <TableCell>{request.id}</TableCell>
-                                <TableCell>{request.bookTitle || `Sách #${request.bookId}`}</TableCell>
+                                <TableCell>
+                                    <Chip
+                                        size="small"
+                                        color={request.requestType === 'RENEWAL' ? 'info' : 'default'}
+                                        label={request.requestType === 'RENEWAL' ? 'Gia hạn' : 'Mượn sách'}
+                                    />
+                                </TableCell>
+                                <TableCell>{request.bookTitle || `Sách #${request.bookId ?? '-'}`}</TableCell>
+                                <TableCell>{request.borrowRecordId ? `#${request.borrowRecordId}` : '-'}</TableCell>
                                 <TableCell>{String(request.requestDate).slice(0, 10)}</TableCell>
                                 <TableCell>{request.requestedPickupDate ? String(request.requestedPickupDate).slice(0, 10) : '-'}</TableCell>
                                 <TableCell>{request.requestedReturnDate ? String(request.requestedReturnDate).slice(0, 10) : '-'}</TableCell>
@@ -57,6 +69,13 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                                                         : 'warning'
                                         }
                                     />
+                                </TableCell>
+                                <TableCell align="center">
+                                    {onViewDetail ? (
+                                        <Button size="small" variant="outlined" onClick={() => onViewDetail(request)}>
+                                            Xem chi tiết
+                                        </Button>
+                                    ) : '-'}
                                 </TableCell>
                                 {showActions && (
                                     <TableCell align="right">

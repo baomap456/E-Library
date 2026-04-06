@@ -15,9 +15,11 @@ import type { BorrowingFinesResponse } from '../../types/modules/borrowing';
 type Props = {
     fines: BorrowingFinesResponse | null;
     showPayButton?: boolean;
+    onPayOnline?: () => void;
+    onViewDetail?: (row: NonNullable<BorrowingFinesResponse['paidHistory']>[number]) => void;
 };
 
-export default function BorrowingFinesCard({ fines, showPayButton = true }: Props) {
+export default function BorrowingFinesCard({ fines, showPayButton = true, onPayOnline, onViewDetail }: Props) {
     return (
         <Card>
             <CardContent>
@@ -28,6 +30,7 @@ export default function BorrowingFinesCard({ fines, showPayButton = true }: Prop
                             <TableCell>ID giao dịch</TableCell>
                             <TableCell>Ngày thanh toán</TableCell>
                             <TableCell align="right">Số tiền</TableCell>
+                            <TableCell align="center">Chi tiết</TableCell>
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -36,6 +39,13 @@ export default function BorrowingFinesCard({ fines, showPayButton = true }: Prop
                                 <TableCell>{row.paymentId}</TableCell>
                                 <TableCell>{String(row.paidAt || '').slice(0, 10)}</TableCell>
                                 <TableCell align="right">{(row.amount || 0).toLocaleString('vi-VN')} VND</TableCell>
+                                <TableCell align="center">
+                                    {onViewDetail ? (
+                                        <Button size="small" variant="outlined" onClick={() => onViewDetail(row)}>
+                                            Xem chi tiết
+                                        </Button>
+                                    ) : '-'}
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
@@ -45,7 +55,13 @@ export default function BorrowingFinesCard({ fines, showPayButton = true }: Prop
                     Tổng nợ: {(fines?.totalDebt || 0).toLocaleString('vi-VN')} VND
                 </Typography>
                 {showPayButton && (
-                    <Button variant="contained" disabled={(fines?.unpaidCount || 0) === 0}>Thanh toán online</Button>
+                    <Button
+                        variant="contained"
+                        disabled={(fines?.unpaidCount || 0) === 0}
+                        onClick={onPayOnline}
+                    >
+                        Thanh toán online
+                    </Button>
                 )}
             </CardContent>
         </Card>

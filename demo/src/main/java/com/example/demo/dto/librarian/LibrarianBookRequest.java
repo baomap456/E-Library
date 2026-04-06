@@ -1,6 +1,10 @@
 package com.example.demo.dto.librarian;
 
+import java.util.List;
+
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
@@ -19,5 +23,10 @@ public record LibrarianBookRequest(
         Double price,
         @Size(max = 1000, message = "coverImageUrl tối đa 1000 ký tự")
         String coverImageUrl,
-        Boolean digital) {
+        Boolean digital,
+        @NotEmpty(message = "authorIds không được để trống")
+        List<Integer> authorIds,
+        @NotNull(message = "categoryId không được để trống")
+        Integer categoryId,
+        Integer locationId) {
 }

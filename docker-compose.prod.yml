@@ -1,0 +1,60 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: elibrary-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-elibrary}
+      MYSQL_USER: ${MYSQL_USER:-elibrary}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    ports:
+      - "${DB_PUBLISHED_PORT:-3307}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD", "mysqladmin", "ping", "-h", "localhost", "-p${MYSQL_ROOT_PASSWORD}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    image: ${BACKEND_IMAGE}
+    container_name: elibrary-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: 8080
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/${MYSQL_DATABASE:-elibrary}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: ${DB_APP_USERNAME:-root}
+      SPRING_DATASOURCE_PASSWORD: ${DB_APP_PASSWORD}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: ${SPRING_JPA_HIBERNATE_DDL_AUTO:-update}
+      SPRING_FLYWAY_ENABLED: ${SPRING_FLYWAY_ENABLED:-false}
+      SPRING_MAIL_HOST: ${SPRING_MAIL_HOST}
+      SPRING_MAIL_PORT: ${SPRING_MAIL_PORT:-2525}
+      SPRING_MAIL_USERNAME: ${SPRING_MAIL_USERNAME}
+      SPRING_MAIL_PASSWORD: ${SPRING_MAIL_PASSWORD}
+      SPRING_MAIL_SMTP_AUTH: ${SPRING_MAIL_SMTP_AUTH:-true}
+      SPRING_MAIL_SMTP_STARTTLS_ENABLE: ${SPRING_MAIL_SMTP_STARTTLS_ENABLE:-true}
+      SPRING_MAIL_SMTP_STARTTLS_REQUIRED: ${SPRING_MAIL_SMTP_STARTTLS_REQUIRED:-true}
+      APP_NOTIFICATION_EMAIL_ENABLED: ${APP_NOTIFICATION_EMAIL_ENABLED:-true}
+      APP_NOTIFICATION_FRONTEND_BASE_URL: ${APP_NOTIFICATION_FRONTEND_BASE_URL}
+      APP_JWT_SECRET_KEY: ${APP_JWT_SECRET_KEY}
+      APP_JWT_EXPIRATION_MS: ${APP_JWT_EXPIRATION_MS:-86400000}
+    ports:
+      - "${BACKEND_PUBLISHED_PORT:-8080}:8080"
+
+  frontend:
+    image: ${FRONTEND_IMAGE}
+    container_name: elibrary-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "${FRONTEND_PUBLISHED_PORT:-80}:80"
+
+volumes:
+  mysql_data:

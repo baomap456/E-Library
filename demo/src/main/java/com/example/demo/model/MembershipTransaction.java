@@ -29,6 +29,9 @@ public class MembershipTransaction {
     private String actorUsername;
 
     @Column(length = 50)
+    private String paymentChannel;
+
+    @Column(length = 50)
     private String action;
 
     @Column(length = 100)

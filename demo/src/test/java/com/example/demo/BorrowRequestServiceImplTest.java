@@ -25,6 +25,7 @@ import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRequest;
 import com.example.demo.model.BorrowRequestStatus;
+import com.example.demo.model.BorrowRequestType;
 import com.example.demo.model.Role;
 import com.example.demo.model.User;
 import com.example.demo.repository.BookItemRepository;
@@ -33,6 +34,7 @@ import com.example.demo.repository.BorrowRequestRepository;
 import com.example.demo.repository.ReservationRepository;
 import com.example.demo.service.DebtRestrictionService;
 import com.example.demo.service.NotificationDispatchService;
+import com.example.demo.service.RenewalPolicyService;
 import com.example.demo.service.UserContextService;
 import com.example.demo.service.impl.BorrowRequestServiceImpl;
 
@@ -63,6 +65,9 @@ class BorrowRequestServiceImplTest {
     @Mock
     private DebtRestrictionService debtRestrictionService;
 
+    @Mock
+    private RenewalPolicyService renewalPolicyService;
+
     @InjectMocks
     private BorrowRequestServiceImpl borrowRequestService;
 
@@ -82,6 +87,7 @@ class BorrowRequestServiceImplTest {
             .thenReturn(new BorrowRequestResponse(
                 1L,
                 1L,
+                null,
                 "reader01",
                 "Reader",
                 1L,
@@ -94,7 +100,9 @@ class BorrowRequestServiceImplTest {
                 null,
                 null,
                 null,
-                BorrowRequestStatus.REJECTED));
+                BorrowRequestStatus.REJECTED,
+                BorrowRequestType.BORROW,
+                "REQUEST"));
 
         borrowRequestService.processBorrowRequest(new ApproveBorrowRequestDto(99L, false, "Từ chối"));
 
@@ -120,6 +128,7 @@ class BorrowRequestServiceImplTest {
             .thenReturn(new BorrowRequestResponse(
                 1L,
                 1L,
+                null,
                 "reader01",
                 "Reader",
                 1L,
@@ -132,7 +141,9 @@ class BorrowRequestServiceImplTest {
                 null,
                 null,
                 null,
-                BorrowRequestStatus.CANCELLED));
+                BorrowRequestStatus.CANCELLED,
+                BorrowRequestType.BORROW,
+                "REQUEST"));
 
         borrowRequestService.cancelRequest(100L);
 
@@ -186,6 +197,7 @@ class BorrowRequestServiceImplTest {
             .thenReturn(new BorrowRequestResponse(
                 102L,
                 borrower.getId(),
+                null,
                 "reader01",
                 "Reader",
                 103L,
@@ -198,7 +210,9 @@ class BorrowRequestServiceImplTest {
                 null,
                 "Được duyệt",
                 "librarian01",
-                BorrowRequestStatus.APPROVED));
+                BorrowRequestStatus.APPROVED,
+                BorrowRequestType.BORROW,
+                "REQUEST"));
 
         borrowRequestService.processBorrowRequest(new ApproveBorrowRequestDto(102L, true, "Duyệt phiếu"));
 
@@ -225,6 +239,7 @@ class BorrowRequestServiceImplTest {
             .thenReturn(new BorrowRequestResponse(
                 103L,
                 borrower.getId(),
+                null,
                 "reader02",
                 "Reader Two",
                 104L,
@@ -237,7 +252,9 @@ class BorrowRequestServiceImplTest {
                 null,
                 "Được duyệt",
                 "librarian01",
-                BorrowRequestStatus.APPROVED));
+                BorrowRequestStatus.APPROVED,
+                BorrowRequestType.BORROW,
+                "REQUEST"));
 
         borrowRequestService.processBorrowRequest(new ApproveBorrowRequestDto(103L, true, "Duyệt phiếu"));
 
@@ -254,6 +271,7 @@ class BorrowRequestServiceImplTest {
         request.setUser(user);
         request.setBookItem(bookItem);
         request.setStatus(BorrowRequestStatus.PENDING);
+        request.setRequestType(BorrowRequestType.BORROW);
         return request;
     }
 

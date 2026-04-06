@@ -6,6 +6,7 @@ import {
 } from '@mui/material';
 import { getStoredUser, hasRole } from '../../api/session';
 import BorrowingBookSelectionCard from '../../components/borrowing/BorrowingBookSelectionCard';
+import BorrowRecordDetailDialog from '../../components/borrowing/BorrowRecordDetailDialog';
 import BorrowingCartCard from '../../components/borrowing/BorrowingCartCard';
 import BorrowingFinesCard from '../../components/borrowing/BorrowingFinesCard';
 import BorrowingPageHeader from '../../components/borrowing/BorrowingPageHeader';
@@ -14,8 +15,11 @@ import BorrowingRequestsCard from '../../components/borrowing/BorrowingRequestsC
 import BorrowingWaitlistCard from '../../components/borrowing/BorrowingWaitlistCard';
 import LibrarianBorrowingNotice from '../../components/borrowing/LibrarianBorrowingNotice';
 import { useBorrowingReservation } from '../../hooks/modules/useBorrowingReservation';
+import { useState } from 'react';
+import type { BorrowingRecord } from '../../types/modules/borrowing';
 
 export default function BorrowingReservation() {
+    const [selectedRecord, setSelectedRecord] = useState<BorrowingRecord | null>(null);
     const {
         cart,
         records,
@@ -73,7 +77,12 @@ export default function BorrowingReservation() {
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 7 }}>
-                    <BorrowingRecordsCard records={records} renewingRecordId={renewingRecordId} onRenew={handleRenew} />
+                    <BorrowingRecordsCard
+                        records={records}
+                        renewingRecordId={renewingRecordId}
+                        onRenew={handleRenew}
+                        onViewDetail={setSelectedRecord}
+                    />
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 5 }}>
@@ -107,6 +116,12 @@ export default function BorrowingReservation() {
                     <BorrowingRequestsCard myRequests={myRequests} onCancelRequest={handleCancelRequest} />
                 </Grid>
             </Grid>
+
+            <BorrowRecordDetailDialog
+                open={selectedRecord !== null}
+                record={selectedRecord}
+                onClose={() => setSelectedRecord(null)}
+            />
         </Box>
     );
 }

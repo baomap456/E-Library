@@ -11,4 +11,6 @@ public interface MembershipTransactionRepository extends JpaRepository<Membershi
     List<MembershipTransaction> findByUserIdOrderByCreatedAtDesc(Long userId);
 
     List<MembershipTransaction> findByCreatedAtBetween(LocalDateTime from, LocalDateTime to);
+
+    List<MembershipTransaction> findAllByOrderByCreatedAtDesc();
 }

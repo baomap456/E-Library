@@ -1,13 +1,16 @@
 export interface BorrowRequestResponse {
     id: number;
     userId: number;
-    bookId: number;
-    bookItemId: number;
+    borrowRecordId?: number | null;
+    bookId?: number | null;
+    bookItemId?: number | null;
     username?: string;
     userFullName?: string;
     bookTitle?: string;
     isbn?: string;
     status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'CANCELLED';
+    requestType?: 'BORROW' | 'RENEWAL';
+    source?: 'REQUEST' | 'DESK';
     requestDate: string;
     requestedPickupDate?: string;
     requestedReturnDate?: string;

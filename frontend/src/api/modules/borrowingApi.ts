@@ -9,6 +9,13 @@ import type {
 import type { ProfileResponse } from '../../types/modules/authPersonal';
 import type { BorrowRequestResponse } from '../../types/borrowing';
 
+export type FinePaymentQrResponse = {
+    qrPayload: string;
+    amount: number;
+    paymentReference: string;
+    paymentMethod: string;
+};
+
 export async function fetchBorrowingData(): Promise<{
     cart: BorrowingCartItem[];
     records: BorrowingRecord[];
@@ -41,6 +48,10 @@ export function cancelBorrowingWaitlist(reservationId: number) {
 
 export function fetchMyProfileForBorrowing() {
     return axiosClient.get<unknown, ProfileResponse>('/profile/me');
+}
+
+export function fetchFinePaymentQr() {
+    return axiosClient.get<unknown, FinePaymentQrResponse>('/borrowing/fines/payment-qr');
 }
 
 /**

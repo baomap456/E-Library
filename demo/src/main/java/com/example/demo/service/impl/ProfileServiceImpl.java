@@ -97,10 +97,11 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public List<MembershipPackageResponse> membershipPackages() {
         return membershipTypeRepository.findAll().stream()
+                .filter(membershipType -> !"Librarian Pro".equalsIgnoreCase(membershipType.getName()))
                 .sorted(Comparator
                         .comparing(com.example.demo.model.MembershipType::isPaid)
                         .thenComparing(com.example.demo.model.MembershipType::getMaxBooks))
-                .map(profileMapper::toMembershipPackageResponse)
+            .map(membershipType -> profileMapper.toMembershipPackageResponse(membershipType, estimatePackagePrice(membershipType)))
                 .toList();
     }
 
@@ -115,6 +116,7 @@ public class ProfileServiceImpl implements ProfileService {
         
         applyMembershipLifecycle(user);
         String targetName = request.targetPackage().trim();
+        String paymentChannel = normalizePaymentChannel(request.paymentChannel());
 
         MembershipType targetMembership = membershipTypeRepository.findByName(targetName)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy gói thành viên: " + targetName));
@@ -135,8 +137,9 @@ public class ProfileServiceImpl implements ProfileService {
         user.setMembershipReminderSentAt(null);
         userRepository.save(user);
 
-        recordTransaction(user, resolveActorUsername(), "UPGRADE", currentName, targetMembership.getName(),
-                estimatePackagePrice(targetMembership), "Nang cap goi thanh vien");
+        String action = "COUNTER".equalsIgnoreCase(paymentChannel) ? "COUNTER_UPGRADE" : "SELF_UPGRADE_QR";
+        recordTransaction(user, resolveActorUsername(), paymentChannel, action, currentName, targetMembership.getName(),
+            estimatePackagePrice(targetMembership), "Nang cap goi thanh vien qua " + paymentChannel);
 
         createNotification(user,
                 "Bạn đã nâng cấp lên gói " + targetMembership.getName() + ". Hiệu lực đến: " + user.getMembershipExpiresAt().toLocalDate());
@@ -170,8 +173,8 @@ public class ProfileServiceImpl implements ProfileService {
         user.setMembershipReminderSentAt(null);
         userRepository.save(user);
 
-        recordTransaction(user, resolveActorUsername(), "RENEW", packageName, packageName,
-                estimatePackagePrice(currentMembership), "Gia han goi thanh vien them 1 nam");
+        recordTransaction(user, resolveActorUsername(), "SELF_SERVICE", "RENEW", packageName, packageName,
+            estimatePackagePrice(currentMembership), "Gia han goi thanh vien them 1 nam");
 
         createNotification(user,
                 "Bạn đã gia hạn gói " + packageName + " thành công. Hiệu lực mới đến: " + user.getMembershipExpiresAt().toLocalDate());
@@ -198,7 +201,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         boolean canViewOthers = currentUser.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(role -> "ROLE_LIBRARIAN".equals(role) || "ROLE_ADMIN".equals(role));
+            .anyMatch(role -> "LIBRARIAN".equals(role) || "ADMIN".equals(role));
 
         if (!canViewOthers) {
             throw new IllegalArgumentException("Bạn không có quyền xem lịch sử giao dịch của tài khoản khác");
@@ -248,17 +251,18 @@ public class ProfileServiceImpl implements ProfileService {
         user.setMembershipReminderSentAt(null);
         userRepository.save(user);
 
-        recordTransaction(user, "SYSTEM", "AUTO_DOWNGRADE_EXPIRED", fromPackage, freeMembership.getName(), 0.0,
+        recordTransaction(user, "SYSTEM", "SYSTEM", "AUTO_DOWNGRADE_EXPIRED", fromPackage, freeMembership.getName(), 0.0,
                 "Het han 1 nam khong gia han");
         createNotification(user,
                 "Gói " + fromPackage + " đã hết hạn và tài khoản đã được chuyển về Free. Bạn có thể nâng cấp lại bất cứ lúc nào.");
     }
 
-    private void recordTransaction(User user, String actorUsername, String action, String fromPackage, String toPackage,
+    private void recordTransaction(User user, String actorUsername, String paymentChannel, String action, String fromPackage, String toPackage,
             Double amount, String note) {
         MembershipTransaction transaction = new MembershipTransaction();
         transaction.setUser(user);
         transaction.setActorUsername(actorUsername);
+        transaction.setPaymentChannel(paymentChannel);
         transaction.setAction(action);
         transaction.setFromPackage(fromPackage);
         transaction.setToPackage(toPackage);
@@ -298,15 +302,19 @@ public class ProfileServiceImpl implements ProfileService {
         if ("Premium".equalsIgnoreCase(membershipType.getName())) {
             return 499000.0;
         }
-        if ("Librarian Pro".equalsIgnoreCase(membershipType.getName())) {
-            return 999000.0;
-        }
         return 299000.0;
+    }
+
+    private String normalizePaymentChannel(String paymentChannel) {
+        if (paymentChannel == null || paymentChannel.isBlank()) {
+            return "QR";
+        }
+        return paymentChannel.trim().toUpperCase();
     }
 
     private boolean isLibrarian(User user) {
         return user.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(name -> name.equals("ROLE_LIBRARIAN"));
+                .anyMatch(name -> name.equals("LIBRARIAN"));
     }
 }

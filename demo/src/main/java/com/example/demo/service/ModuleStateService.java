@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.stereotype.Service;
 
@@ -25,6 +26,7 @@ public class ModuleStateService {
     private final Map<Long, WaitlistReservation> reservationByBook = new HashMap<>();
     private final List<Map<String, Object>> incidentReports = new ArrayList<>();
     private final List<Map<String, Object>> inventorySessions = new ArrayList<>();
+    private final Map<Long, Set<String>> scannedBarcodesBySession = new HashMap<>();
 
     public List<Long> getCart(Long userId) {
         return cartsByUser.computeIfAbsent(userId, id -> new ArrayList<>());
@@ -155,5 +157,32 @@ public class ModuleStateService {
 
     public List<Map<String, Object>> getInventorySessions() {
         return List.copyOf(inventorySessions);
+    }
+
+    public synchronized Optional<Map<String, Object>> findInventorySession(Long sessionId) {
+        return inventorySessions.stream()
+                .filter(session -> Objects.equals(session.get("id"), sessionId))
+                .findFirst();
+    }
+
+    public synchronized void addScannedBarcode(Long sessionId, String barcode) {
+        scannedBarcodesBySession
+                .computeIfAbsent(sessionId, key -> new java.util.LinkedHashSet<>())
+                .add(barcode);
+    }
+
+    public synchronized Set<String> getScannedBarcodes(Long sessionId) {
+        return Set.copyOf(scannedBarcodesBySession.getOrDefault(sessionId, Set.of()));
+    }
+
+    public synchronized int getScannedCount(Long sessionId) {
+        return scannedBarcodesBySession.getOrDefault(sessionId, Set.of()).size();
+    }
+
+    public synchronized void closeInventorySession(Long sessionId) {
+        findInventorySession(sessionId).ifPresent(session -> {
+            session.put("status", "CLOSED");
+            session.put("closedAt", LocalDateTime.now());
+        });
     }
 }

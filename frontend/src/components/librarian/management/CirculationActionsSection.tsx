@@ -12,7 +12,11 @@ import {
 } from '@mui/material';
 import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
-export default function CirculationActionsSection() {
+interface CirculationActionsSectionProps {
+    mode: 'borrow' | 'return';
+}
+
+export default function CirculationActionsSection({ mode }: Readonly<CirculationActionsSectionProps>) {
     const props = useLibrarianManagementContext();
     const availableBooks = props.allBooks.filter((book) => {
         if (!(book.availableCopies > 0 && !!book.availableBarcode)) {
@@ -26,10 +30,30 @@ export default function CirculationActionsSection() {
     const selectedBook = availableBooks.find((book) => book.availableBarcode === props.barcode) || null;
     const selectedBorrower = props.borrowers.find((item) => item.username === props.username) || null;
 
+    if (mode === 'return') {
+        return (
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" sx={{ mb: 1.2 }}>Trả sách</Typography>
+                    <Stack spacing={1.2}>
+                        <TextField
+                            label="Barcode sách cần trả"
+                            fullWidth
+                            value={props.barcode}
+                            onChange={(e) => props.onBarcodeChange(e.target.value)}
+                            helperText="Nhập hoặc quét barcode của cuốn sách đang mượn"
+                        />
+                        <Button variant="contained" onClick={props.onCheckin}>Xác nhận trả sách</Button>
+                    </Stack>
+                </CardContent>
+            </Card>
+        );
+    }
+
     return (
         <Card>
             <CardContent>
-                <Typography variant="h6" sx={{ mb: 1.2 }}>Lập phiếu mượn trực tiếp / Check-in</Typography>
+                <Typography variant="h6" sx={{ mb: 1.2 }}>Lập phiếu mượn trực tiếp</Typography>
                 <Stack spacing={1.2}>
                     <FormControlLabel
                         control={(
@@ -121,9 +145,17 @@ export default function CirculationActionsSection() {
                         value={props.barcode}
                         disabled
                     />
-                    {!props.guestBorrowMode && <Button variant="contained" onClick={props.onCheckout}>Xác nhận giao sách</Button>}
-                    {props.guestBorrowMode && <Button variant="contained" onClick={props.onGuestCheckout}>Lập phiếu mượn cho khách</Button>}
-                    <Button variant="outlined" onClick={props.onCheckin}>Xác nhận trả sách</Button>
+                    <TextField
+                        label="Thời gian trả"
+                        type="datetime-local"
+                        fullWidth
+                        value={props.borrowDueDate}
+                        onChange={(event) => props.onBorrowDueDateChange(event.target.value)}
+                        helperText="Chọn thời điểm trả sách thay vì hệ thống tự gán"
+                        InputLabelProps={{ shrink: true }}
+                    />
+                    {!props.guestBorrowMode && <Button variant="contained" onClick={() => void props.onCheckout()}>Xác nhận giao sách</Button>}
+                    {props.guestBorrowMode && <Button variant="contained" onClick={() => void props.onGuestCheckout()}>Lập phiếu mượn cho khách</Button>}
                 </Stack>
             </CardContent>
         </Card>

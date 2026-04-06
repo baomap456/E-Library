@@ -10,6 +10,7 @@ import DigitalCrudSection from './management/DigitalCrudSection';
 import IncidentReportSection from './management/IncidentReportSection';
 import { LibrarianManagementProvider } from './management/LibrarianManagementContext';
 import LocationCrudSection from './management/LocationCrudSection';
+import ReturnBorrowRecordSection from './management/ReturnBorrowRecordSection';
 import LibrarianDashboardMetrics from './LibrarianDashboardMetrics';
 import InventoryManagementSection from './management/InventoryManagementSection';
 import type { LibrarianManagementContextValue } from './management/LibrarianManagementContext';
@@ -18,7 +19,13 @@ import type { ReportsKpi } from '../../types/modules/reports';
 export type LibrarianManagementView =
     | 'dashboard'
     | 'circulation'
+    | 'circulation-borrow'
+    | 'circulation-return'
     | 'catalog'
+    | 'catalog-books'
+    | 'catalog-authors'
+    | 'catalog-categories'
+    | 'catalog-locations'
     | 'debtors'
     | 'incidents'
     | 'digital'
@@ -70,10 +77,36 @@ export default function LibrarianManagementTab({ view, ...props }: Readonly<Libr
             return (
                 <Grid size={{ xs: 12 }}>
                     <SectionBlock
-                        title="Vận hành mượn trả"
-                        description="Khu vực tạo phiếu mượn, check-in/check-out và các tác vụ giao dịch trực tiếp."
+                        title="Mượn sách"
+                        description="Khu vực lập phiếu mượn trực tiếp cho bạn đọc hoặc khách tại quầy."
                     >
-                        <CirculationActionsSection />
+                        <CirculationActionsSection mode="borrow" />
+                    </SectionBlock>
+                </Grid>
+            );
+        }
+
+        if (view === 'circulation-borrow') {
+            return (
+                <Grid size={{ xs: 12 }}>
+                    <SectionBlock
+                        title="Mượn sách"
+                        description="Khu vực lập phiếu mượn trực tiếp cho bạn đọc hoặc khách tại quầy."
+                    >
+                        <CirculationActionsSection mode="borrow" />
+                    </SectionBlock>
+                </Grid>
+            );
+        }
+
+        if (view === 'circulation-return') {
+            return (
+                <Grid size={{ xs: 12 }}>
+                    <SectionBlock
+                        title="Trả sách"
+                        description="Check-in sách trả về bằng barcode và cập nhật trạng thái bản sách ngay lập tức."
+                    >
+                        <ReturnBorrowRecordSection />
                     </SectionBlock>
                 </Grid>
             );
@@ -81,28 +114,93 @@ export default function LibrarianManagementTab({ view, ...props }: Readonly<Libr
 
         if (view === 'catalog') {
             return (
+                <>
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBlock
+                            title="Quản lý sách"
+                            description="Thêm, sửa, xóa đầu sách bằng form riêng và hiển thị danh sách theo bảng phân trang."
+                        >
+                            <BookCrudSection />
+                        </SectionBlock>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                        <SectionBlock
+                            title="Quản lý tác giả"
+                            description="Tổ chức danh mục tác giả với form CRUD dạng hộp thoại và bảng phân trang."
+                        >
+                            <AuthorCrudSection />
+                        </SectionBlock>
+                    </Grid>
+
+                    <Grid size={{ xs: 12, lg: 6 }}>
+                        <SectionBlock
+                            title="Quản lý danh mục"
+                            description="Quản lý thể loại sách bằng form thêm/sửa/xóa và bảng dữ liệu phân trang."
+                        >
+                            <CategoryCrudSection />
+                        </SectionBlock>
+                    </Grid>
+
+                    <Grid size={{ xs: 12 }}>
+                        <SectionBlock
+                            title="Quản lý vị trí sách"
+                            description="Theo dõi phòng, kệ đặt sách với thao tác CRUD qua form và bảng phân trang."
+                        >
+                            <LocationCrudSection />
+                        </SectionBlock>
+                    </Grid>
+                </>
+            );
+        }
+
+        if (view === 'catalog-books') {
+            return (
                 <Grid size={{ xs: 12 }}>
                     <SectionBlock
-                        title="Quản lý đầu sách"
-                        description="Quản lý tác giả, thể loại và vị trí kệ để dữ liệu đầu sách luôn đồng nhất."
+                        title="Quản lý sách"
+                        description="Thêm, sửa, xoá đầu sách bằng form riêng và hiển thị danh sách theo bảng phân trang."
                     >
-                        <Grid container spacing={1.5}>
-                            <Grid size={{ xs: 12 }}>
-                                <BookCrudSection />
-                            </Grid>
+                        <BookCrudSection />
+                    </SectionBlock>
+                </Grid>
+            );
+        }
 
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <AuthorCrudSection />
-                            </Grid>
+        if (view === 'catalog-authors') {
+            return (
+                <Grid size={{ xs: 12 }}>
+                    <SectionBlock
+                        title="Quản lý tác giả"
+                        description="Tổ chức danh mục tác giả với form CRUD dạng hộp thoại và bảng phân trang."
+                    >
+                        <AuthorCrudSection />
+                    </SectionBlock>
+                </Grid>
+            );
+        }
 
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <CategoryCrudSection />
-                            </Grid>
+        if (view === 'catalog-categories') {
+            return (
+                <Grid size={{ xs: 12 }}>
+                    <SectionBlock
+                        title="Quản lý danh mục"
+                        description="Quản lý thể loại sách bằng form thêm/sửa/xoá và bảng dữ liệu phân trang."
+                    >
+                        <CategoryCrudSection />
+                    </SectionBlock>
+                </Grid>
+            );
+        }
 
-                            <Grid size={{ xs: 12, md: 4 }}>
-                                <LocationCrudSection />
-                            </Grid>
-                        </Grid>
+        if (view === 'catalog-locations') {
+            return (
+                <Grid size={{ xs: 12 }}>
+                    <SectionBlock
+                        title="Quản lý vị trí sách"
+                        description="Theo dõi phòng, kệ đặt sách với thao tác CRUD qua form và bảng phân trang."
+                    >
+                        <LocationCrudSection />
                     </SectionBlock>
                 </Grid>
             );
@@ -163,8 +261,8 @@ export default function LibrarianManagementTab({ view, ...props }: Readonly<Libr
         return (
             <Grid size={{ xs: 12 }}>
                 <SectionBlock
-                    title="Tài khoản thành viên"
-                    description="Tạo nhanh tài khoản và nâng cấp gói thành viên ngay trong panel."
+                    title="Quản lý người dùng"
+                    description="Tạo tài khoản, nâng cấp thành viên và theo dõi danh sách bạn đọc trong một nơi."
                 >
                     <AccountManagementSection />
                 </SectionBlock>

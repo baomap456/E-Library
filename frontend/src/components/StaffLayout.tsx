@@ -17,14 +17,23 @@ const drawerWidth = 280;
 
 const navItems = [
     { label: 'Dashboard', path: '/app/librarian/dashboard' },
-    { label: 'Mượn trả', path: '/app/librarian/circulation' },
-    { label: 'Quản lý đầu sách', path: '/app/librarian/catalog' },
+    { label: 'Mượn sách', path: '/app/librarian/circulation/borrow' },
+    { label: 'Trả sách', path: '/app/librarian/circulation/return' },
+    { label: 'Quản lý sách', path: '/app/librarian/catalog/books' },
+    { label: 'Quản lý tác giả', path: '/app/librarian/catalog/authors' },
+    { label: 'Quản lý danh mục', path: '/app/librarian/catalog/categories' },
+    { label: 'Quản lý vị trí sách', path: '/app/librarian/catalog/locations' },
     { label: 'Công nợ', path: '/app/librarian/debtors' },
     { label: 'Sự cố', path: '/app/librarian/incidents' },
     { label: 'Tài liệu số', path: '/app/librarian/digital' },
-    { label: 'Tài khoản', path: '/app/librarian/accounts' },
+    { label: 'Quản lý người dùng', path: '/app/librarian/user-management' },
     { label: 'Duyệt yêu cầu', path: '/app/librarian/requests' },
-    { label: 'Báo cáo kho', path: '/app/librarian/inventory' },
+    { label: 'Kiểm kê kho', path: '/app/librarian/inventory/workflow' },
+    { label: 'Kiểm kê số', path: '/app/librarian/inventory/digital-audit' },
+    { label: 'Chênh lệch kho', path: '/app/librarian/inventory/discrepancies' },
+    { label: 'Thanh lý sách', path: '/app/librarian/inventory/discard' },
+    { label: 'Xuất báo cáo', path: '/app/librarian/inventory/export' },
+    { label: 'Audit log', path: '/app/librarian/inventory/audit-logs' },
 ];
 
 export default function StaffLayout() {
@@ -101,7 +110,12 @@ export default function StaffLayout() {
                                     '&:hover': { bgcolor: active ? '#f27b22' : 'rgba(255,255,255,0.14)' },
                                 }}
                             >
-                                <ListItemText primary={item.label} primaryTypographyProps={{ fontSize: 14, lineHeight: 1.3 }} />
+                                <ListItemText
+                                    primary={item.label}
+                                    slotProps={{
+                                        primary: { fontSize: 14, lineHeight: 1.3 },
+                                    }}
+                                />
                             </ListItemButton>
                         );
                     })}

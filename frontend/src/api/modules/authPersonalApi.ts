@@ -25,8 +25,8 @@ export async function fetchAuthPersonalData(): Promise<{
     return { profile, card, notifications, packages, transactions };
 }
 
-export async function upgradeMembership(targetPackage: string): Promise<{ message: string }> {
-    return axiosClient.post('/profile/membership/upgrade', { targetPackage });
+export async function upgradeMembership(targetPackage: string, paymentChannel: 'QR' | 'COUNTER' = 'QR'): Promise<{ message: string }> {
+    return axiosClient.post('/profile/membership/upgrade', { targetPackage, paymentChannel });
 }
 
 export async function renewMembership(): Promise<{ message: string }> {

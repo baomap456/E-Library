@@ -1,14 +1,23 @@
-import { Box, Button, Card, CardContent, Chip, Grid, List, ListItem, ListItemText, Paper, Typography } from '@mui/material';
+import { Box, Button, Card, CardContent, Chip, Dialog, DialogActions, DialogContent, DialogTitle, Grid, List, ListItem, ListItemText, Paper, Stack, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
 import type { MembershipPackageResponse, ProfileResponse } from '../../types/modules/authPersonal';
 
 type Props = {
     profile: ProfileResponse | null;
     packages: MembershipPackageResponse[];
     upgrading: boolean;
-    onUpgrade: (targetPackage: string) => Promise<void>;
+    onUpgrade: (targetPackage: string, paymentChannel?: 'QR' | 'COUNTER') => Promise<void>;
 };
 
 export default function MembershipPackagesCard({ profile, packages, upgrading, onUpgrade }: Props) {
+    const [selectedPackage, setSelectedPackage] = useState<MembershipPackageResponse | null>(null);
+    const qrPayload = useMemo(() => {
+        if (!selectedPackage || !profile) {
+            return '';
+        }
+        return `MEMBERSHIP_UPGRADE|${profile.username}|${selectedPackage.name}|${selectedPackage.price || 0}`;
+    }, [profile, selectedPackage]);
+
     return (
         <Card>
             <CardContent>
@@ -47,6 +56,9 @@ export default function MembershipPackagesCard({ profile, packages, upgrading, o
                                         Thời hạn mượn: {pkg.borrowDurationDays} ngày
                                     </Typography>
                                     <Typography variant="body2" sx={{ mb: 0.6 }}>
+                                        Giá gói: {(pkg.price || 0).toLocaleString('vi-VN')} VND
+                                    </Typography>
+                                    <Typography variant="body2" sx={{ mb: 0.6 }}>
                                         Phí trễ hạn: {pkg.fineRatePerDay.toLocaleString('vi-VN')} VND/ngày
                                     </Typography>
                                     <Typography variant="body2" sx={{ mb: 0.9, color: 'text.secondary' }}>
@@ -64,10 +76,10 @@ export default function MembershipPackagesCard({ profile, packages, upgrading, o
                                             variant="contained"
                                             color="secondary"
                                             disabled={upgrading}
-                                            onClick={() => void onUpgrade(pkg.name)}
+                                            onClick={() => setSelectedPackage(pkg)}
                                             sx={{ mt: 1 }}
                                         >
-                                            {upgrading ? 'Đang nâng cấp...' : `Nâng cấp lên ${pkg.name}`}
+                                            Nâng cấp bằng QR
                                         </Button>
                                     )}
                                 </Paper>
@@ -75,6 +87,48 @@ export default function MembershipPackagesCard({ profile, packages, upgrading, o
                         );
                     })}
                 </Grid>
+
+                <Dialog open={Boolean(selectedPackage)} onClose={() => setSelectedPackage(null)} maxWidth="sm" fullWidth>
+                    <DialogTitle>Nâng cấp bằng QR giả lập</DialogTitle>
+                    <DialogContent>
+                        <Stack spacing={1.2} sx={{ pt: 1 }}>
+                            <Typography>
+                                Gói: <strong>{selectedPackage?.name}</strong>
+                            </Typography>
+                            <Typography>
+                                Số tiền: <strong>{(selectedPackage?.price || 0).toLocaleString('vi-VN')} VND</strong>
+                            </Typography>
+                            <Typography color="text.secondary">
+                                Mã QR giả lập này đại diện cho giao dịch chuyển khoản của bạn.
+                            </Typography>
+                            <Box
+                                component="img"
+                                src={`https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`}
+                                alt="QR upgrade"
+                                sx={{ width: 220, height: 220, alignSelf: 'center', borderRadius: 2, border: '1px solid #d4ddf2' }}
+                            />
+                            <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center' }}>
+                                Sau khi quét QR, bấm xác nhận để lưu hoá đơn vào hệ thống. Nếu nâng cấp tại quầy, thủ thư sẽ thực hiện ở màn hình quản lý tài khoản.
+                            </Typography>
+                        </Stack>
+                    </DialogContent>
+                    <DialogActions>
+                        <Button onClick={() => setSelectedPackage(null)}>Hủy</Button>
+                        <Button
+                            variant="contained"
+                            onClick={() => {
+                                if (!selectedPackage) {
+                                    return;
+                                }
+                                void onUpgrade(selectedPackage.name, 'QR');
+                                setSelectedPackage(null);
+                            }}
+                            disabled={upgrading}
+                        >
+                            Xác nhận đã chuyển khoản
+                        </Button>
+                    </DialogActions>
+                </Dialog>
             </CardContent>
         </Card>
     );

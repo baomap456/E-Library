@@ -54,26 +54,26 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        Role memberRole = roleRepository.findByName("ROLE_MEMBER").orElseGet(() -> {
+        Role memberRole = roleRepository.findByName("MEMBER").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_MEMBER");
+            role.setName("MEMBER");
             return roleRepository.save(role);
         });
 
-        roleRepository.findByName("ROLE_LIBRARIAN").orElseGet(() -> {
+        roleRepository.findByName("LIBRARIAN").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_LIBRARIAN");
+            role.setName("LIBRARIAN");
             return roleRepository.save(role);
         });
 
-        roleRepository.findByName("ROLE_GUEST").orElseGet(() -> {
+        roleRepository.findByName("GUEST").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_GUEST");
+            role.setName("GUEST");
             return roleRepository.save(role);
         });
 
-        Role librarianRole = roleRepository.findByName("ROLE_LIBRARIAN")
-            .orElseThrow(() -> new IllegalStateException("Không tìm thấy ROLE_LIBRARIAN"));
+        Role librarianRole = roleRepository.findByName("LIBRARIAN")
+            .orElseThrow(() -> new IllegalStateException("Không tìm thấy LIBRARIAN"));
 
         MembershipType freeMembership = membershipTypeRepository.findByName("Free").orElseGet(() -> {
             MembershipType membershipType = new MembershipType();
@@ -94,17 +94,6 @@ public class DataInitializer implements ApplicationRunner {
             membershipType.setBorrowDurationDays(30);
             membershipType.setFineRatePerDay(2000.0);
             membershipType.setPrivilegeNote("Goi tra phi voi quyen loi mo rong va uu tien dat cho");
-            return membershipTypeRepository.save(membershipType);
-        });
-
-        MembershipType librarianMembership = membershipTypeRepository.findByName("Librarian Pro").orElseGet(() -> {
-            MembershipType membershipType = new MembershipType();
-            membershipType.setName("Librarian Pro");
-            membershipType.setPaid(true);
-            membershipType.setMaxBooks(20);
-            membershipType.setBorrowDurationDays(30);
-            membershipType.setFineRatePerDay(0.0);
-            membershipType.setPrivilegeNote("Goi nghiep vu danh cho thu thu");
             return membershipTypeRepository.save(membershipType);
         });
 
@@ -152,7 +141,7 @@ public class DataInitializer implements ApplicationRunner {
             userRepository.save(premiumMember);
         }
 
-        User librarian = userRepository.findByUsername("librarian01").orElseGet(() -> {
+        userRepository.findByUsername("librarian01").orElseGet(() -> {
             User user = new User();
             user.setUsername("librarian01");
             user.setPassword(passwordEncoder.encode("Librarian@123"));
