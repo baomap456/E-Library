@@ -15,9 +15,10 @@ import type { BorrowRequestResponse } from '../../types/borrowing';
 type Props = {
     myRequests: BorrowRequestResponse[];
     onCancelRequest?: (requestId: number) => Promise<void>;
+    onViewDetail?: (request: BorrowRequestResponse) => void;
 };
 
-export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: Props) {
+export default function BorrowingRequestsCard({ myRequests, onCancelRequest, onViewDetail }: Props) {
     const showActions = Boolean(onCancelRequest);
     return (
         <Card>
@@ -34,6 +35,7 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                             <TableCell>Ngày lấy sách</TableCell>
                             <TableCell>Ngày trả dự kiến</TableCell>
                             <TableCell>Trạng thái</TableCell>
+                            <TableCell align="center">Chi tiết</TableCell>
                             {showActions && <TableCell align="right">Hành động</TableCell>}
                         </TableRow>
                     </TableHead>
@@ -67,6 +69,13 @@ export default function BorrowingRequestsCard({ myRequests, onCancelRequest }: P
                                                         : 'warning'
                                         }
                                     />
+                                </TableCell>
+                                <TableCell align="center">
+                                    {onViewDetail ? (
+                                        <Button size="small" variant="outlined" onClick={() => onViewDetail(request)}>
+                                            Xem chi tiết
+                                        </Button>
+                                    ) : '-'}
                                 </TableCell>
                                 {showActions && (
                                     <TableCell align="right">

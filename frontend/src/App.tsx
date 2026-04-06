@@ -14,12 +14,18 @@ import { getStoredToken, getStoredUser, hasRole } from './api/session';
 
 const Login = lazy(() => import('./pages/auth/Login'));
 const Register = lazy(() => import('./pages/auth/Register'));
+const ForgotPassword = lazy(() => import('./pages/auth/ForgotPassword'));
 const AuthenticationPersonal = lazy(() => import('./pages/modules/AuthenticationPersonal.tsx'));
+const UpgradeInvoicesPage = lazy(() => import('./pages/modules/account-services/UpgradeInvoicesPage.tsx'));
+const MyRequestsPage = lazy(() => import('./pages/modules/account-services/MyRequestsPage.tsx'));
+const WaitingBooksPage = lazy(() => import('./pages/modules/account-services/WaitingBooksPage.tsx'));
+const DebtHistoryPage = lazy(() => import('./pages/modules/account-services/DebtHistoryPage.tsx'));
 const HomePage = lazy(() => import('./pages/modules/HomePage.tsx'));
 const BookList = lazy(() => import('./pages/modules/BookList.tsx'));
 const BookDetail = lazy(() => import('./pages/modules/BookDetail.tsx'));
 const CatalogDiscovery = lazy(() => import('./pages/modules/CatalogDiscovery.tsx'));
-const BorrowingReservation = lazy(() => import('./pages/modules/BorrowingReservation.tsx'));
+const BorrowBooksPage = lazy(() => import('./pages/modules/BorrowBooksPage.tsx'));
+const ReturnBooksPage = lazy(() => import('./pages/modules/ReturnBooksPage.tsx'));
 const DigitalLibrary = lazy(() => import('./pages/modules/DigitalLibrary.tsx'));
 const LibrarianLayout = lazy(() => import('./pages/modules/librarian/LibrarianLayout.tsx'));
 const LibrarianDashboardPage = lazy(() => import('./pages/modules/librarian/LibrarianDashboardPage.tsx'));
@@ -107,17 +113,24 @@ function App() {
             <Route element={<RequireGuest />}>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
             </Route>
 
             <Route element={<RequireAuth />}>
               <Route element={<RequireMember />}>
                 <Route element={<AppLayout />}>
                   <Route path="/app/profile" element={<AuthenticationPersonal />} />
+                  <Route path="/app/account-services/upgrade-invoices" element={<UpgradeInvoicesPage />} />
+                  <Route path="/app/account-services/my-requests" element={<MyRequestsPage />} />
+                  <Route path="/app/account-services/waiting-books" element={<WaitingBooksPage />} />
+                  <Route path="/app/account-services/debt-history" element={<DebtHistoryPage />} />
                   <Route path="/app/auth-personal" element={<Navigate to="/app/profile" replace />} />
                   <Route path="/app/book-list" element={<BookList />} />
                   <Route path="/app/book-detail/:bookId" element={<BookDetail />} />
                   <Route path="/app/catalog" element={<CatalogDiscovery />} />
-                  <Route path="/app/borrowing" element={<BorrowingReservation />} />
+                  <Route path="/app/borrowing" element={<Navigate to="/app/borrowing/borrow" replace />} />
+                  <Route path="/app/borrowing/borrow" element={<BorrowBooksPage />} />
+                  <Route path="/app/borrowing/return" element={<ReturnBooksPage />} />
                   <Route path="/app/digital" element={<DigitalLibrary />} />
                 </Route>
               </Route>
@@ -138,7 +151,8 @@ function App() {
                     <Route path="debtors" element={<LibrarianDebtorsPage />} />
                     <Route path="incidents" element={<LibrarianIncidentsPage />} />
                     <Route path="digital" element={<LibrarianDigitalPage />} />
-                    <Route path="accounts" element={<LibrarianAccountsPage />} />
+                    <Route path="user-management" element={<LibrarianAccountsPage />} />
+                    <Route path="accounts" element={<Navigate to="../user-management" replace />} />
                     <Route path="requests" element={<LibrarianRequestsPage />} />
                     <Route path="inventory" element={<Navigate to="inventory/workflow" replace />} />
                     <Route path="inventory/workflow" element={<LibrarianInventoryWorkflowPage />} />

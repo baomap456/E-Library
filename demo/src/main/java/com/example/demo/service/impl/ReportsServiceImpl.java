@@ -1,11 +1,16 @@
 package com.example.demo.service.impl;
 
+import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -83,6 +88,7 @@ public class ReportsServiceImpl implements ReportsService {
     private static final String ACTOR_LIBRARIAN = "LIBRARIAN";
         private static final String TARGET_BOOK_ITEM = "BOOK_ITEM";
         private static final String STATUS_UNKNOWN = "UNKNOWN";
+        private static final DateTimeFormatter EXPORT_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss");
 
     private static final Set<BookStatus> ACTIVE_BORROW_STATUSES = Set.of(BookStatus.BORROWING, BookStatus.OVERDUE);
         private static final Set<BookStatus> ACTIVE_INVENTORY_STATUSES = Set.of(
@@ -405,10 +411,52 @@ public class ReportsServiceImpl implements ReportsService {
     @Override
     public ReportsExportResponse export(ReportsExportRequest request) {
         String format = request != null && request.format() != null ? request.format() : "excel";
-        String path = "/exports/library-report-" + System.currentTimeMillis() + "."
-                + ("pdf".equalsIgnoreCase(format) ? "pdf" : "xlsx");
-                auditLogService.log(ACTOR_LIBRARIAN, "EXPORT_REPORT", "REPORT", format, "path=" + path);
-                return new ReportsExportResponse("Xuất báo cáo thành công", format, path);
+                String safeFormat = "pdf".equalsIgnoreCase(format) ? "pdf" : "excel";
+                String fileName = "library-report-" + LocalDateTime.now().format(EXPORT_TIME_FORMAT)
+                                + ("pdf".equalsIgnoreCase(safeFormat) ? ".txt" : ".csv");
+
+                try {
+                        Path exportDirectory = resolveExportDirectory();
+                        Path outputFile = exportDirectory.resolve(fileName);
+                        String content = buildExportContent(safeFormat);
+                        Files.writeString(outputFile, content, StandardCharsets.UTF_8);
+
+                        String absolutePath = outputFile.toAbsolutePath().toString();
+                        auditLogService.log(ACTOR_LIBRARIAN, "EXPORT_REPORT", "REPORT", safeFormat, "path=" + absolutePath);
+                        return new ReportsExportResponse(
+                                        "Xuất báo cáo thành công. File được lưu trong thư mục Downloads/E-Library-Exports.",
+                                        safeFormat,
+                                        absolutePath);
+                } catch (IOException ex) {
+                        throw new IllegalArgumentException("Không thể tạo file export lúc này. Vui lòng thử lại.");
+                }
+        }
+
+    private Path resolveExportDirectory() throws IOException {
+                String userHome = System.getProperty("user.home");
+                Path path = Path.of(userHome, "Downloads", "E-Library-Exports");
+                Files.createDirectories(path);
+                return path;
+        }
+
+        private String buildExportContent(String format) {
+                ReportsKpiResponse kpi = kpis(PERIOD_MONTH);
+                ReportsFinancialResponse financialResponse = financial(PERIOD_MONTH);
+
+                StringBuilder builder = new StringBuilder();
+                builder.append("E-Library Report").append('\n');
+                builder.append("Generated At,").append(LocalDateTime.now()).append('\n');
+                builder.append("Format,").append(format).append('\n');
+                builder.append('\n');
+                builder.append("Metric,Value").append('\n');
+                builder.append("Total Borrows,").append(kpi.totalBorrows()).append('\n');
+                builder.append("Borrowing Rate (%),").append(String.format("%.2f", kpi.borrowingRate())).append('\n');
+                builder.append("Overdue User Rate (%),").append(String.format("%.2f", kpi.overdueUserRate())).append('\n');
+                builder.append("Paid Fine Revenue,").append(financialResponse.paidFineRevenue()).append('\n');
+                builder.append("Outstanding Debt,").append(financialResponse.outstandingDebt()).append('\n');
+                builder.append("Membership Revenue,").append(kpi.membershipRevenue()).append('\n');
+
+                return builder.toString();
         }
 
         @Override
@@ -770,7 +818,7 @@ public class ReportsServiceImpl implements ReportsService {
                 } catch (InterruptedException ex) {
                         Thread.currentThread().interrupt();
                         return new ReportsDigitalAuditItemResponse(bookId, title, fileUrl, false, "InterruptedException");
-                } catch (Exception ex) {
+                } catch (IOException | IllegalArgumentException ex) {
                         return new ReportsDigitalAuditItemResponse(bookId, title, fileUrl, false, ex.getClass().getSimpleName());
                 }
         }

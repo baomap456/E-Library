@@ -261,8 +261,8 @@ export default function LibrarianManagementTab({ view, ...props }: Readonly<Libr
         return (
             <Grid size={{ xs: 12 }}>
                 <SectionBlock
-                    title="Tài khoản thành viên"
-                    description="Tạo nhanh tài khoản và nâng cấp gói thành viên ngay trong panel."
+                    title="Quản lý người dùng"
+                    description="Tạo tài khoản, nâng cấp thành viên và theo dõi danh sách bạn đọc trong một nơi."
                 >
                     <AccountManagementSection />
                 </SectionBlock>

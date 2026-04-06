@@ -11,11 +11,30 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useMemo, useState } from 'react';
+import LibrarianTablePagination from '../LibrarianTablePagination';
 import type { LibrarianDigitalDocument } from '../../../types/modules/librarian';
 import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
 export default function DigitalCrudSection() {
     const props = useLibrarianManagementContext();
+    const [page, setPage] = useState(0);
+    const [rowsPerPage, setRowsPerPage] = useState(10);
+
+    const pagedDocuments = useMemo(() => {
+        const start = page * rowsPerPage;
+        return props.digitalDocuments.slice(start, start + rowsPerPage);
+    }, [props.digitalDocuments, page, rowsPerPage]);
+
+    const handlePageChange = (_: unknown, nextPage: number) => {
+        setPage(nextPage);
+    };
+
+    const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setRowsPerPage(Number.parseInt(event.target.value, 10));
+        setPage(0);
+    };
+
     const handleEditDocument = (doc: LibrarianDigitalDocument) => {
         const title = globalThis.prompt('Tên tài liệu', doc.title);
         if (title === null) {
@@ -85,7 +104,7 @@ export default function DigitalCrudSection() {
                                 <TableCell colSpan={4} align="center">Chưa có dữ liệu</TableCell>
                             </TableRow>
                         ) : (
-                            props.digitalDocuments.map((doc) => (
+                            pagedDocuments.map((doc) => (
                                 <TableRow key={doc.id}>
                                     <TableCell>{doc.title}</TableCell>
                                     <TableCell>{doc.publishYear}</TableCell>
@@ -104,6 +123,14 @@ export default function DigitalCrudSection() {
                         )}
                     </TableBody>
                 </Table>
+                <LibrarianTablePagination
+                    count={props.digitalDocuments.length}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={handlePageChange}
+                    onRowsPerPageChange={handleRowsPerPageChange}
+                    rowsPerPageOptions={[5, 10, 20]}
+                />
             </CardContent>
         </Card>
     );

@@ -1,9 +1,45 @@
 import { Button, Card, CardContent, FormControlLabel, Stack, Switch, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
+import { useMemo, useState } from 'react';
 import LibrarianTablePagination from '../LibrarianTablePagination';
 import { useLibrarianManagementContext } from './LibrarianManagementContext';
 
 export default function DebtorFinesSection() {
     const props = useLibrarianManagementContext();
+    const [invoicePage, setInvoicePage] = useState(0);
+    const [invoiceRowsPerPage, setInvoiceRowsPerPage] = useState(10);
+    const [summaryPage, setSummaryPage] = useState(0);
+    const [summaryRowsPerPage, setSummaryRowsPerPage] = useState(10);
+
+    const pagedFineInvoices = useMemo(() => {
+        const invoices = props.fineInvoices ?? [];
+        const start = invoicePage * invoiceRowsPerPage;
+        return invoices.slice(start, start + invoiceRowsPerPage);
+    }, [props.fineInvoices, invoicePage, invoiceRowsPerPage]);
+
+    const pagedUserFineSummaries = useMemo(() => {
+        const summaries = props.userFineSummaries ?? [];
+        const start = summaryPage * summaryRowsPerPage;
+        return summaries.slice(start, start + summaryRowsPerPage);
+    }, [props.userFineSummaries, summaryPage, summaryRowsPerPage]);
+
+    const handleInvoicePageChange = (_: unknown, nextPage: number) => {
+        setInvoicePage(nextPage);
+    };
+
+    const handleInvoiceRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setInvoiceRowsPerPage(Number.parseInt(event.target.value, 10));
+        setInvoicePage(0);
+    };
+
+    const handleSummaryPageChange = (_: unknown, nextPage: number) => {
+        setSummaryPage(nextPage);
+    };
+
+    const handleSummaryRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setSummaryRowsPerPage(Number.parseInt(event.target.value, 10));
+        setSummaryPage(0);
+    };
+
     return (
         <Card>
             <CardContent>
@@ -94,7 +130,7 @@ export default function DebtorFinesSection() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {(props.fineInvoices ?? []).map((invoice) => (
+                        {pagedFineInvoices.map((invoice) => (
                             <TableRow key={invoice.paymentId}>
                                 <TableCell>{invoice.paymentId}</TableCell>
                                 <TableCell>
@@ -113,6 +149,14 @@ export default function DebtorFinesSection() {
                         ))}
                     </TableBody>
                 </Table>
+                <LibrarianTablePagination
+                    count={(props.fineInvoices ?? []).length}
+                    page={invoicePage}
+                    rowsPerPage={invoiceRowsPerPage}
+                    onPageChange={handleInvoicePageChange}
+                    onRowsPerPageChange={handleInvoiceRowsPerPageChange}
+                    rowsPerPageOptions={[10, 20, 30]}
+                />
 
                 <Typography variant="h6" sx={{ mt: 3, mb: 1.2 }}>Bảng thống kê thu tiền phí của user</Typography>
                 <Table size="small">
@@ -126,7 +170,7 @@ export default function DebtorFinesSection() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {(props.userFineSummaries ?? []).map((user) => (
+                        {pagedUserFineSummaries.map((user) => (
                             <TableRow key={user.userId}>
                                 <TableCell>
                                     <Typography variant="body2" sx={{ fontWeight: 600 }}>
@@ -144,6 +188,14 @@ export default function DebtorFinesSection() {
                         ))}
                     </TableBody>
                 </Table>
+                <LibrarianTablePagination
+                    count={(props.userFineSummaries ?? []).length}
+                    page={summaryPage}
+                    rowsPerPage={summaryRowsPerPage}
+                    onPageChange={handleSummaryPageChange}
+                    onRowsPerPageChange={handleSummaryRowsPerPageChange}
+                    rowsPerPageOptions={[10, 20, 30]}
+                />
             </CardContent>
         </Card>
     );

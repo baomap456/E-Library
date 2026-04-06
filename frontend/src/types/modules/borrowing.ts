@@ -35,7 +35,13 @@ export interface BorrowingRecord {
 export interface BorrowingFinesResponse {
     totalDebt: number;
     unpaidCount: number;
-    paidHistory: Array<{ paymentId: number; amount: number; paidAt: string }>;
+    paidHistory: Array<{
+        paymentId: number;
+        recordId?: number;
+        amount: number;
+        paidAt: string;
+        paymentMethod?: string;
+    }>;
 }
 
 export interface BorrowingWaitlistItem {

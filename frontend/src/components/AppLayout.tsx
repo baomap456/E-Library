@@ -17,10 +17,13 @@ const drawerWidth = 280;
 
 const navItems = [
     { label: 'Trang chủ', path: '/', librarianOnly: false },
-    { label: 'Tài khoản của tôi', path: '/app/auth-personal', librarianOnly: false },
-    { label: 'Tra cứu sách', path: '/app/catalog', librarianOnly: false },
-    { label: 'Mượn trả của tôi', path: '/app/borrowing', librarianOnly: false, memberOnly: true },
-    { label: 'Thư viện số', path: '/app/digital', librarianOnly: false, memberOnly: true },
+    { label: 'Tài khoản của tôi', path: '/app/profile', librarianOnly: false },
+    { label: 'Hoá đơn nâng cấp', path: '/app/account-services/upgrade-invoices', librarianOnly: false, memberOnly: true },
+    { label: 'Phiếu của tôi', path: '/app/account-services/my-requests', librarianOnly: false, memberOnly: true },
+    { label: 'Sách đang chờ', path: '/app/account-services/waiting-books', librarianOnly: false, memberOnly: true },
+    { label: 'Lịch sử nợ phí', path: '/app/account-services/debt-history', librarianOnly: false, memberOnly: true },
+    { label: 'Mượn sách của tôi', path: '/app/borrowing/borrow', librarianOnly: false, memberOnly: true },
+    { label: 'Trả sách của tôi', path: '/app/borrowing/return', librarianOnly: false, memberOnly: true },
     { label: 'Quản trị thư viện', path: '/app/librarian', librarianOnly: true },
     { label: 'Báo cáo kho', path: '/app/reports', librarianOnly: true },
 ];

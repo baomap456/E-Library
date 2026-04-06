@@ -1,8 +1,55 @@
 import { Autocomplete, Button, Card, CardContent, Divider, MenuItem, Stack, Table, TableBody, TableCell, TableHead, TableRow, TextField, Typography } from '@mui/material';
 import { useLibrarianManagementContext } from './LibrarianManagementContext';
+import { useMemo, useState } from 'react';
+import LibrarianTablePagination from '../LibrarianTablePagination';
 
 export default function AccountManagementSection() {
     const props = useLibrarianManagementContext();
+    const [userSearch, setUserSearch] = useState('');
+    const [userPage, setUserPage] = useState(0);
+    const [userRowsPerPage, setUserRowsPerPage] = useState(5);
+    const [invoicePage, setInvoicePage] = useState(0);
+    const [invoiceRowsPerPage, setInvoiceRowsPerPage] = useState(5);
+
+    const filteredUsers = useMemo(() => {
+        const q = userSearch.trim().toLowerCase();
+        if (!q) {
+            return props.borrowers;
+        }
+        return props.borrowers.filter((borrower) => {
+            const text = `${borrower.username} ${borrower.fullName || ''} ${borrower.email || ''} ${borrower.phone || ''} ${borrower.studentId || ''} ${borrower.membershipName || ''}`.toLowerCase();
+            return text.includes(q);
+        });
+    }, [props.borrowers, userSearch]);
+
+    const pagedUsers = useMemo(() => {
+        const start = userPage * userRowsPerPage;
+        return filteredUsers.slice(start, start + userRowsPerPage);
+    }, [filteredUsers, userPage, userRowsPerPage]);
+
+    const pagedMembershipInvoices = useMemo(() => {
+        const start = invoicePage * invoiceRowsPerPage;
+        return (props.membershipInvoices ?? []).slice(start, start + invoiceRowsPerPage);
+    }, [props.membershipInvoices, invoicePage, invoiceRowsPerPage]);
+
+    const handleUserPageChange = (_: unknown, nextPage: number) => {
+        setUserPage(nextPage);
+    };
+
+    const handleUserRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setUserRowsPerPage(Number.parseInt(event.target.value, 10));
+        setUserPage(0);
+    };
+
+    const handleInvoicePageChange = (_: unknown, nextPage: number) => {
+        setInvoicePage(nextPage);
+    };
+
+    const handleInvoiceRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setInvoiceRowsPerPage(Number.parseInt(event.target.value, 10));
+        setInvoicePage(0);
+    };
+
     const selectedBorrower = props.borrowers.find((borrower) => borrower.username === props.upgradeUsername);
     const selectedPackage = props.membershipPackageOptions.find((pkg) => pkg.name === props.upgradeTargetPackage);
 
@@ -11,7 +58,7 @@ export default function AccountManagementSection() {
             <CardContent>
                 <Stack spacing={1.2}>
                     <Typography variant="h6" sx={{ fontWeight: 800 }}>
-                        Quản lý tài khoản bạn đọc
+                        Quản lý người dùng
                     </Typography>
 
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
@@ -155,6 +202,62 @@ export default function AccountManagementSection() {
                     <Divider sx={{ my: 1 }} />
 
                     <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
+                        Quản lý người dùng
+                    </Typography>
+                    <TextField
+                        label="Tìm người dùng"
+                        placeholder="Username / họ tên / email / số điện thoại"
+                        fullWidth
+                        value={userSearch}
+                        onChange={(e) => {
+                            setUserSearch(e.target.value);
+                            setUserPage(0);
+                        }}
+                    />
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>User ID</TableCell>
+                                <TableCell>Username</TableCell>
+                                <TableCell>Họ tên</TableCell>
+                                <TableCell>Email</TableCell>
+                                <TableCell>Số điện thoại</TableCell>
+                                <TableCell>Mã sinh viên</TableCell>
+                                <TableCell>Gói thành viên</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {pagedUsers.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} align="center">Không tìm thấy người dùng phù hợp</TableCell>
+                                </TableRow>
+                            ) : (
+                                pagedUsers.map((user) => (
+                                    <TableRow key={user.userId}>
+                                        <TableCell>{user.userId}</TableCell>
+                                        <TableCell>{user.username}</TableCell>
+                                        <TableCell>{user.fullName || '-'}</TableCell>
+                                        <TableCell>{user.email || '-'}</TableCell>
+                                        <TableCell>{user.phone || '-'}</TableCell>
+                                        <TableCell>{user.studentId || '-'}</TableCell>
+                                        <TableCell>{user.membershipName || '-'}</TableCell>
+                                    </TableRow>
+                                ))
+                            )}
+                        </TableBody>
+                    </Table>
+                    <LibrarianTablePagination
+                        count={filteredUsers.length}
+                        page={userPage}
+                        rowsPerPage={userRowsPerPage}
+                        onPageChange={handleUserPageChange}
+                        onRowsPerPageChange={handleUserRowsPerPageChange}
+                        rowsPerPageOptions={[5, 10, 20]}
+                    />
+
+                    <Divider sx={{ my: 1 }} />
+
+                    <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                         Hoá đơn membership
                     </Typography>
                     <Table size="small">
@@ -170,7 +273,7 @@ export default function AccountManagementSection() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {(props.membershipInvoices ?? []).map((invoice) => (
+                            {pagedMembershipInvoices.map((invoice) => (
                                 <TableRow key={invoice.transactionId}>
                                     <TableCell>{`HD-${invoice.transactionId}`}</TableCell>
                                     <TableCell>{String(invoice.createdAt || '').slice(0, 19).replace('T', ' ')}</TableCell>
@@ -183,6 +286,14 @@ export default function AccountManagementSection() {
                             ))}
                         </TableBody>
                     </Table>
+                    <LibrarianTablePagination
+                        count={(props.membershipInvoices ?? []).length}
+                        page={invoicePage}
+                        rowsPerPage={invoiceRowsPerPage}
+                        onPageChange={handleInvoicePageChange}
+                        onRowsPerPageChange={handleInvoiceRowsPerPageChange}
+                        rowsPerPageOptions={[5, 10, 20]}
+                    />
                 </Stack>
             </CardContent>
         </Card>

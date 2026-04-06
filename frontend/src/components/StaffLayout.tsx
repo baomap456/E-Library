@@ -26,14 +26,14 @@ const navItems = [
     { label: 'Công nợ', path: '/app/librarian/debtors' },
     { label: 'Sự cố', path: '/app/librarian/incidents' },
     { label: 'Tài liệu số', path: '/app/librarian/digital' },
-    { label: 'Tài khoản', path: '/app/librarian/accounts' },
+    { label: 'Quản lý người dùng', path: '/app/librarian/user-management' },
     { label: 'Duyệt yêu cầu', path: '/app/librarian/requests' },
     { label: 'Kiểm kê kho', path: '/app/librarian/inventory/workflow' },
-    { label: 'Kho: Kiểm kê số', path: '/app/librarian/inventory/digital-audit' },
-    { label: 'Kho: Chênh lệch kho', path: '/app/librarian/inventory/discrepancies' },
-    { label: 'Kho: Thanh lý sách', path: '/app/librarian/inventory/discard' },
-    { label: 'Kho: Xuất báo cáo', path: '/app/librarian/inventory/export' },
-    { label: 'Kho: Audit log', path: '/app/librarian/inventory/audit-logs' },
+    { label: 'Kiểm kê số', path: '/app/librarian/inventory/digital-audit' },
+    { label: 'Chênh lệch kho', path: '/app/librarian/inventory/discrepancies' },
+    { label: 'Thanh lý sách', path: '/app/librarian/inventory/discard' },
+    { label: 'Xuất báo cáo', path: '/app/librarian/inventory/export' },
+    { label: 'Audit log', path: '/app/librarian/inventory/audit-logs' },
 ];
 
 export default function StaffLayout() {

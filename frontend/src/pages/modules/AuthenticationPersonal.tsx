@@ -7,12 +7,7 @@ import {
     Stack,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
-import BorrowingFinesCard from '../../components/borrowing/BorrowingFinesCard';
-import BorrowingRecordsCard from '../../components/borrowing/BorrowingRecordsCard';
-import BorrowingRequestsCard from '../../components/borrowing/BorrowingRequestsCard';
-import BorrowingWaitlistCard from '../../components/borrowing/BorrowingWaitlistCard';
 import MembershipPackagesCard from '../../components/profile/MembershipPackagesCard';
-import MembershipTransactionsCard from '../../components/profile/MembershipTransactionsCard';
 import ProfileInfoCard from '../../components/profile/ProfileInfoCard';
 import ProfilePageHeader from '../../components/profile/ProfilePageHeader';
 import { useAuthPersonal } from '../../hooks/modules/useAuthPersonal';
@@ -24,15 +19,8 @@ export default function AuthenticationPersonal() {
         card,
         qrData,
         packages,
-        transactions,
-        myRequests,
-        records,
-        waitlist,
-        fines,
         upgrading,
-        renewingRecordId,
         handleUpgrade,
-        handleRenewBorrowRecord,
         loading,
         error,
     } = useAuthPersonal();
@@ -79,30 +67,6 @@ export default function AuthenticationPersonal() {
                         upgrading={upgrading}
                         onUpgrade={handleUpgrade}
                     />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <MembershipTransactionsCard transactions={transactions} />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <BorrowingRecordsCard
-                        records={records}
-                        renewingRecordId={renewingRecordId}
-                        onRenew={handleRenewBorrowRecord}
-                    />
-                </Grid>
-
-                <Grid size={{ xs: 12 }}>
-                    <BorrowingRequestsCard myRequests={myRequests} />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 7 }}>
-                    <BorrowingWaitlistCard waitlist={waitlist} />
-                </Grid>
-
-                <Grid size={{ xs: 12, md: 5 }}>
-                    <BorrowingFinesCard fines={fines} showPayButton={false} />
                 </Grid>
             </Grid>
         </Box>

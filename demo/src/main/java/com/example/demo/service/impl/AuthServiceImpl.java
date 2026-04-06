@@ -1,5 +1,6 @@
 package com.example.demo.service.impl;
 
+import java.security.SecureRandom;
 import java.util.Set;
 
 import org.springframework.security.authentication.BadCredentialsException;
@@ -7,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.example.demo.dto.AuthResponse;
+import com.example.demo.dto.ForgotPasswordRequest;
+import com.example.demo.dto.ForgotPasswordResponse;
 import com.example.demo.dto.LoginRequest;
 import com.example.demo.dto.RegisterRequest;
 import com.example.demo.mapper.AuthMapper;
@@ -31,6 +34,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthMapper authMapper;
+    private static final SecureRandom RANDOM = new SecureRandom();
 
     @Override
     public AuthResponse login(LoginRequest request) {
@@ -85,5 +89,30 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
         String jwtToken = jwtService.generateToken(user);
         return authMapper.toAuthResponse(user, jwtToken);
+    }
+
+    @Override
+    public ForgotPasswordResponse forgotPassword(ForgotPasswordRequest request) {
+        String identifier = request.getIdentifier() == null ? "" : request.getIdentifier().trim();
+        User user = userRepository.findByUsername(identifier)
+                .or(() -> userRepository.findByEmail(identifier))
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản phù hợp"));
+
+        String tempPassword = generateTempPassword();
+        user.setPassword(passwordEncoder.encode(tempPassword));
+        userRepository.save(user);
+
+        return new ForgotPasswordResponse(
+                "Mật khẩu tạm thời đã được tạo. Hãy đăng nhập lại bằng mật khẩu mới này và đổi mật khẩu sau khi vào hệ thống.",
+                tempPassword);
+    }
+
+    private String generateTempPassword() {
+        String alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            builder.append(alphabet.charAt(RANDOM.nextInt(alphabet.length())));
+        }
+        return builder.toString();
     }
 }

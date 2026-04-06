@@ -19,6 +19,8 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import LibrarianTablePagination from '../../LibrarianTablePagination';
 import type {
     ReportsDiscardBooksResponse,
     ReportsDiscardReportDetail,
@@ -58,6 +60,46 @@ export default function InventoryDiscardCard({
     onCloseDiscardReportDetail,
     onDiscardBooks,
 }: Readonly<Props>) {
+    const [historyPage, setHistoryPage] = useState(0);
+    const [historyRowsPerPage, setHistoryRowsPerPage] = useState(10);
+    const [detailPage, setDetailPage] = useState(0);
+    const [detailRowsPerPage, setDetailRowsPerPage] = useState(10);
+
+    const pagedDiscardHistory = useMemo(() => {
+        const start = historyPage * historyRowsPerPage;
+        return discardReportHistory.slice(start, start + historyRowsPerPage);
+    }, [discardReportHistory, historyPage, historyRowsPerPage]);
+
+    const pagedDiscardDetailItems = useMemo(() => {
+        if (!selectedDiscardReportDetail) {
+            return [];
+        }
+        const start = detailPage * detailRowsPerPage;
+        return selectedDiscardReportDetail.items.slice(start, start + detailRowsPerPage);
+    }, [selectedDiscardReportDetail, detailPage, detailRowsPerPage]);
+
+    const handleHistoryPageChange = (_: unknown, nextPage: number) => {
+        setHistoryPage(nextPage);
+    };
+
+    const handleHistoryRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setHistoryRowsPerPage(Number.parseInt(event.target.value, 10));
+        setHistoryPage(0);
+    };
+
+    const handleDetailPageChange = (_: unknown, nextPage: number) => {
+        setDetailPage(nextPage);
+    };
+
+    const handleDetailRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+        setDetailRowsPerPage(Number.parseInt(event.target.value, 10));
+        setDetailPage(0);
+    };
+
+    useEffect(() => {
+        setDetailPage(0);
+    }, [selectedDiscardReportDetail?.reportId]);
+
     return (
         <Card>
             <CardContent>
@@ -137,7 +179,7 @@ export default function InventoryDiscardCard({
                                             <TableCell colSpan={4} align="center">Chưa có biên bản thanh lý</TableCell>
                                         </TableRow>
                                     ) : (
-                                        discardReportHistory.map((report) => (
+                                        pagedDiscardHistory.map((report) => (
                                             <TableRow key={report.reportId}>
                                                 <TableCell>{report.reportCode}</TableCell>
                                                 <TableCell>{new Date(report.createdAt).toLocaleString('vi-VN')}</TableCell>
@@ -153,6 +195,14 @@ export default function InventoryDiscardCard({
                                 </TableBody>
                             </Table>
                         </Box>
+                        <LibrarianTablePagination
+                            count={discardReportHistory.length}
+                            page={historyPage}
+                            rowsPerPage={historyRowsPerPage}
+                            onPageChange={handleHistoryPageChange}
+                            onRowsPerPageChange={handleHistoryRowsPerPageChange}
+                            rowsPerPageOptions={[5, 10, 20]}
+                        />
                     </Box>
                 </Stack>
             </CardContent>
@@ -180,7 +230,7 @@ export default function InventoryDiscardCard({
                                     </TableRow>
                                 </TableHead>
                                 <TableBody>
-                                    {selectedDiscardReportDetail.items.map((item) => (
+                                    {pagedDiscardDetailItems.map((item) => (
                                         <TableRow key={`${item.barcode}-${item.criteriaCode}`}>
                                             <TableCell>{item.barcode}</TableCell>
                                             <TableCell>{item.title}</TableCell>
@@ -191,6 +241,14 @@ export default function InventoryDiscardCard({
                                     ))}
                                 </TableBody>
                             </Table>
+                            <LibrarianTablePagination
+                                count={selectedDiscardReportDetail.items.length}
+                                page={detailPage}
+                                rowsPerPage={detailRowsPerPage}
+                                onPageChange={handleDetailPageChange}
+                                onRowsPerPageChange={handleDetailRowsPerPageChange}
+                                rowsPerPageOptions={[5, 10, 20]}
+                            />
                         </Stack>
                     )}
                 </DialogContent>

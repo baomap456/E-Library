@@ -17,6 +17,7 @@ import com.example.demo.dto.borrowing.AddCartItemRequest;
 import com.example.demo.dto.borrowing.BorrowRecordResponse;
 import com.example.demo.dto.borrowing.CartItemActionResponse;
 import com.example.demo.dto.borrowing.CartItemResponse;
+import com.example.demo.dto.borrowing.FinePaymentQrResponse;
 import com.example.demo.dto.borrowing.FinePaymentResponse;
 import com.example.demo.dto.borrowing.FinesResponse;
 import com.example.demo.dto.borrowing.PayFineRequest;
@@ -95,6 +96,11 @@ public class BorrowingController {
     @GetMapping("/fines")
     public ResponseEntity<FinesResponse> fines(@RequestParam(required = false) String username) {
         return ResponseEntity.ok(borrowingService.getFines(username));
+    }
+
+    @GetMapping("/fines/payment-qr")
+    public ResponseEntity<FinePaymentQrResponse> finePaymentQr() {
+        return ResponseEntity.ok(borrowingService.getFinePaymentQr());
     }
 
     @PostMapping("/fines/pay")

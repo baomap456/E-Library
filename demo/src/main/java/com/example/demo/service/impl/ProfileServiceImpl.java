@@ -97,6 +97,7 @@ public class ProfileServiceImpl implements ProfileService {
     @Override
     public List<MembershipPackageResponse> membershipPackages() {
         return membershipTypeRepository.findAll().stream()
+                .filter(membershipType -> !"Librarian Pro".equalsIgnoreCase(membershipType.getName()))
                 .sorted(Comparator
                         .comparing(com.example.demo.model.MembershipType::isPaid)
                         .thenComparing(com.example.demo.model.MembershipType::getMaxBooks))
@@ -300,9 +301,6 @@ public class ProfileServiceImpl implements ProfileService {
         }
         if ("Premium".equalsIgnoreCase(membershipType.getName())) {
             return 499000.0;
-        }
-        if ("Librarian Pro".equalsIgnoreCase(membershipType.getName())) {
-            return 999000.0;
         }
         return 299000.0;
     }

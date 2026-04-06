@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -18,6 +19,7 @@ import com.example.demo.dto.borrowing.AddCartItemRequest;
 import com.example.demo.dto.borrowing.BorrowRecordResponse;
 import com.example.demo.dto.borrowing.CartItemActionResponse;
 import com.example.demo.dto.borrowing.CartItemResponse;
+import com.example.demo.dto.borrowing.FinePaymentQrResponse;
 import com.example.demo.dto.borrowing.FinePaymentResponse;
 import com.example.demo.dto.borrowing.FinesResponse;
 import com.example.demo.dto.borrowing.PaidFineHistoryResponse;
@@ -343,6 +345,26 @@ public class BorrowingServiceImpl implements BorrowingService {
 
         double totalDebt = unpaidRecords.stream().mapToDouble(BorrowRecord::getFineAmount).sum();
         return new FinesResponse(totalDebt, unpaidRecords.size(), paidHistory);
+    }
+
+    @Override
+    public FinePaymentQrResponse getFinePaymentQr() {
+        User user = userContextService.getCurrentUser();
+        FinesResponse fines = getFines(user.getUsername());
+        double amount = Objects.requireNonNullElse(fines.totalDebt(), 0.0);
+        if (amount <= 0) {
+            throw new IllegalArgumentException("Bạn hiện không có công nợ để thanh toán");
+        }
+
+        String paymentReference = "FINE-" + user.getId() + "-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String qrPayload = String.join("|",
+                "E-Library",
+                "FINE_PAYMENT",
+                user.getUsername(),
+                String.valueOf(Math.round(amount)),
+                paymentReference);
+
+        return new FinePaymentQrResponse(qrPayload, amount, paymentReference, DEFAULT_PAYMENT_METHOD);
     }
 
     @Override

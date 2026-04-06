@@ -97,17 +97,6 @@ public class DataInitializer implements ApplicationRunner {
             return membershipTypeRepository.save(membershipType);
         });
 
-        MembershipType librarianMembership = membershipTypeRepository.findByName("Librarian Pro").orElseGet(() -> {
-            MembershipType membershipType = new MembershipType();
-            membershipType.setName("Librarian Pro");
-            membershipType.setPaid(true);
-            membershipType.setMaxBooks(20);
-            membershipType.setBorrowDurationDays(30);
-            membershipType.setFineRatePerDay(0.0);
-            membershipType.setPrivilegeNote("Goi nghiep vu danh cho thu thu");
-            return membershipTypeRepository.save(membershipType);
-        });
-
         User member = userRepository.findByUsername("reader01").orElseGet(() -> {
             User user = new User();
             user.setUsername("reader01");
@@ -152,7 +141,7 @@ public class DataInitializer implements ApplicationRunner {
             userRepository.save(premiumMember);
         }
 
-        User librarian = userRepository.findByUsername("librarian01").orElseGet(() -> {
+        userRepository.findByUsername("librarian01").orElseGet(() -> {
             User user = new User();
             user.setUsername("librarian01");
             user.setPassword(passwordEncoder.encode("Librarian@123"));

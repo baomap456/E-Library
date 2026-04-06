@@ -4,6 +4,8 @@ import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -25,14 +27,21 @@ public class GlobalExceptionHandler {
     public ResponseEntity<ApiErrorResponse> handleBadCredentials(
             BadCredentialsException ex,
             HttpServletRequest request) {
-        return build(HttpStatus.UNAUTHORIZED, ex.getMessage(), request, Map.of());
+        return build(HttpStatus.UNAUTHORIZED, sanitizeMessage(ex.getMessage(), "Tên đăng nhập hoặc mật khẩu không đúng"), request, Map.of());
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<ApiErrorResponse> handleIllegalArgument(
             IllegalArgumentException ex,
             HttpServletRequest request) {
-        return build(HttpStatus.BAD_REQUEST, ex.getMessage(), request, Map.of());
+        return build(HttpStatus.BAD_REQUEST, sanitizeMessage(ex.getMessage(), "Yêu cầu không hợp lệ, vui lòng kiểm tra lại"), request, Map.of());
+    }
+
+    @ExceptionHandler({ DataIntegrityViolationException.class, DataAccessException.class })
+    public ResponseEntity<ApiErrorResponse> handleDataAccess(
+            Exception ex,
+            HttpServletRequest request) {
+        return build(HttpStatus.BAD_REQUEST, "Không thể xử lý dữ liệu lúc này. Vui lòng thử lại sau.", request, Map.of());
     }
 
     @ExceptionHandler({ MethodArgumentNotValidException.class, BindException.class })
@@ -102,5 +111,27 @@ public class GlobalExceptionHandler {
                 request.getRequestURI(),
                 fieldErrors);
         return ResponseEntity.status(status).body(body);
+    }
+
+    private String sanitizeMessage(String message, String fallback) {
+        if (message == null || message.isBlank()) {
+            return fallback;
+        }
+
+        String normalized = message.trim().toLowerCase();
+        boolean looksTechnical = normalized.contains("select ")
+                || normalized.contains("insert ")
+                || normalized.contains("update ")
+                || normalized.contains("delete ")
+                || normalized.contains("from ")
+                || normalized.contains("where ")
+                || normalized.contains("sql")
+                || normalized.contains("hibernate")
+                || normalized.contains("jpa")
+                || normalized.contains("constraint")
+                || normalized.contains("duplicate entry")
+                || normalized.contains("bad sql grammar");
+
+        return looksTechnical ? fallback : message;
     }
 }
