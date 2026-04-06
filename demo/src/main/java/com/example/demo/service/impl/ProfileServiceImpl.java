@@ -200,7 +200,7 @@ public class ProfileServiceImpl implements ProfileService {
 
         boolean canViewOthers = currentUser.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(role -> "ROLE_LIBRARIAN".equals(role) || "ROLE_ADMIN".equals(role));
+            .anyMatch(role -> "LIBRARIAN".equals(role) || "ADMIN".equals(role));
 
         if (!canViewOthers) {
             throw new IllegalArgumentException("Bạn không có quyền xem lịch sử giao dịch của tài khoản khác");
@@ -317,6 +317,6 @@ public class ProfileServiceImpl implements ProfileService {
     private boolean isLibrarian(User user) {
         return user.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(name -> name.equals("ROLE_LIBRARIAN"));
+                .anyMatch(name -> name.equals("LIBRARIAN"));
     }
 }

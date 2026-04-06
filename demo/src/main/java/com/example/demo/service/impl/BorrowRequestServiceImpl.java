@@ -341,7 +341,7 @@ public class BorrowRequestServiceImpl implements BorrowRequestService {
     private boolean isLibrarian(User user) {
         return user.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(name -> name.equals("ROLE_LIBRARIAN") || name.equals("ROLE_ADMIN"));
+                .anyMatch(name -> name.equals("LIBRARIAN") || name.equals("ADMIN"));
     }
 
 }

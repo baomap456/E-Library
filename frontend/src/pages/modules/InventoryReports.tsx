@@ -39,8 +39,8 @@ export default function InventoryReports() {
         setAuditNote,
         lastPhysicalAudit,
         lastDigitalAudit,
-        discardBookIdsRaw,
-        setDiscardBookIdsRaw,
+        discardBarcodesRaw,
+        setDiscardBarcodesRaw,
         discardReason,
         setDiscardReason,
         loading,
@@ -204,7 +204,7 @@ export default function InventoryReports() {
                         <CardContent>
                             <Typography variant="h6" sx={{ mb: 1 }}>Thanh lý sách (DISCARDED)</Typography>
                             <Stack spacing={1.2}>
-                                <TextField label="Book IDs (vd: 1,2,3)" value={discardBookIdsRaw} onChange={(e) => setDiscardBookIdsRaw(e.target.value)} />
+                                <TextField label="Barcodes (vd: BK001-001,BK001-002)" value={discardBarcodesRaw} onChange={(e) => setDiscardBarcodesRaw(e.target.value)} />
                                 <TextField label="Lý do thanh lý" value={discardReason} onChange={(e) => setDiscardReason(e.target.value)} />
                                 <Button color="error" variant="contained" onClick={() => void handleDiscardBooks()}>Thanh lý</Button>
                             </Stack>

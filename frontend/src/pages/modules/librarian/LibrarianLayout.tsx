@@ -203,6 +203,7 @@ export default function LibrarianLayout() {
         books,
         debtors,
         fineInvoices,
+        membershipInvoices,
         userFineSummaries,
         requests,
         authors,

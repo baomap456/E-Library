@@ -91,7 +91,7 @@ public class NotificationDispatchService {
     private boolean isEmailRecipient(User user) {
         return user.getRoles().stream()
                 .map(role -> role.getName())
-                .anyMatch(roleName -> "ROLE_MEMBER".equals(roleName) || "ROLE_GUEST".equals(roleName));
+                .anyMatch(roleName -> "MEMBER".equals(roleName) || "GUEST".equals(roleName));
     }
 
     private String buildHtmlEmail(User user, String message, String emailTemplateName, Map<String, Object> templateVariables) {

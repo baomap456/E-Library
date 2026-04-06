@@ -62,10 +62,10 @@ public class AuthServiceImpl implements AuthService {
         user.setActive(true);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
 
-        Role defaultRole = roleRepository.findByName("ROLE_MEMBER")
+        Role defaultRole = roleRepository.findByName("MEMBER")
                 .orElseGet(() -> {
                     Role role = new Role();
-                    role.setName("ROLE_MEMBER");
+                    role.setName("MEMBER");
                     return roleRepository.save(role);
                 });
         MembershipType defaultMembership = membershipTypeRepository.findByName("Free")

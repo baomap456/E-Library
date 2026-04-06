@@ -412,7 +412,7 @@ public class BorrowingServiceImpl implements BorrowingService {
     private boolean isLibrarian(User user) {
         return user.getRoles().stream()
                 .map(Role::getName)
-                .anyMatch(name -> name.equals("ROLE_LIBRARIAN"));
+                .anyMatch(name -> name.equals("LIBRARIAN"));
     }
 
     private int waitlistPosition(Reservation reservation) {

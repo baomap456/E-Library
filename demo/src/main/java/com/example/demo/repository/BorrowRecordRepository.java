@@ -25,6 +25,10 @@ public interface BorrowRecordRepository extends JpaRepository<BorrowRecord, Long
 
     long countByBorrowDateBetween(LocalDateTime start, LocalDateTime end);
 
+    long countByBookItemId(Long bookItemId);
+
+    Optional<BorrowRecord> findFirstByBookItemIdOrderByBorrowDateDesc(Long bookItemId);
+
     List<BorrowRecord> findByReturnDateIsNullAndBorrowModeAndDueDateBefore(String borrowMode, LocalDateTime dueDate);
 
     List<BorrowRecord> findByReturnDateIsNullAndStatusInAndDueDateBefore(Collection<BookStatus> statuses, LocalDateTime dueDate);

@@ -81,8 +81,57 @@ export interface ReportsDigitalAuditResponse {
 
 export interface ReportsDiscardBooksResponse {
     message: string;
-    discardedBookIds: number[];
+    discardedBarcodes: string[];
     discardedCount: number;
+    reportId: number;
+    reportCode: string;
+    reportCreatedAt: string;
+    reportItems: ReportsDiscardReportItem[];
+}
+
+export interface ReportsDiscardReportItem {
+    barcode: string;
+    title: string;
+    previousStatus: string;
+    currentStatus: string;
+    criteriaCode: string;
+}
+
+export interface ReportsDiscardSuggestion {
+    barcode: string;
+    title: string;
+    status: string;
+    criteriaCode: string;
+    criteriaLabel: string;
+    locationLabel: string;
+    publishYear: number | null;
+    borrowCount: number;
+    lostDays: number | null;
+}
+
+export interface ReportsDiscardSuggestionsResponse {
+    totalSuggestions: number;
+    damagedSuggestions: number;
+    lostOver365Suggestions: number;
+    staleNoBorrowSuggestions: number;
+    candidates: ReportsDiscardSuggestion[];
+}
+
+export interface ReportsDiscardReportSummary {
+    reportId: number;
+    reportCode: string;
+    reason: string;
+    discardedCount: number;
+    createdAt: string;
+}
+
+export interface ReportsDiscardReportDetail {
+    reportId: number;
+    reportCode: string;
+    reason: string;
+    discardedCount: number;
+    createdAt: string;
+    items: ReportsDiscardReportItem[];
 }
 
 export interface ReportsExportResponse {
@@ -96,6 +145,41 @@ export interface ReportsInventorySession {
     name: string;
     area: string;
     createdAt: string;
+    status?: string;
+}
+
+export interface ReportsInventoryBarcodeSearchResult {
+    barcode: string;
+    title: string;
+    status: string;
+    locationLabel: string;
+}
+
+export interface ReportsInventoryConflictItem {
+    barcode: string;
+    type: string;
+    message: string;
+    resolved: boolean;
+}
+
+export interface ReportsInventoryCloseResponse {
+    sessionId: number;
+    status: string;
+    scannedCount: number;
+    matchedCount: number;
+    missingCount: number;
+    conflictCount: number;
+    missingBarcodes: string[];
+    conflicts: ReportsInventoryConflictItem[];
+    message: string;
+}
+
+export interface ReportsInventoryDetail {
+    barcode: string;
+    title: string;
+    status: string;
+    locationLabel: string;
+    scannedAt: string;
 }
 
 export interface ReportsReconcileRequest {

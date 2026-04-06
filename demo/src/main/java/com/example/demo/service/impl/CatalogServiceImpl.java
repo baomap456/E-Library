@@ -45,7 +45,9 @@ public class CatalogServiceImpl implements CatalogService {
 
     @Override
     public CatalogHomeResponse home() {
-        List<Book> books = bookRepository.findByDiscardedFalse();
+        List<Book> books = bookRepository.findByDiscardedFalse().stream()
+                .filter(book -> bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE) > 0)
+                .toList();
         List<CatalogSimpleBookResponse> newBooks = books.stream()
                 .sorted(Comparator.comparing(Book::getId).reversed())
                 .limit(6)
@@ -80,6 +82,7 @@ public class CatalogServiceImpl implements CatalogService {
                             availableItems,
                             inventoryStatus);
                 })
+                .filter(book -> book.availableItems() > 0)
                 .filter(book -> status == null || Objects.equals(book.status(), status.toUpperCase()))
                 .toList();
     }
@@ -91,6 +94,10 @@ public class CatalogServiceImpl implements CatalogService {
         if (book.isDiscarded()) {
             throw new IllegalArgumentException("Sách đã được thanh lý và không còn hiển thị");
         }
+                long availableItems = bookItemRepository.countByBookIdAndStatus(book.getId(), BookStatus.AVAILABLE);
+                if (availableItems <= 0) {
+                        throw new IllegalArgumentException("Sách hiện không còn bản khả dụng để hiển thị");
+                }
         Optional<BookItem> firstItem = bookItemRepository.findByBookId(bookId).stream().findFirst();
 
         String location = firstItem

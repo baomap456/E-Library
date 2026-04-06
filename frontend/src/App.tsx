@@ -36,7 +36,8 @@ const LibrarianIncidentsPage = lazy(() => import('./pages/modules/librarian/Libr
 const LibrarianDigitalPage = lazy(() => import('./pages/modules/librarian/LibrarianDigitalPage.tsx'));
 const LibrarianAccountsPage = lazy(() => import('./pages/modules/librarian/LibrarianAccountsPage.tsx'));
 const LibrarianRequestsPage = lazy(() => import('./pages/modules/librarian/LibrarianRequestsPage.tsx'));
-const LibrarianInventoryPage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryPage.tsx'));
+const LibrarianInventoryWorkflowPage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryWorkflowPage.tsx'));
+const LibrarianInventoryFeaturePage = lazy(() => import('./pages/modules/librarian/LibrarianInventoryFeaturePage.tsx'));
 
 const theme = createTheme({
   palette: {
@@ -139,7 +140,13 @@ function App() {
                     <Route path="digital" element={<LibrarianDigitalPage />} />
                     <Route path="accounts" element={<LibrarianAccountsPage />} />
                     <Route path="requests" element={<LibrarianRequestsPage />} />
-                    <Route path="inventory" element={<LibrarianInventoryPage />} />
+                    <Route path="inventory" element={<Navigate to="inventory/workflow" replace />} />
+                    <Route path="inventory/workflow" element={<LibrarianInventoryWorkflowPage />} />
+                    <Route path="inventory/digital-audit" element={<LibrarianInventoryFeaturePage feature="digital-audit" />} />
+                    <Route path="inventory/discrepancies" element={<LibrarianInventoryFeaturePage feature="discrepancies" />} />
+                    <Route path="inventory/discard" element={<LibrarianInventoryFeaturePage feature="discard" />} />
+                    <Route path="inventory/export" element={<LibrarianInventoryFeaturePage feature="export" />} />
+                    <Route path="inventory/audit-logs" element={<LibrarianInventoryFeaturePage feature="audit-logs" />} />
                   </Route>
                   <Route path="/app/reports" element={<Navigate to="/app/librarian/dashboard" replace />} />
                 </Route>

@@ -217,6 +217,7 @@ export default function BookCrudSection() {
                         <TableRow>
                             <TableCell>ID</TableCell>
                             <TableCell>Tên sách</TableCell>
+                            <TableCell>Barcode</TableCell>
                             <TableCell>Tác giả</TableCell>
                             <TableCell>Danh mục</TableCell>
                             <TableCell>Vị trí</TableCell>
@@ -229,13 +230,14 @@ export default function BookCrudSection() {
                     <TableBody>
                         {props.pagedBooks.length === 0 ? (
                             <TableRow>
-                                <TableCell colSpan={9} align="center">Chưa có dữ liệu</TableCell>
+                                <TableCell colSpan={10} align="center">Chưa có dữ liệu</TableCell>
                             </TableRow>
                         ) : (
                             props.pagedBooks.map((book) => (
                                 <TableRow key={book.id}>
                                     <TableCell>{book.id}</TableCell>
                                     <TableCell>{book.title}</TableCell>
+                                    <TableCell>{book.availableBarcode || '-'}</TableCell>
                                     <TableCell>{book.authorNames?.join(', ') || '-'}</TableCell>
                                     <TableCell>{book.categoryName || '-'}</TableCell>
                                     <TableCell>{book.locationLabel || '-'}</TableCell>

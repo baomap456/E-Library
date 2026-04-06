@@ -98,8 +98,8 @@ import lombok.RequiredArgsConstructor;
 public class LibrarianServiceImpl implements LibrarianService {
 
     private static final double DAILY_FINE = 5000.0;
-    private static final String MEMBER_ROLE = "ROLE_MEMBER";
-    private static final String GUEST_ROLE = "ROLE_GUEST";
+    private static final String MEMBER_ROLE = "MEMBER";
+    private static final String GUEST_ROLE = "GUEST";
     private static final String BORROW_MODE_TAKE_HOME = "TAKE_HOME";
     private static final String BORROW_MODE_READ_ON_SITE = "READ_ON_SITE";
     private static final String INCIDENT_LOST = "LOST";
@@ -213,7 +213,7 @@ public class LibrarianServiceImpl implements LibrarianService {
     public LibrarianCheckoutResponse checkout(LibrarianCheckoutRequest request) {
         User user = userRepository.findByUsername(request.username())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng"));
-        if (hasRole(user, "ROLE_LIBRARIAN") || hasRole(user, "ROLE_ADMIN")) {
+        if (hasRole(user, "LIBRARIAN") || hasRole(user, "ADMIN")) {
             throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
         }
         debtRestrictionService.assertBorrowingAllowed(user, "mượn sách");
@@ -766,7 +766,7 @@ public class LibrarianServiceImpl implements LibrarianService {
             Double depositAmount,
             String citizenId,
             boolean temporaryRecord) {
-        if (hasRole(borrower, "ROLE_LIBRARIAN") || hasRole(borrower, "ROLE_ADMIN")) {
+        if (hasRole(borrower, "LIBRARIAN") || hasRole(borrower, "ADMIN")) {
             throw new IllegalArgumentException("Không thể lập phiếu mượn cho tài khoản thủ thư");
         }
         BookItem item = bookItemRepository.findByBarcode(barcode)

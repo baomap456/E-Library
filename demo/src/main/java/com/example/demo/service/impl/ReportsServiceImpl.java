@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -25,10 +26,19 @@ import com.example.demo.dto.reports.ReportsDigitalAuditItemResponse;
 import com.example.demo.dto.reports.ReportsDigitalAuditResponse;
 import com.example.demo.dto.reports.ReportsDiscardBooksRequest;
 import com.example.demo.dto.reports.ReportsDiscardBooksResponse;
+import com.example.demo.dto.reports.ReportsDiscardCandidateResponse;
+import com.example.demo.dto.reports.ReportsDiscardReportDetailResponse;
+import com.example.demo.dto.reports.ReportsDiscardReportItemResponse;
+import com.example.demo.dto.reports.ReportsDiscardReportSummaryResponse;
+import com.example.demo.dto.reports.ReportsDiscardSuggestionsResponse;
 import com.example.demo.dto.reports.ReportsDiscrepancyResponse;
 import com.example.demo.dto.reports.ReportsExportRequest;
 import com.example.demo.dto.reports.ReportsExportResponse;
 import com.example.demo.dto.reports.ReportsFinancialResponse;
+import com.example.demo.dto.reports.ReportsInventoryBarcodeSearchResponse;
+import com.example.demo.dto.reports.ReportsInventoryCloseResponse;
+import com.example.demo.dto.reports.ReportsInventoryConflictItemResponse;
+import com.example.demo.dto.reports.ReportsInventoryDetailResponse;
 import com.example.demo.dto.reports.ReportsInventorySessionRequest;
 import com.example.demo.dto.reports.ReportsInventorySessionResponse;
 import com.example.demo.dto.reports.ReportsKpiResponse;
@@ -44,14 +54,21 @@ import com.example.demo.model.Book;
 import com.example.demo.model.BookItem;
 import com.example.demo.model.BookStatus;
 import com.example.demo.model.BorrowRecord;
+import com.example.demo.model.DiscardReport;
+import com.example.demo.model.DiscardReportItem;
+import com.example.demo.model.InventoryDetail;
+import com.example.demo.model.InventorySession;
 import com.example.demo.repository.BookItemRepository;
 import com.example.demo.repository.BookRepository;
 import com.example.demo.repository.BorrowRecordRepository;
+import com.example.demo.repository.DiscardReportItemRepository;
+import com.example.demo.repository.DiscardReportRepository;
 import com.example.demo.repository.FinePaymentRepository;
+import com.example.demo.repository.InventoryDetailRepository;
+import com.example.demo.repository.InventorySessionRepository;
 import com.example.demo.repository.MembershipTransactionRepository;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.service.AuditLogService;
-import com.example.demo.service.ModuleStateService;
 import com.example.demo.service.ReportsService;
 
 import lombok.RequiredArgsConstructor;
@@ -64,6 +81,8 @@ public class ReportsServiceImpl implements ReportsService {
     private static final String PERIOD_QUARTER = "quarter";
     private static final String PERIOD_YEAR = "year";
     private static final String ACTOR_LIBRARIAN = "LIBRARIAN";
+        private static final String TARGET_BOOK_ITEM = "BOOK_ITEM";
+        private static final String STATUS_UNKNOWN = "UNKNOWN";
 
     private static final Set<BookStatus> ACTIVE_BORROW_STATUSES = Set.of(BookStatus.BORROWING, BookStatus.OVERDUE);
         private static final Set<BookStatus> ACTIVE_INVENTORY_STATUSES = Set.of(
@@ -74,51 +93,231 @@ public class ReportsServiceImpl implements ReportsService {
                         BookStatus.LOST,
                         BookStatus.DAMAGED);
         private static final Set<BookStatus> NON_DISCARDABLE_STATUSES = Set.of(BookStatus.BORROWING, BookStatus.OVERDUE, BookStatus.RESERVED);
+        private static final String CRITERIA_DAMAGED = "DAMAGED_SEVERE";
+        private static final String CRITERIA_LOST_OVER_365 = "LOST_OVER_365_DAYS";
+        private static final String CRITERIA_STALE_NO_BORROW = "STALE_5Y_NO_BORROW";
+        private static final String CRITERIA_MANUAL = "MANUAL_REVIEW";
 
         private static final HttpClient HTTP_CLIENT = HttpClient.newBuilder()
                         .connectTimeout(java.time.Duration.ofSeconds(4))
                         .build();
 
-    private final ModuleStateService moduleStateService;
     private final BookItemRepository bookItemRepository;
         private final BookRepository bookRepository;
     private final BorrowRecordRepository borrowRecordRepository;
     private final FinePaymentRepository finePaymentRepository;
         private final MembershipTransactionRepository membershipTransactionRepository;
         private final UserRepository userRepository;
+        private final InventorySessionRepository inventorySessionRepository;
+        private final InventoryDetailRepository inventoryDetailRepository;
+        private final DiscardReportRepository discardReportRepository;
+        private final DiscardReportItemRepository discardReportItemRepository;
         private final AuditLogService auditLogService;
         private final ReportsMapper reportsMapper;
 
     @Override
     public ReportsInventorySessionResponse createInventorySession(ReportsInventorySessionRequest request) {
-        String name = request != null && request.name() != null ? request.name() : "Inventory Session";
-        String area = request != null && request.area() != null ? request.area() : "Main Warehouse";
-                ReportsInventorySessionResponse response = reportsMapper.toInventorySessionResponse(moduleStateService.addInventorySession(name, area));
+                String name = request != null && request.name() != null ? request.name() : "Phiên kiểm kê";
+                String area = request != null && request.area() != null ? request.area() : "Toàn bộ";
+
+                InventorySession session = new InventorySession();
+                session.setName(name);
+                session.setArea(area);
+                session.setStatus("OPEN");
+                InventorySession saved = inventorySessionRepository.save(session);
+
+                ReportsInventorySessionResponse response = toInventorySessionResponse(saved);
                 auditLogService.log(ACTOR_LIBRARIAN, "CREATE_INVENTORY_SESSION", "INVENTORY_SESSION", String.valueOf(response.id()), "name=" + name + ", area=" + area);
                 return response;
     }
 
     @Override
     public List<ReportsInventorySessionResponse> inventorySessions() {
-                return moduleStateService.getInventorySessions().stream().map(reportsMapper::toInventorySessionResponse).toList();
+        return inventorySessionRepository.findAllByOrderByCreatedAtDesc().stream()
+                .map(this::toInventorySessionResponse)
+                .toList();
     }
+
+        @Override
+        public List<ReportsInventoryDetailResponse> inventorySessionDetails(Long sessionId) {
+                return inventoryDetailRepository.findBySessionIdOrderByScannedAtDesc(sessionId).stream()
+                                .map(detail -> {
+                                        BookItem item = bookItemRepository.findByBarcode(detail.getBarcode()).orElse(null);
+                                        String title = item == null || item.getBook() == null ? "N/A" : item.getBook().getTitle();
+                                        String status = item == null || item.getStatus() == null ? STATUS_UNKNOWN : item.getStatus().name();
+                                        String locationLabel = item == null ? "N/A" : buildLocationLabel(item);
+                                        return new ReportsInventoryDetailResponse(
+                                                        detail.getBarcode(),
+                                                        title,
+                                                        status,
+                                                        locationLabel,
+                                                        detail.getScannedAt());
+                                })
+                                .toList();
+        }
 
     @Override
     public ReportsReconcileResponse reconcile(ReportsReconcileRequest request) {
+        InventorySession session = inventorySessionRepository.findById(request.sessionId())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên kiểm kê"));
+        if (!"OPEN".equals(session.getStatus())) {
+            throw new IllegalArgumentException("Phiên kiểm kê đã đóng");
+        }
+        BookItem item = bookItemRepository.findByBarcode(request.barcode().trim())
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy barcode trong hệ thống"));
+
+        if (!inventoryDetailRepository.existsBySessionIdAndBarcode(session.getId(), item.getBarcode())) {
+            InventoryDetail detail = new InventoryDetail();
+            detail.setSession(session);
+            detail.setBarcode(item.getBarcode());
+            inventoryDetailRepository.save(detail);
+        }
+
         Map<String, Object> response = new HashMap<>();
-        response.put("message", "Đã ghi nhận dữ liệu đối soát");
+        response.put("message", "Đã ghi nhận barcode vào phiên kiểm kê");
         response.put("sessionId", request.sessionId());
-        response.put("barcode", request.barcode());
+        response.put("barcode", item.getBarcode());
         response.put("actualQuantity", request.actualQuantity());
 
         ReportsReconcileResponse result = new ReportsReconcileResponse(
                 String.valueOf(response.get("message")),
                 request.sessionId(),
-                request.barcode(),
+                                item.getBarcode(),
                 request.actualQuantity());
-        auditLogService.log(ACTOR_LIBRARIAN, "RECONCILE_INVENTORY", "BOOK_ITEM", request.barcode(), "actualQuantity=" + request.actualQuantity());
+                auditLogService.log(ACTOR_LIBRARIAN, "RECONCILE_INVENTORY", TARGET_BOOK_ITEM, item.getBarcode(), "actualQuantity=" + request.actualQuantity());
         return result;
     }
+
+        @Override
+        public List<ReportsInventoryBarcodeSearchResponse> searchBarcodes(String keyword) {
+                String normalized = keyword == null ? "" : keyword.trim().toLowerCase();
+                if (normalized.isBlank()) {
+                        return List.of();
+                }
+
+                return bookItemRepository.findAll().stream()
+                                .filter(item -> item.getBarcode() != null && item.getBarcode().toLowerCase().contains(normalized))
+                                .limit(20)
+                                .map(item -> new ReportsInventoryBarcodeSearchResponse(
+                                                item.getBarcode(),
+                                                item.getBook() == null ? "N/A" : item.getBook().getTitle(),
+                                                item.getStatus() == null ? STATUS_UNKNOWN : item.getStatus().name(),
+                                                buildLocationLabel(item)))
+                                .toList();
+        }
+
+        @Override
+        @Transactional
+        public ReportsInventoryCloseResponse closeInventorySession(Long sessionId) {
+                        InventorySession session = inventorySessionRepository.findById(sessionId)
+                                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy phiên kiểm kê"));
+                        if (!"OPEN".equals(session.getStatus())) {
+                        throw new IllegalArgumentException("Phiên kiểm kê đã đóng");
+                }
+
+                        String scopeArea = session.getArea() == null ? "" : session.getArea().trim();
+                        Set<String> scannedBarcodes = inventoryDetailRepository.findBySessionId(sessionId).stream()
+                                        .map(InventoryDetail::getBarcode)
+                                        .collect(Collectors.toSet());
+                List<BookItem> allItems = bookItemRepository.findAll();
+
+                List<BookItem> expectedItems = allItems.stream()
+                                .filter(item -> isInScope(item, scopeArea))
+                                .filter(item -> item.getStatus() == BookStatus.AVAILABLE)
+                                .toList();
+
+                List<BookItem> missingItems = expectedItems.stream()
+                                .filter(item -> !scannedBarcodes.contains(item.getBarcode()))
+                                .toList();
+
+                missingItems.forEach(item -> item.setStatus(BookStatus.LOST));
+                if (!missingItems.isEmpty()) {
+                        bookItemRepository.saveAll(missingItems);
+                }
+
+                List<ReportsInventoryConflictItemResponse> conflicts = allItems.stream()
+                                .filter(item -> scannedBarcodes.contains(item.getBarcode()))
+                                .flatMap(item -> buildConflictItems(item, scopeArea).stream())
+                                .toList();
+
+                session.setStatus("CLOSED");
+                session.setClosedAt(LocalDateTime.now());
+                inventorySessionRepository.save(session);
+
+                auditLogService.log(
+                                ACTOR_LIBRARIAN,
+                                "CLOSE_INVENTORY_SESSION",
+                                "INVENTORY_SESSION",
+                                String.valueOf(sessionId),
+                                "scanned=" + scannedBarcodes.size() + ", missing=" + missingItems.size() + ", conflicts=" + conflicts.size());
+
+                return new ReportsInventoryCloseResponse(
+                                sessionId,
+                                "CLOSED",
+                                scannedBarcodes.size(),
+                                Math.max(0, expectedItems.size() - missingItems.size()),
+                                missingItems.size(),
+                                conflicts.size(),
+                                missingItems.stream().map(BookItem::getBarcode).toList(),
+                                conflicts,
+                                "Đã chốt phiên kiểm kê. Các sách thất lạc được chuyển trạng thái LOST.");
+        }
+
+        private ReportsInventorySessionResponse toInventorySessionResponse(InventorySession session) {
+                return new ReportsInventorySessionResponse(
+                                session.getId(),
+                                session.getName(),
+                                session.getArea(),
+                                session.getStatus(),
+                                session.getCreatedAt());
+        }
+
+        private String buildLocationLabel(BookItem item) {
+                if (item.getLocation() == null) {
+                        return "N/A";
+                }
+                String room = item.getLocation().getRoomName() == null ? "" : item.getLocation().getRoomName();
+                String shelf = item.getLocation().getShelfNumber() == null ? "" : item.getLocation().getShelfNumber();
+                return (room + " / " + shelf).trim();
+        }
+
+        private boolean isInScope(BookItem item, String scopeArea) {
+                if (scopeArea == null || scopeArea.isBlank() || "toan bo".equalsIgnoreCase(scopeArea) || "all".equalsIgnoreCase(scopeArea)) {
+                        return true;
+                }
+                if (item.getLocation() == null) {
+                        return false;
+                }
+                String locationText = ((item.getLocation().getRoomName() == null ? "" : item.getLocation().getRoomName())
+                                + " "
+                                + (item.getLocation().getShelfNumber() == null ? "" : item.getLocation().getShelfNumber()))
+                                .toLowerCase();
+                return locationText.contains(scopeArea.toLowerCase());
+        }
+
+        private List<ReportsInventoryConflictItemResponse> buildConflictItems(BookItem item, String scopeArea) {
+                List<ReportsInventoryConflictItemResponse> conflicts = new java.util.ArrayList<>();
+
+                if (item.getStatus() == BookStatus.BORROWING || item.getStatus() == BookStatus.OVERDUE) {
+                        item.setStatus(BookStatus.AVAILABLE);
+                        bookItemRepository.save(item);
+                        conflicts.add(new ReportsInventoryConflictItemResponse(
+                                        item.getBarcode(),
+                                        "BORROWED_ON_SHELF",
+                                        "Sách đang ở trạng thái mượn nhưng được tìm thấy trên kệ. Đã tự động chuyển về AVAILABLE.",
+                                        true));
+                }
+
+                if (!isInScope(item, scopeArea)) {
+                        conflicts.add(new ReportsInventoryConflictItemResponse(
+                                        item.getBarcode(),
+                                        "LOCATION_MISMATCH",
+                                        "Barcode được nhập nhưng đang nằm ngoài khu vực kiểm kê của phiên hiện tại.",
+                                        false));
+                }
+
+                return conflicts;
+        }
 
     @Override
     public List<ReportsDiscrepancyResponse> discrepancies() {
@@ -357,7 +556,7 @@ public class ReportsServiceImpl implements ReportsService {
                 auditLogService.log(
                                 ACTOR_LIBRARIAN,
                                 "PHYSICAL_AUDIT",
-                                "BOOK_ITEM",
+                                TARGET_BOOK_ITEM,
                                 item.getBarcode(),
                                 "observed=" + observed + ", result=" + result + ", note=" + Objects.requireNonNullElse(request.note(), ""));
 
@@ -380,39 +579,158 @@ public class ReportsServiceImpl implements ReportsService {
         }
 
         @Override
+        @Transactional(readOnly = true)
+        public ReportsDiscardSuggestionsResponse discardSuggestions() {
+                List<BookItem> activeItems = bookItemRepository.findByStatusNot(BookStatus.DISCARDED).stream()
+                                .filter(item -> item.getBook() != null)
+                                .toList();
+
+                List<ReportsDiscardCandidateResponse> candidates = activeItems.stream()
+                                .map(this::toDiscardCandidate)
+                                .filter(Objects::nonNull)
+                                .toList();
+
+                int damaged = (int) candidates.stream().filter(c -> CRITERIA_DAMAGED.equals(c.criteriaCode())).count();
+                int lostOver365 = (int) candidates.stream().filter(c -> CRITERIA_LOST_OVER_365.equals(c.criteriaCode())).count();
+                int staleNoBorrow = (int) candidates.stream().filter(c -> CRITERIA_STALE_NO_BORROW.equals(c.criteriaCode())).count();
+
+                return new ReportsDiscardSuggestionsResponse(
+                                candidates.size(),
+                                damaged,
+                                lostOver365,
+                                staleNoBorrow,
+                                candidates);
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public List<ReportsDiscardReportSummaryResponse> discardReports() {
+                return discardReportRepository.findAllByOrderByCreatedAtDesc().stream()
+                                .map(report -> new ReportsDiscardReportSummaryResponse(
+                                                report.getId(),
+                                                report.getReportCode(),
+                                                report.getReason(),
+                                                report.getDiscardedCount(),
+                                                report.getCreatedAt()))
+                                .toList();
+        }
+
+        @Override
+        @Transactional(readOnly = true)
+        public ReportsDiscardReportDetailResponse discardReportDetail(Long reportId) {
+                DiscardReport report = discardReportRepository.findById(reportId)
+                                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy biên bản thanh lý"));
+
+                List<ReportsDiscardReportItemResponse> items = discardReportItemRepository.findByReportIdOrderByIdAsc(reportId).stream()
+                                .map(item -> new ReportsDiscardReportItemResponse(
+                                                item.getBarcode(),
+                                                item.getTitle(),
+                                                item.getPreviousStatus(),
+                                                BookStatus.DISCARDED.name(),
+                                                item.getCriteriaCode()))
+                                .toList();
+
+                return new ReportsDiscardReportDetailResponse(
+                                report.getId(),
+                                report.getReportCode(),
+                                report.getReason(),
+                                report.getDiscardedCount(),
+                                report.getCreatedAt(),
+                                items);
+        }
+
+        @Override
         @Transactional
         public ReportsDiscardBooksResponse discardBooks(ReportsDiscardBooksRequest request) {
-                List<Long> bookIds = request.bookIds().stream().filter(Objects::nonNull).distinct().toList();
-                if (bookIds.isEmpty()) {
-                        throw new IllegalArgumentException("bookIds không hợp lệ");
+                List<String> barcodes = request.barcodes().stream()
+                                .filter(Objects::nonNull)
+                                .map(String::trim)
+                                .filter(s -> !s.isBlank())
+                                .distinct()
+                                .toList();
+                if (barcodes.isEmpty()) {
+                        throw new IllegalArgumentException("barcodes không hợp lệ");
                 }
 
-                List<Book> books = bookRepository.findAllById(bookIds);
-                if (books.size() != bookIds.size()) {
-                        throw new IllegalArgumentException("Một số sách không tồn tại để thanh lý");
+                List<BookItem> items = bookItemRepository.findByBarcodeIn(barcodes);
+                if (items.size() != barcodes.size()) {
+                        throw new IllegalArgumentException("Một số barcode không tồn tại để thanh lý");
                 }
 
-                List<BookItem> items = bookItemRepository.findByBookIdIn(bookIds);
                 boolean hasActiveItems = items.stream().anyMatch(item -> NON_DISCARDABLE_STATUSES.contains(item.getStatus()));
                 if (hasActiveItems) {
                         throw new IllegalArgumentException("Không thể thanh lý sách đang mượn/đặt trước");
                 }
 
-                books.forEach(book -> book.setDiscarded(true));
-                bookRepository.saveAll(books);
-                bookItemRepository.bulkUpdateStatusByBookIds(bookIds, BookStatus.DISCARDED);
+                boolean hasDiscardedItems = items.stream().anyMatch(item -> item.getStatus() == BookStatus.DISCARDED);
+                if (hasDiscardedItems) {
+                        throw new IllegalArgumentException("Danh sách chứa barcode đã ở trạng thái DISCARDED");
+                }
+
+                List<ReportsDiscardReportItemResponse> reportItems = items.stream()
+                                .map(item -> {
+                                        String previousStatus = item.getStatus() == null ? STATUS_UNKNOWN : item.getStatus().name();
+                                        String criteria = detectCriteriaCode(item, borrowRecordRepository.countByBookItemId(item.getId()));
+                                        return new ReportsDiscardReportItemResponse(
+                                                        item.getBarcode(),
+                                                        item.getBook() == null ? "N/A" : item.getBook().getTitle(),
+                                                        previousStatus,
+                                                        BookStatus.DISCARDED.name(),
+                                                        criteria);
+                                })
+                                .toList();
+
+                items.forEach(item -> item.setStatus(BookStatus.DISCARDED));
+                bookItemRepository.saveAll(items);
+
+                Map<Long, Long> remainingByBook = items.stream()
+                                .map(item -> item.getBook() == null ? null : item.getBook().getId())
+                                .filter(Objects::nonNull)
+                                .distinct()
+                                .collect(Collectors.toMap(
+                                                bookId -> bookId,
+                                                bookId -> bookItemRepository.countByBookIdAndStatusNot(bookId, BookStatus.DISCARDED),
+                                                (left, right) -> left,
+                                                LinkedHashMap::new));
+
+                List<Book> touchedBooks = bookRepository.findAllById(remainingByBook.keySet());
+                touchedBooks.forEach(book -> book.setDiscarded(remainingByBook.getOrDefault(book.getId(), 0L) == 0L));
+                bookRepository.saveAll(touchedBooks);
+
+                DiscardReport report = new DiscardReport();
+                report.setReportCode(buildReportCode());
+                report.setReason(Objects.requireNonNullElse(request.reason(), "N/A"));
+                report.setDiscardedCount(items.size());
+                DiscardReport savedReport = discardReportRepository.save(report);
+
+                List<DiscardReportItem> reportEntities = reportItems.stream()
+                                .map(item -> {
+                                        DiscardReportItem entity = new DiscardReportItem();
+                                        entity.setReport(savedReport);
+                                        entity.setBarcode(item.barcode());
+                                        entity.setTitle(item.title());
+                                        entity.setPreviousStatus(item.previousStatus());
+                                        entity.setCriteriaCode(item.criteriaCode());
+                                        return entity;
+                                })
+                                .toList();
+                discardReportItemRepository.saveAll(reportEntities);
 
                 auditLogService.log(
                                 ACTOR_LIBRARIAN,
                                 "DISCARD_BOOKS",
-                                "BOOK",
-                                bookIds.toString(),
-                                "reason=" + Objects.requireNonNullElse(request.reason(), "N/A"));
+                                TARGET_BOOK_ITEM,
+                                barcodes.toString(),
+                                "reason=" + Objects.requireNonNullElse(request.reason(), "N/A") + ", reportCode=" + savedReport.getReportCode());
 
                 return new ReportsDiscardBooksResponse(
-                                "Thanh lý sách thành công. Dữ liệu lịch sử vẫn được giữ lại.",
-                                bookIds,
-                                bookIds.size());
+                                "Thanh lý mềm thành công. Đã tạo biên bản thanh lý.",
+                                barcodes,
+                                barcodes.size(),
+                                savedReport.getId(),
+                                savedReport.getReportCode(),
+                                savedReport.getCreatedAt(),
+                                reportItems);
         }
 
         @Override
@@ -497,6 +815,74 @@ public class ReportsServiceImpl implements ReportsService {
 
         private double round2(double value) {
                 return Math.round(value * 100.0) / 100.0;
+        }
+
+        private ReportsDiscardCandidateResponse toDiscardCandidate(BookItem item) {
+                long borrowCount = borrowRecordRepository.countByBookItemId(item.getId());
+                String criteriaCode = detectCriteriaCode(item, borrowCount);
+                if (CRITERIA_MANUAL.equals(criteriaCode)) {
+                        return null;
+                }
+
+                Long lostDays = null;
+                if (item.getStatus() == BookStatus.LOST) {
+                        lostDays = borrowRecordRepository.findFirstByBookItemIdOrderByBorrowDateDesc(item.getId())
+                                        .map(BorrowRecord::getBorrowDate)
+                                        .map(date -> date.until(LocalDateTime.now(), ChronoUnit.DAYS))
+                                        .orElse(null);
+                }
+
+                return new ReportsDiscardCandidateResponse(
+                                item.getBarcode(),
+                                item.getBook() == null ? "N/A" : item.getBook().getTitle(),
+                                item.getStatus() == null ? STATUS_UNKNOWN : item.getStatus().name(),
+                                criteriaCode,
+                                criteriaLabel(criteriaCode),
+                                buildLocationLabel(item),
+                                item.getBook() == null ? null : item.getBook().getPublishYear(),
+                                borrowCount,
+                                lostDays);
+        }
+
+        private String detectCriteriaCode(BookItem item, long borrowCount) {
+                if (NON_DISCARDABLE_STATUSES.contains(item.getStatus())) {
+                        return CRITERIA_MANUAL;
+                }
+
+                if (item.getStatus() == BookStatus.DAMAGED) {
+                        return CRITERIA_DAMAGED;
+                }
+
+                if (item.getStatus() == BookStatus.LOST
+                                && borrowRecordRepository.findFirstByBookItemIdOrderByBorrowDateDesc(item.getId())
+                                                .map(BorrowRecord::getBorrowDate)
+                                                .map(date -> date.until(LocalDateTime.now(), ChronoUnit.DAYS) > 365)
+                                                .orElse(false)) {
+                        return CRITERIA_LOST_OVER_365;
+                }
+
+                Integer publishYear = item.getBook() == null ? null : item.getBook().getPublishYear();
+                if (item.getStatus() == BookStatus.AVAILABLE
+                                && publishYear != null
+                                && publishYear <= LocalDate.now().getYear() - 5
+                                && borrowCount == 0) {
+                        return CRITERIA_STALE_NO_BORROW;
+                }
+
+                return CRITERIA_MANUAL;
+        }
+
+        private String criteriaLabel(String code) {
+                return switch (code) {
+                        case CRITERIA_DAMAGED -> "Hư hại nặng (DAMAGED)";
+                        case CRITERIA_LOST_OVER_365 -> "Mất quá 365 ngày (LOST)";
+                        case CRITERIA_STALE_NO_BORROW -> "Tồn kho >= 5 năm, chưa từng mượn";
+                        default -> "Duyệt thủ công";
+                };
+        }
+
+        private String buildReportCode() {
+                return "BBTL-" + LocalDate.now().toString().replace("-", "") + "-" + System.currentTimeMillis();
         }
 
 }

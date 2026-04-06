@@ -1,5 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
-import type { LibrarianAuthor, LibrarianBook, LibrarianCategory, LibrarianDebtor, LibrarianLocation } from '../../types/modules/librarian';
+import type {
+    LibrarianAuthor,
+    LibrarianBook,
+    LibrarianCategory,
+    LibrarianDebtor,
+    LibrarianFineInvoice,
+    LibrarianLocation,
+    LibrarianMembershipInvoice,
+    LibrarianUserFineSummary,
+} from '../../types/modules/librarian';
 import type { BorrowRequestResponse } from '../../types/borrowing';
 import { usePagination } from '../shared/usePagination';
 
@@ -20,8 +29,9 @@ function readStoredString(key: string, fallback: string): string {
 interface UseLibrarianPanelUiStateParams {
     books: LibrarianBook[];
     debtors: LibrarianDebtor[];
-    fineInvoices: unknown[];
-    userFineSummaries: unknown[];
+    fineInvoices: LibrarianFineInvoice[];
+    membershipInvoices: LibrarianMembershipInvoice[];
+    userFineSummaries: LibrarianUserFineSummary[];
     requests: BorrowRequestResponse[];
     authors: LibrarianAuthor[];
     categories: LibrarianCategory[];
@@ -30,7 +40,18 @@ interface UseLibrarianPanelUiStateParams {
 }
 
 export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams) {
-    const { books, debtors, fineInvoices, userFineSummaries, requests, authors, categories, locations, filterStatus } = params;
+    const {
+        books,
+        debtors,
+        fineInvoices,
+        membershipInvoices,
+        userFineSummaries,
+        requests,
+        authors,
+        categories,
+        locations,
+        filterStatus,
+    } = params;
 
     const [tabValue, setTabValue] = useState(() => readStoredNumber('librarian:tabValue', 0));
     const [selectedRequest, setSelectedRequest] = useState<number | null>(null);
@@ -187,6 +208,7 @@ export function useLibrarianPanelUiState(params: UseLibrarianPanelUiStateParams)
         debtorSearch,
         setDebtorSearch,
         fineInvoices,
+        membershipInvoices,
         userFineSummaries,
         filteredDebtorsCount: filteredDebtors.length,
         pagedDebtors: debtorPagination.pagedItems,

@@ -54,26 +54,26 @@ public class DataInitializer implements ApplicationRunner {
     @Override
     @Transactional
     public void run(ApplicationArguments args) {
-        Role memberRole = roleRepository.findByName("ROLE_MEMBER").orElseGet(() -> {
+        Role memberRole = roleRepository.findByName("MEMBER").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_MEMBER");
+            role.setName("MEMBER");
             return roleRepository.save(role);
         });
 
-        roleRepository.findByName("ROLE_LIBRARIAN").orElseGet(() -> {
+        roleRepository.findByName("LIBRARIAN").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_LIBRARIAN");
+            role.setName("LIBRARIAN");
             return roleRepository.save(role);
         });
 
-        roleRepository.findByName("ROLE_GUEST").orElseGet(() -> {
+        roleRepository.findByName("GUEST").orElseGet(() -> {
             Role role = new Role();
-            role.setName("ROLE_GUEST");
+            role.setName("GUEST");
             return roleRepository.save(role);
         });
 
-        Role librarianRole = roleRepository.findByName("ROLE_LIBRARIAN")
-            .orElseThrow(() -> new IllegalStateException("Không tìm thấy ROLE_LIBRARIAN"));
+        Role librarianRole = roleRepository.findByName("LIBRARIAN")
+            .orElseThrow(() -> new IllegalStateException("Không tìm thấy LIBRARIAN"));
 
         MembershipType freeMembership = membershipTypeRepository.findByName("Free").orElseGet(() -> {
             MembershipType membershipType = new MembershipType();

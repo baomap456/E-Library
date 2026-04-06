@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -14,10 +15,16 @@ import com.example.demo.dto.reports.ReportsAuditLogResponse;
 import com.example.demo.dto.reports.ReportsDigitalAuditResponse;
 import com.example.demo.dto.reports.ReportsDiscardBooksRequest;
 import com.example.demo.dto.reports.ReportsDiscardBooksResponse;
+import com.example.demo.dto.reports.ReportsDiscardReportDetailResponse;
+import com.example.demo.dto.reports.ReportsDiscardReportSummaryResponse;
+import com.example.demo.dto.reports.ReportsDiscardSuggestionsResponse;
 import com.example.demo.dto.reports.ReportsDiscrepancyResponse;
 import com.example.demo.dto.reports.ReportsExportRequest;
 import com.example.demo.dto.reports.ReportsExportResponse;
 import com.example.demo.dto.reports.ReportsFinancialResponse;
+import com.example.demo.dto.reports.ReportsInventoryBarcodeSearchResponse;
+import com.example.demo.dto.reports.ReportsInventoryCloseResponse;
+import com.example.demo.dto.reports.ReportsInventoryDetailResponse;
 import com.example.demo.dto.reports.ReportsInventorySessionRequest;
 import com.example.demo.dto.reports.ReportsInventorySessionResponse;
 import com.example.demo.dto.reports.ReportsKpiResponse;
@@ -48,9 +55,24 @@ public class ReportsController {
         return ResponseEntity.ok(reportsService.inventorySessions());
     }
 
+    @GetMapping("/inventory/sessions/{sessionId}/details")
+    public ResponseEntity<List<ReportsInventoryDetailResponse>> inventorySessionDetails(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(reportsService.inventorySessionDetails(sessionId));
+    }
+
     @PostMapping("/inventory/reconcile")
     public ResponseEntity<ReportsReconcileResponse> reconcile(@Valid @RequestBody ReportsReconcileRequest request) {
         return ResponseEntity.ok(reportsService.reconcile(request));
+    }
+
+    @GetMapping("/inventory/barcodes/search")
+    public ResponseEntity<List<ReportsInventoryBarcodeSearchResponse>> searchBarcodes(@RequestParam String keyword) {
+        return ResponseEntity.ok(reportsService.searchBarcodes(keyword));
+    }
+
+    @PostMapping("/inventory/sessions/{sessionId}/close")
+    public ResponseEntity<ReportsInventoryCloseResponse> closeInventorySession(@PathVariable Long sessionId) {
+        return ResponseEntity.ok(reportsService.closeInventorySession(sessionId));
     }
 
     @GetMapping("/inventory/discrepancies")
@@ -86,6 +108,21 @@ public class ReportsController {
     @PostMapping("/inventory/digital-audit")
     public ResponseEntity<ReportsDigitalAuditResponse> runDigitalAudit() {
         return ResponseEntity.ok(reportsService.runDigitalAudit());
+    }
+
+    @GetMapping("/inventory/discard/suggestions")
+    public ResponseEntity<ReportsDiscardSuggestionsResponse> discardSuggestions() {
+        return ResponseEntity.ok(reportsService.discardSuggestions());
+    }
+
+    @GetMapping("/inventory/discard/reports")
+    public ResponseEntity<List<ReportsDiscardReportSummaryResponse>> discardReports() {
+        return ResponseEntity.ok(reportsService.discardReports());
+    }
+
+    @GetMapping("/inventory/discard/reports/{reportId}")
+    public ResponseEntity<ReportsDiscardReportDetailResponse> discardReportDetail(@PathVariable Long reportId) {
+        return ResponseEntity.ok(reportsService.discardReportDetail(reportId));
     }
 
     @PostMapping("/inventory/discard")

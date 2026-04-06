@@ -32,15 +32,23 @@ export default function InventoryManagementSection() {
         setAuditNote,
         lastPhysicalAudit,
         lastDigitalAudit,
-        discardBookIdsRaw,
-        setDiscardBookIdsRaw,
+        discardBarcodesRaw,
+        setDiscardBarcodesRaw,
         discardReason,
         setDiscardReason,
+        discardSuggestions,
+        discardSuggestionSummary,
+        lastDiscardReport,
+        discardReportHistory,
+        selectedDiscardReportDetail,
         successMessage,
         handleCreateSession,
         handleRunPhysicalAudit,
         handleRunDigitalAudit,
         handleDiscardBooks,
+        handleUseSuggestedBarcodes,
+        handleOpenDiscardReportDetail,
+        handleCloseDiscardReportDetail,
         handleExport,
     } = useInventoryReports();
 
@@ -89,10 +97,18 @@ export default function InventoryManagementSection() {
 
             <Grid size={{ xs: 12, md: 6 }}>
                 <InventoryDiscardCard
-                    discardBookIdsRaw={discardBookIdsRaw}
+                    discardBarcodesRaw={discardBarcodesRaw}
                     discardReason={discardReason}
-                    onDiscardBookIdsRawChange={setDiscardBookIdsRaw}
+                    discardSuggestions={discardSuggestions}
+                    discardSuggestionSummary={discardSuggestionSummary}
+                    lastDiscardReport={lastDiscardReport}
+                    discardReportHistory={discardReportHistory}
+                    selectedDiscardReportDetail={selectedDiscardReportDetail}
+                    onDiscardBarcodesRawChange={setDiscardBarcodesRaw}
                     onDiscardReasonChange={setDiscardReason}
+                    onUseSuggestedBarcodes={handleUseSuggestedBarcodes}
+                    onOpenDiscardReportDetail={(reportId) => void handleOpenDiscardReportDetail(reportId)}
+                    onCloseDiscardReportDetail={handleCloseDiscardReportDetail}
                     onDiscardBooks={() => void handleDiscardBooks()}
                 />
             </Grid>
